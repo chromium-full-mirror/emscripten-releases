@@ -134,7 +134,7 @@
       }
     ]
   },
-  "test-suites": {
+  "linux-test-suites": {
     "build_steps": [
       {
         "name": "Build LLVM",
