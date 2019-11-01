@@ -15,7 +15,7 @@
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--no-tool-tests"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
         "name": "Build fastcomp",
@@ -70,7 +70,7 @@
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--no-tool-tests"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
         "name": "Build fastcomp",
@@ -110,7 +110,7 @@
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--no-tool-tests"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
         "name": "Build fastcomp",
@@ -146,7 +146,7 @@
       },
       {
         "name": "Build V8",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8", "--no-tool-tests"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
         "name": "Build Emscripten",
