@@ -22,8 +22,12 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
       },
       {
-        "name": "Build Emscripten",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
+        "name": "Build Emscripten (upstream)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+      },
+      {
+        "name": "Build Emscripten (fastcomp)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
@@ -77,8 +81,12 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
       },
       {
-        "name": "Build Emscripten",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
+        "name": "Build Emscripten (upstream)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+      },
+      {
+        "name": "Build Emscripten (fastcomp)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
@@ -117,8 +125,12 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
       },
       {
-        "name": "Build Emscripten",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
+        "name": "Build Emscripten (upstream)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+      },
+      {
+        "name": "Build Emscripten (fastcomp)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
@@ -149,8 +161,8 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
-        "name": "Build Emscripten",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
+        "name": "Build Emscripten (upstream)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
       }
     ],
     "test_steps": [
