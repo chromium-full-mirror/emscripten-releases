@@ -167,6 +167,10 @@
     ],
     "test_steps": [
       {
+        "name": "LLVM regression",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-build", "--test-include=llvm-regression"]
+      },
+      {
         "name": "Emscripten testsuite (hello world)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasm0.test_hello_world"]
