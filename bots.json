@@ -153,6 +153,10 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
+        "name": "Build Test Deps",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm-test-depends"]
+      },
+      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
       },
