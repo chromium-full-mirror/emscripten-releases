@@ -11,7 +11,10 @@ vars = {
   'v8_url': 'https://chromium.googlesource.com/v8/v8',
   'wabt_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/wabt',
   'waterfall_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/waterfall',
-  # TODO: v8 for testing, Gcc for torture tests, llvm test-suite
+  # WARNING: This is a mirror of the old LLVM git mirror of the SVN repo. The github
+  # repo URL is different, and has different hashes.
+  'llvm-test-suite_url': 'https://chromium.googlesource.com/external/llvm.org/test-suite',
+  # TODO: v8 for testing, Gcc for torture tests, Update llvm test-suite to github
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
@@ -45,6 +48,10 @@ vars = {
   # the commit queue can handle CLs rolling waterfall
   # and whatever else without interference from each other.
   'waterfall_revision': 'e55c546094289e2335eeaa19f054a8e3f99cd810',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling llvm_test_suite
+  # and whatever else without interference from each other.
+  'llvm-test-suite_revision': '8f3667acb3a6438c8088302b94a8bdbf7662623f',
 }
 
 deps = {
@@ -56,6 +63,7 @@ deps = {
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/wabt': Var('wabt_url') + '@' + Var('wabt_revision'),
   'emscripten-releases/waterfall': Var('waterfall_url') + '@' + Var('waterfall_revision'),
+  'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
 }
 
 hooks = [
