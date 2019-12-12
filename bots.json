@@ -45,16 +45,6 @@
         "name": "Emscripten testsuite (upstream, other)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=other"]
-      },
-      {
-        "name": "Emscripten testsuite (asm2wasm, wasm2)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
-                    "--test-include=emtest-asm", "--test-param=wasm2"]
-      },
-      {
-        "name": "Emscripten testsuite (asm2wasm, other)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
-                    "--test-include=emtest-asm", "--test-param=other"]
       }
     ]
   },
