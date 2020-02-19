@@ -35,14 +35,3 @@ Update a DEPS entry:
 
 The argument to roll-dep must match one of the keys in the 'deps' dictionary in
 the DEPS file. See `roll-dep -h` for more options.
-
-The following DEPS entries do not track `origin/master` but instead track
-`origin/incoming`:
-
-* emscripten-fastcomp
-* emscripten-fastcomp-clang
-* emscripten
-
-To roll these DEPS entries you also need to specify the branch name.  e.g.:
-
-* `roll-dep emscripten-releases/emscripten --roll-to origin/incoming`
