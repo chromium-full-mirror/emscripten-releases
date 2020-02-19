@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '963a02ea9fa248c830d8b7fe4984ddcfadc98e54',
+  'emscripten_revision': '1255b37aff45da2c3a8ecda0491124b81027cdb4',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling fastcomp
   # and whatever else without interference from each other.
@@ -47,7 +47,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling waterfall
   # and whatever else without interference from each other.
-  'waterfall_revision': '895043fa19ba3cb749bf44405d2daee0435a5564',
+  'waterfall_revision': 'b3ac16186d04af8b90d8bbe918d26564e0f08c3e',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
