@@ -32,9 +32,9 @@
     ],
     "test_steps": [
       {
-        "name": "Emscripten testsuite (upstream, wasm0)",
+        "name": "Emscripten testsuite (upstream, wasms)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
-                    "--test-include=emtest", "--test-param=wasm0"]
+                    "--test-include=emtest", "--test-param=wasms"]
       },
       {
         "name": "Emscripten testsuite (upstream, wasm3)",
@@ -81,9 +81,9 @@
     ],
     "test_steps": [
       {
-        "name": "Emscripten testsuite (upstream, wasms)",
+        "name": "Emscripten testsuite (upstream, wasm0)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
-                    "--test-include=emtest", "--test-param=wasms"]
+                    "--test-include=emtest", "--test-param=wasm0"]
       },
       {
         "name": "Emscripten testsuite (upstream, other)",
