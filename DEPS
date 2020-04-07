@@ -31,7 +31,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling fastcomp_clang
   # and whatever else without interference from each other.
-  'fastcomp_clang_revision': '98df4be387dde3e3918fa5bbb5fc43e1a0e1daac',
+  'fastcomp_clang_revision': 'd7c19e389e4bfb36fbc4558c3d86231b69d9e05f',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
@@ -47,7 +47,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling waterfall
   # and whatever else without interference from each other.
-  'waterfall_revision': 'b4bced4771d61d3f6bef35cbcd89917d02714886',
+  'waterfall_revision': '567d84f18198308af6d560db882097809c026a17',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -71,7 +71,7 @@ hooks = [
     'name': 'cmake',
     'pattern': '.',
     'action': ['python', 'emscripten-releases/waterfall/src/build.py',
-               '--sync-include=cmake,nodejs,java','--no-build', '--no-test',
+               '--sync-include=cmake,nodejs,java,sysroot','--no-build', '--no-test',
                '--prebuilt-dir=emscripten-releases', '--v8-dir=v8'],
   },
 ]
