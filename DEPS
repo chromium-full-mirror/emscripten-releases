@@ -27,7 +27,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling fastcomp
   # and whatever else without interference from each other.
-  'fastcomp_revision': 'ef14a284d4d6c1b4567550696e372427f0d3d7f4',
+  'fastcomp_revision': 'ede231d349e048cf2971d1efe4d73f62325ebfe2',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling fastcomp_clang
   # and whatever else without interference from each other.
