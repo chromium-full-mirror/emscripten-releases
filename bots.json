@@ -172,6 +172,11 @@
       {
         "name": "LLVM testsuite",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build", "--test-include=llvmtest"]
+      },
+      {
+        "name": "Emscripten testsuite (AddressSanitizer)",
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=asan"]
       }
     ]
   }
