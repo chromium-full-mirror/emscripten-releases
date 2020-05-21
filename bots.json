@@ -2,16 +2,8 @@
   "linux": {
     "build_steps": [
       {
-        "name": "Build Wabt",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=wabt"]
-      },
-      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
-      },
-      {
-        "name": "Build V8",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
         "name": "Build LLVM",
@@ -51,16 +43,8 @@
   "mac": {
     "build_steps": [
       {
-        "name": "Build Wabt",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=wabt"]
-      },
-      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
-      },
-      {
-        "name": "Build V8",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
         "name": "Build LLVM",
@@ -95,16 +79,8 @@
   "win": {
     "build_steps": [
       {
-        "name": "Build Wabt",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=wabt"]
-      },
-      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
-      },
-      {
-        "name": "Build V8",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
         "name": "Build LLVM",
@@ -149,10 +125,6 @@
       {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
-      },
-      {
-        "name": "Build V8",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=v8"]
       },
       {
         "name": "Build Emscripten (upstream)",
