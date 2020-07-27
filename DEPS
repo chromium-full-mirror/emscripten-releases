@@ -47,7 +47,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling waterfall
   # and whatever else without interference from each other.
-  'waterfall_revision': 'd4a504ffee488a68d09b336897c00d404544601d',
+  'waterfall_revision': 'd30e6385f2f8ffcacf2ab5d1fd4b39ca4063c275',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
