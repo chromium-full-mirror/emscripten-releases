@@ -13,7 +13,7 @@ vars = {
   'waterfall_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/waterfall',
   # WARNING: This is a mirror of the old LLVM git mirror of the SVN repo. The github
   # repo URL is different, and has different hashes.
-  'llvm-test-suite_url': 'https://chromium.googlesource.com/external/llvm.org/test-suite',
+  'llvm-test-suite_url': 'https://chromium.googlesource.com/native_client/pnacl-llvm-testsuite',
   # TODO: v8 for testing, Gcc for torture tests, Update llvm test-suite to github
 
   # Three lines of non-changing comments so that
@@ -51,7 +51,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
-  'llvm-test-suite_revision': '8f3667acb3a6438c8088302b94a8bdbf7662623f',
+  'llvm-test-suite_revision': 'a70e8c81f0bc8e9323dd2559f523544a14577d38',
 }
 
 deps = {
