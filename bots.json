@@ -10,16 +10,8 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
-        "name": "Build fastcomp",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
-      },
-      {
         "name": "Build Emscripten (upstream)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
-      },
-      {
-        "name": "Build Emscripten (fastcomp)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
@@ -52,16 +44,8 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
-        "name": "Build fastcomp",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
-      },
-      {
         "name": "Build Emscripten (upstream)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
-      },
-      {
-        "name": "Build Emscripten (fastcomp)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
@@ -89,16 +73,8 @@
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
-        "name": "Build fastcomp",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=fastcomp"]
-      },
-      {
         "name": "Build Emscripten (upstream)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
-      },
-      {
-        "name": "Build Emscripten (fastcomp)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-fastcomp"]
       }
     ],
     "test_steps": [
