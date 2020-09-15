@@ -20,7 +20,7 @@ def emscripten_builder(bucket, name, os, service_account, archive = None, **kwar
         ),
         service_account = service_account,
         swarming_tags = ["vpython:native-python-wrapper"],
-        execution_timeout = 7201 * time.second,
+        execution_timeout = 7200 * time.second,
         properties = props,
         **kwargs
     )
