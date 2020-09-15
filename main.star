@@ -72,11 +72,11 @@ luci.bucket(name = "try", acls = [
 
 ci_builder("linux", "Ubuntu-16.04")
 ci_builder("linux-test-suites", "Ubuntu-16.04", archive = False, max_concurrent_invocations = 2)
-ci_builder("mac", "Mac-10.13")
+ci_builder("mac", "Mac")
 ci_builder("win", "Windows-10")
 
 try_builder("linux", "Ubuntu-16.04")
-try_builder("mac", "Mac-10.13")
+try_builder("mac", "Mac")
 try_builder("win", "Windows-10")
 
 luci.builder(
