@@ -5,8 +5,6 @@
 vars = {
   'binaryen_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/binaryen',
   'emscripten_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten',
-  'fastcomp_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten-fastcomp',
-  'fastcomp_clang_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten-fastcomp-clang',
   'llvm_project_url': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-project',
   'v8_url': 'https://chromium.googlesource.com/v8/v8',
   'wabt_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/wabt',
@@ -24,14 +22,6 @@ vars = {
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
   'emscripten_revision': '0caed62db3d056e84766606c0220d879f7cabbf0',
-  # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling fastcomp
-  # and whatever else without interference from each other.
-  'fastcomp_revision': 'ede231d349e048cf2971d1efe4d73f62325ebfe2',
-  # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling fastcomp_clang
-  # and whatever else without interference from each other.
-  'fastcomp_clang_revision': 'd7c19e389e4bfb36fbc4558c3d86231b69d9e05f',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
@@ -57,8 +47,6 @@ vars = {
 deps = {
   'emscripten-releases/binaryen': Var('binaryen_url') + '@' + Var('binaryen_revision'),
   'emscripten-releases/emscripten': Var('emscripten_url') + '@' + Var('emscripten_revision'),
-  'emscripten-releases/emscripten-fastcomp': Var('fastcomp_url') + '@' + Var('fastcomp_revision'),
-  'emscripten-releases/emscripten-fastcomp-clang': Var('fastcomp_clang_url') + '@' + Var('fastcomp_clang_revision'),
   'emscripten-releases/llvm-project': Var('llvm_project_url') + '@' + Var('llvm_project_revision'),
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/wabt': Var('wabt_url') + '@' + Var('wabt_revision'),
