@@ -23,7 +23,8 @@
       {
         "name": "Emscripten testsuite (upstream, wasm3)",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
-                    "--test-include=emtest", "--test-param=wasm3"]
+                    "--test-include=emtest",
+                    "--test-param=wasm3,wasm2js1.test_pthread_create"]
       },
       {
         "name": "Emscripten testsuite (upstream, other)",
