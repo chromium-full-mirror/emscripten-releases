@@ -13,7 +13,7 @@ def _CheckJSONFiles(input_api, output_api):
   def FilterFile(affected_file):
     return input_api.FilterSourceFile(
         affected_file,
-        white_list=(r'.+\.json',))
+        files_to_check=(r'.+\.json',))
 
   results = []
   for f in input_api.AffectedFiles(
