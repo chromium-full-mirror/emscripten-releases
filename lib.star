@@ -3,6 +3,7 @@ def emscripten_builder(bucket, name, os, service_account, archive = None, **kwar
         "server_host": "goma.chromium.org",
         "enable_ats": True,
         "rpc_extra_params": "?prod",
+        "use_luci_auth": True,
     }
     if os.startswith("Mac"):
         goma_props.pop("enable_ats")
