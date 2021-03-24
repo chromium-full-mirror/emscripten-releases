@@ -3,11 +3,11 @@
     "build_steps": [
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
@@ -38,11 +38,11 @@
     "build_steps": [
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
@@ -67,11 +67,11 @@
     "build_steps": [
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
+        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
