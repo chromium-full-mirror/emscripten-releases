@@ -1,11 +1,9 @@
 # Managed by DEPS checkouts
 binaryen
 emscripten
-emscripten-fastcomp
-emscripten-fastcomp-clang
 llvm-project
 wabt
-waterfall
+llvm-test-suite
 
 # Managed by DEPS hooks
 jre-*
