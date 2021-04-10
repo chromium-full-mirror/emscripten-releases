@@ -2,6 +2,10 @@
   "linux": {
     "build_steps": [
       {
+        "name": "Setup Release DEPS",
+        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+      },
+      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
@@ -37,6 +41,10 @@
   "mac": {
     "build_steps": [
       {
+        "name": "Setup Release DEPS",
+        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+      },
+      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
@@ -66,6 +74,10 @@
   "win": {
     "build_steps": [
       {
+        "name": "Setup Release DEPS",
+        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+      },
+      {
         "name": "Build Binaryen",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
@@ -94,6 +106,10 @@
   },
   "linux-test-suites": {
     "build_steps": [
+      {
+        "name": "Setup Release DEPS",
+        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+      },
       {
         "name": "Build LLVM",
         "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
