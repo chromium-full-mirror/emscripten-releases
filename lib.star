@@ -1,4 +1,9 @@
+# Copyright 2020 the V8 project authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 def emscripten_builder(bucket, name, os, service_account, archive = None, **kwargs):
+    caches = None
     goma_props = {
         "server_host": "goma.chromium.org",
         "enable_ats": True,
@@ -7,12 +12,20 @@ def emscripten_builder(bucket, name, os, service_account, archive = None, **kwar
     }
     if os.startswith("Mac"):
         goma_props.pop("enable_ats")
+        caches = [
+            swarming.cache(
+                path = "osx_sdk",
+                name = "osx_sdk",
+            ),
+        ]
+
     props = {"$build/goma": goma_props}
     if archive != None:
         props["archive"] = archive
     luci.builder(
         name = name,
         bucket = bucket,
+        caches = caches,
         dimensions = {"os": os, "pool": "luci.emscripten-releases." + bucket},
         executable = luci.recipe(
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
