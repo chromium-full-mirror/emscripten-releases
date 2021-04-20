@@ -3,36 +3,36 @@
     "build_steps": [
       {
         "name": "Setup Release DEPS",
-        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
       },
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
       }
     ],
     "test_steps": [
       {
         "name": "Emscripten testsuite (upstream, wasms)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasms"]
       },
       {
         "name": "Emscripten testsuite (upstream, wasm3)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=wasm3,wasm2js1.test_pthread_create"]
       },
       {
         "name": "Emscripten testsuite (upstream, other)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
       }
@@ -42,30 +42,30 @@
     "build_steps": [
       {
         "name": "Setup Release DEPS",
-        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
       },
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
       }
     ],
     "test_steps": [
       {
         "name": "Emscripten testsuite (upstream, wasm0)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasm0"]
       },
       {
         "name": "Emscripten testsuite (upstream, other)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size"]
       }
@@ -75,30 +75,30 @@
     "build_steps": [
       {
         "name": "Setup Release DEPS",
-        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
       },
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--use-lto=auto"]
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
       }
     ],
     "test_steps": [
             {
         "name": "Emscripten testsuite (upstream, wasm2)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasm2"]
       },
       {
         "name": "Emscripten testsuite (upstream, other)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size"]
       }
@@ -108,42 +108,42 @@
     "build_steps": [
       {
         "name": "Setup Release DEPS",
-        "command": ["waterfall/src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm"]
       },
       {
         "name": "Build Test Deps",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=llvm-test-depends"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm-test-depends"]
       },
       {
         "name": "Build Binaryen",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen"]
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
       }
     ],
     "test_steps": [
       {
         "name": "LLVM regression",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build", "--test-include=llvm-regression"]
+        "command": ["src/build.py", "--no-sync", "--no-build", "--test-include=llvm-regression"]
       },
       {
         "name": "Emscripten testsuite (hello world)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasm0.test_hello_world"]
       },
       {
         "name": "LLVM testsuite",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build", "--test-include=llvmtest"]
+        "command": ["src/build.py", "--no-sync", "--no-build", "--test-include=llvmtest"]
       },
       {
         "name": "Emscripten testsuite (AddressSanitizer)",
-        "command": ["waterfall/src/build.py", "--no-sync", "--no-build",
+        "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=asan"]
       }
     ]

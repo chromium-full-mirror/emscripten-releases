@@ -12,3 +12,6 @@ cmake-*
 
 # Build directory for buildbots
 build
+
+*~
+*.pyc
