@@ -932,7 +932,9 @@ def LLVM(build_dir):
     buildbot.Step('LLVM')
     Mkdir(build_dir)
     cc_env = BuildEnv(build_dir, bin_subdir=True)
-    build_dylib = 'ON' if not IsWindows() and not ShouldUseLTO() else 'OFF'
+    build_dylib = 'ON'
+    if IsWindows() or ShouldUseLTO() or options.link_static:
+        build_dylib = 'OFF'
     command = CMakeCommandNative([
         GetLLVMSrcDir('llvm'),
         '-DCMAKE_CXX_FLAGS=-Wno-nonportable-include-path',
@@ -1897,6 +1899,9 @@ def ParseArgs():
         '--use-lto', dest='use_lto', default=False, action='store',
         choices=['true', 'false', 'auto'],
         help='Use extra optimization for host binaries')
+    parser.add_argument(
+        '--link-static', dest='link_static', default=False, action='store_true',
+        help="Link LLVM statically instead of using the libLLVM dylib")
 
     return parser.parse_args()
 
