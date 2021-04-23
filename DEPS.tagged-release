@@ -16,19 +16,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'c248d90bdc2f439ed04b89aff408412dd7711f1f',
+  'binaryen_revision': '8b66a9d40f55758b99b528d7adb371d275707c5e',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '52ed04f424ff0db7d8085c35df3afd7f7b1c9eb7',
+  'emscripten_revision': '87b5d5617b174ef99acadb8da064344b5d81be95',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'ad8010e598d9aa3747c34ce28aa2ba6de1650bd4',
+  'llvm_project_revision': '94340dd5bb23fb7c4bc7d91d5ac0608eb25660a8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'c5fc192efb5920d02028f58d95a3cbcf55502077',
+  'v8_revision': '0e7767f0c2c3e1c32184a3b1c336a283798ea483',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling wabt
   # and whatever else without interference from each other.
@@ -52,7 +52,7 @@ hooks = [
   {
     'name': 'cmake',
     'pattern': '.',
-    'action': ['python3', 'emscripten-releases/waterfall/src/build.py',
+    'action': ['python3', 'emscripten-releases/src/build.py',
                '--sync-include=cmake,nodejs,java,sysroot','--no-build', '--no-test',
                '--prebuilt-dir=emscripten-releases', '--v8-dir=v8'],
   },
