@@ -175,7 +175,7 @@ emscripten_cq_group(
 
 emscripten_cq_group(
     name = "emscripten-releases-cq",
-    ref = "refs/heads/master",
+    ref = "refs/heads/main",
     verifiers = [
         luci.cq_tryjob_verifier("emscripten_releases_presubmit", disable_reuse = True),
         "try/linux",
@@ -192,7 +192,7 @@ luci.console_view(
     name = "main",
     title = "Main",
     repo = "https://chromium.googlesource.com/emscripten-releases",
-    refs = ["refs/heads/master"],
+    refs = ["refs/heads/main"],
     favicon = "https://storage.googleapis.com/chrome-infra-public/logo/emscripten.ico",
     entries = [
         luci.console_view_entry(builder = "ci/linux", short_name = "Linux", category = "Release builders"),
@@ -218,5 +218,5 @@ luci.gitiles_poller(
     name = "emscripten-releases-trigger",
     bucket = "ci",
     repo = "https://chromium.googlesource.com/emscripten-releases",
-    refs = ["refs/heads/master"],
+    refs = ["refs/heads/main"],
 )
