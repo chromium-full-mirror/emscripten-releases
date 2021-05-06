@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-def emscripten_builder(bucket, name, os, service_account, archive = None, **kwargs):
+def emscripten_builder(bucket, name, os, service_account, **kwargs):
     caches = None
     goma_props = {
         "server_host": "goma.chromium.org",
@@ -20,8 +20,6 @@ def emscripten_builder(bucket, name, os, service_account, archive = None, **kwar
         ]
 
     props = {"$build/goma": goma_props}
-    if archive != None:
-        props["archive"] = archive
     luci.builder(
         name = name,
         bucket = bucket,
@@ -39,13 +37,12 @@ def emscripten_builder(bucket, name, os, service_account, archive = None, **kwar
         **kwargs
     )
 
-def ci_builder(name, os, archive = None, max_concurrent_invocations = 4):
+def ci_builder(name, os, max_concurrent_invocations = 4):
     emscripten_builder(
         "ci",
         name,
         os,
         "emscripten-releases-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
-        archive = archive,
         triggered_by = ["emscripten-releases-trigger"],
         triggering_policy = scheduler.policy(
             kind = scheduler.GREEDY_BATCHING_KIND,
