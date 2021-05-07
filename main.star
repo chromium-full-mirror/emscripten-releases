@@ -133,19 +133,19 @@ luci.bucket(name = "try", acls = [
     ),
 ])
 
-ci_builder("linux", "Ubuntu-16.04")
-ci_builder("linux-test-suites", "Ubuntu-16.04", max_concurrent_invocations = 2)
+ci_builder("linux", "Ubuntu")
+ci_builder("linux-test-suites", "Ubuntu", max_concurrent_invocations = 2)
 ci_builder("mac", "Mac")
 ci_builder("win", "Windows-10")
 
-try_builder("linux", "Ubuntu-16.04")
+try_builder("linux", "Ubuntu")
 try_builder("mac", "Mac")
 try_builder("win", "Windows-10")
 
 luci.builder(
     name = "emscripten_releases_presubmit",
     bucket = "try",
-    dimensions = {"os": "Ubuntu-16.04", "pool": "luci.emscripten-releases.try"},
+    dimensions = {"os": "Ubuntu", "pool": "luci.emscripten-releases.try"},
     executable = luci.recipe(
         cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
         cipd_version = "refs/heads/master",
