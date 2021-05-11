@@ -63,6 +63,22 @@
       {
         "name": "Archive Binaries",
         "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=archive"]
+      },
+      {
+        "name": "Build Binaryen (arm64)",
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen-cross", "--use-lto=auto"]
+      },
+      {
+        "name": "Build LLVM (arm64)",
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm-cross", "--use-lto=auto"]
+      },
+      {
+        "name": "Archive Binaries (arm64)",
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=archive-cross"]
+      },
+      {
+        "name": "Extract archive for testing",
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=extract-archive"]
       }
     ],
     "test_steps": [

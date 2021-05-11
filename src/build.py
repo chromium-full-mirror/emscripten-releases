@@ -19,8 +19,10 @@ import argparse
 import glob
 import json
 import multiprocessing
+import platform
 import os
 import shutil
+import struct
 import sys
 import tarfile
 import tempfile
@@ -843,7 +845,7 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir):
+def CMakeCommandNative(args, build_dir, mac_cross=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
     if IsLinux() and host_toolchains.ShouldUseSysroot():
@@ -865,6 +867,9 @@ def CMakeCommandNative(args, build_dir):
             os.symlink(xcode_sdk_path, symlink_path)
         command.append('-DCMAKE_OSX_SYSROOT=%s' % symlink_path)
         command.append('-DCMAKE_SYSROOT=%s' % symlink_path)
+
+    if mac_cross:
+        command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
 
     if host_toolchains.ShouldForceHostClang():
         command.extend(OverrideCMakeCompiler())
@@ -929,15 +934,14 @@ def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
     return cc_env
 
 
-def LLVM(build_dir):
+def LLVM(build_dir, mac_cross=False):
     buildbot.Step('LLVM')
     Mkdir(build_dir)
     cc_env = BuildEnv(build_dir, bin_subdir=True)
     build_dylib = 'ON'
     if IsWindows() or ShouldUseLTO() or options.link_static:
         build_dylib = 'OFF'
-    command = CMakeCommandNative([
-        GetLLVMSrcDir('llvm'),
+    cmake_flags_common = [
         '-DCMAKE_CXX_FLAGS=-Wno-nonportable-include-path',
         '-DLLVM_ENABLE_LIBXML2=OFF',
         '-DLLVM_INCLUDE_EXAMPLES=OFF',
@@ -955,13 +959,16 @@ def LLVM(build_dir):
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
-    ], build_dir)
+    ]
 
     if not IsMac():
         # LLD isn't fully baked on mac yet.
-        command.append('-DLLVM_ENABLE_LLD=ON')
+        cmake_flags_common.append('-DLLVM_ENABLE_LLD=ON')
 
+    # Only cross builds have a "stage1" build. Native builds only use stage 2.
+    cmake_flags_stage2 = []
     ninja_targets = ('all', 'install')
+
     if ShouldUseLTO():
         targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cxxfilt',
                    'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm', 'llvm-objcopy',
@@ -969,18 +976,39 @@ def LLVM(build_dir):
                    'llvm-strings', 'llvm-symbolizer', 'clang-resource-headers']
         ninja_targets = ('distribution', 'install-distribution')
         targets.extend(['llc', 'opt'])  # TODO: remove uses of these upstream
-        command.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
+        cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
                         '-DLLVM_INCLUDE_TESTS=OFF',
                         '-DLLVM_TOOLCHAIN_TOOLS=' + ';'.join(targets),
                         '-DLLVM_DISTRIBUTION_COMPONENTS=' + ';'.join(targets),
                         '-DLLVM_ENABLE_LTO=Thin'])
 
     else:
-        command.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
+        cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
 
+    stage2_cmake_cmd =  CMakeCommandNative(
+        [GetLLVMSrcDir('llvm')] + cmake_flags_common,
+        build_dir,
+        mac_cross=mac_cross)
     jobs = host_toolchains.NinjaJobs()
 
-    proc.check_call(command, cwd=build_dir, env=cc_env)
+    if mac_cross:
+        # Stage 1 is a native build, and only builds tablegen.
+        stage1_build_dir = os.path.join(build_dir, 'stage1')
+        Mkdir(stage1_build_dir)
+        stage1_cmake_cmd = CMakeCommandNative(
+            [GetLLVMSrcDir('llvm')] + cmake_flags_common,
+            stage1_build_dir)
+
+        proc.check_call(stage1_cmake_cmd, cwd=stage1_build_dir, env=cc_env)
+        proc.check_call(['ninja', '-v', 'llvm-tblgen', 'clang-tblgen'] + jobs,
+                        cwd=stage1_build_dir, env=cc_env)
+        # Stage 2 is a cross build, and uses tablegen on the build machine
+        lt = os.path.join(stage1_build_dir, 'bin', 'llvm-tblgen')
+        ct = os.path.join(stage1_build_dir, 'bin', 'clang-tblgen')
+        stage2_cmake_cmd += ['-DLLVM_TABLEGEN=' + lt, '-DCLANG_TABLEGEN=' + ct]
+
+
+    proc.check_call(stage2_cmake_cmd, cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
                     cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', ninja_targets[1]] + jobs,
@@ -1122,13 +1150,14 @@ def Wabt(build_dir):
     proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
 
 
-def Binaryen(build_dir):
+def Binaryen(build_dir, mac_cross=False):
     buildbot.Step('binaryen')
     Mkdir(build_dir)
     # Currently it's a bad idea to do a non-asserts build of Binaryen
     cc_env = BuildEnv(build_dir, bin_subdir=True, runtime='Debug')
 
-    cmake_command = CMakeCommandNative([GetSrcDir('binaryen')], build_dir)
+    cmake_command = CMakeCommandNative(
+        [GetSrcDir('binaryen')],build_dir, mac_cross=mac_cross)
     cmake_command.append('-DBYN_INSTALL_TOOLS_ONLY=ON')
     if ShouldUseLTO():
         cmake_command.append('-DBUILD_STATIC_LIB=ON')
@@ -1328,13 +1357,58 @@ def WasiLibc():
     shutil.copy2(os.path.join(SCRIPT_DIR, 'wasi.js'), GetInstallDir())
 
 
-def ArchiveBinaries():
+def VerifyEmscriptenCrossBuild():
+    # Ensure that all binaries have the correct architecture. There is
+    # currently one exception which is allowed to be x86_64:
+    closure_binary = 'google-closure-compiler-osx/compiler'
+    print('Verifying architecture of MacOS binaries')
+    for root, dirs, files in os.walk(GetInstallDir()):
+        for f in files:
+            path = os.path.join(root, f)
+            with open(path, 'rb') as fd:
+                header = fd.read(8)
+                if len(header) < 8:
+                    continue
+                is_macho = struct.unpack_from('I', header)[0] == 0xfeedfacf
+                if not is_macho:
+                    continue
+                cpu_type = struct.unpack_from('I', header, 4)[0]
+                is_x86_64 = cpu_type == 0x1000007
+                is_arm64 = cpu_type == 0x100000c
+                if is_arm64:
+                    continue
+                if not (path.endswith(closure_binary) and is_x86_64):
+                    print(f'{path} is a non-arm64 binary:')
+                    proc.check_call(['file', path])
+                    raise Exception('Native binary in the cross build')
+
+
+def ArchiveBinaries(mac_cross=False):
     buildbot.Step('Archive binaries')
+    # Archive everything in the install directory.
+    filename = 'binaries'
+    if mac_cross:
+        assert IsMac() and platform.machine() == 'x86_64'
+        filename += '-arm64'
+        VerifyEmscriptenCrossBuild()
     archive = Archive(GetInstallDir(), print_content=buildbot.IsBot())
+
+    # Also make a local copy for running tests.
+    if IsMac() and not mac_cross:
+        copy = os.path.join(os.path.dirname(archive), 'test-install.tbz2')
+        print(f'Copying {archive} to {copy}')
+        shutil.copy(archive, copy)
     if not buildbot.IsUploadingBot():
         return
-    # All relevant binaries were copied to the LLVM directory.
-    UploadArchive('binaries', archive)
+    UploadArchive(filename, archive)
+
+
+def ExtractArchive():
+    Remove(GetInstallDir())
+    upper_dir = os.path.dirname(GetInstallDir())
+    proc.check_call(['tar', '-xvjf',
+        os.path.join(upper_dir, 'test-install.tbz2')],
+        cwd=upper_dir)
 
 
 def DebianPackage():
@@ -1550,6 +1624,9 @@ def AllBuilds():
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-out')),
+        Build('llvm-cross', LLVM,
+              incremental_build_dir=os.path.join(
+                  work_dirs.GetBuild(), 'llvm-cross-out'), mac_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
         Build('v8', V8, os_filter=Filter(exclude=['mac'])),
         Build('jsvu', Jsvu, os_filter=Filter(exclude=['windows'])),
@@ -1559,6 +1636,9 @@ def AllBuilds():
         Build('binaryen', Binaryen,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-out')),
+        Build('binaryen-cross', Binaryen,
+              incremental_build_dir=os.path.join(
+                  work_dirs.GetBuild(), 'binaryen-cross-out'), mac_cross=True),
         Build('emscripten-upstream', Emscripten),
         # Target libs
         # TODO: re-enable wasi on windows, see #517
@@ -1569,6 +1649,8 @@ def AllBuilds():
         Build('libcxxabi', LibCXXABI, os_filter=Filter(exclude=['windows'])),
         # Archive
         Build('archive', ArchiveBinaries),
+        Build('archive-cross', ArchiveBinaries, mac_cross=True),
+        Build('extract-archive', ExtractArchive),
         Build('debian', DebianPackage),
     ]
 
