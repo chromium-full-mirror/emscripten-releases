@@ -1817,9 +1817,11 @@ def TestLLVMTestSuite():
         GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
         GetInstallDir('emscripten', 'em++'), '-DTEST_SUITE_RUN_UNDER=' +
         NodeBin(), '-DTEST_SUITE_USER_MODE_EMULATION=ON',
-        '-DTEST_SUITE_SUBDIRS=SingleSource',
+        '-DTEST_SUITE_SUBDIRS=SingleSource;MicroBenchmarks',
+        # The tests for the in-progress matrix extension don't currently work.
+        '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
-        '-L %s -s TOTAL_MEMORY=1024MB' % outdir,
+        '-L %s -s TOTAL_MEMORY=1024MB -lnodefs.js -sNODERAWFS=1' % outdir,
         '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py')
     ]
 

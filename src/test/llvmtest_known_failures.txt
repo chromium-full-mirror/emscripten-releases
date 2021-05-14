@@ -51,3 +51,4 @@ SingleSource/UnitTests/2003-05-14-AtExit.js.test
 SingleSource/UnitTests/C++11/stdthreadbug.js.test
 SingleSource/UnitTests/Threads/2010-12-08-tls.js.test
 SingleSource/UnitTests/Threads/tls.js.test
+MicroBenchmarks/harris/harris.js.test
