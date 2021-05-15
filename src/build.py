@@ -1821,7 +1821,8 @@ def TestLLVMTestSuite():
         # The tests for the in-progress matrix extension don't currently work.
         '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
-        '-L %s -s TOTAL_MEMORY=1024MB -lnodefs.js -sNODERAWFS=1' % outdir,
+        '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
+        '-lnodefs.js -sNODERAWFS',
         '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py')
     ]
 
