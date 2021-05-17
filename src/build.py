@@ -986,7 +986,7 @@ def LLVM(build_dir, mac_cross=False):
         cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
 
     stage2_cmake_cmd =  CMakeCommandNative(
-        [GetLLVMSrcDir('llvm')] + cmake_flags_common,
+        [GetLLVMSrcDir('llvm')] + cmake_flags_common + cmake_flags_stage2,
         build_dir,
         mac_cross=mac_cross)
     jobs = host_toolchains.NinjaJobs()
