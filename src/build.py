@@ -52,17 +52,6 @@ CMAKE_TOOLCHAIN_FILE = 'Wasi.cmake'
 EMSCRIPTEN_CONFIG_UPSTREAM = 'emscripten_config_upstream'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
-# Avoid flakes: use cached repositories to avoid relying on external network.
-GIT_MIRROR_BASE = 'https://chromium.googlesource.com/'
-GITHUB_MIRROR_BASE = GIT_MIRROR_BASE + 'external/github.com/'
-WASM_GIT_BASE = GITHUB_MIRROR_BASE + 'WebAssembly/'
-EMSCRIPTEN_GIT_BASE = 'https://github.com/emscripten-core/'
-LLVM_GIT_BASE = 'https://github.com/llvm/'
-
-# Name of remote for build script to use. Don't touch origin to avoid
-# clobbering any local development.
-WATERFALL_REMOTE = '_waterfall'
-
 WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
 
 GNUWIN32_ZIP = 'gnuwin32.zip'
@@ -270,11 +259,6 @@ if IsMac():
     flags = fcntl(fd, F_GETFL)
     fcntl(fd, F_SETFL, flags & ~os.O_NONBLOCK)
 
-# Pin the GCC revision so that new torture tests don't break the bot. This
-# should be manually updated when convenient.
-GCC_REVISION = 'b6125c702850488ac3bfb1079ae5c9db89989406'
-GCC_CLONE_DEPTH = 1000
-
 g_should_use_lto = None
 
 
@@ -374,32 +358,6 @@ def UploadArchive(name, archive):
     UploadFile(archive, 'wasm-%s%s' % (name, extension))
 
 
-# Repo and subproject utilities
-
-
-def GitRemoteUrl(cwd, remote):
-    """Get the URL of a remote."""
-    return proc.check_output(
-        ['git', 'config', '--get', 'remote.%s.url' % remote],
-        cwd=cwd).strip()
-
-
-def RemoteBranch(branch):
-    """Get the remote-qualified branch name to use for waterfall"""
-    return WATERFALL_REMOTE + '/' + branch
-
-
-def GitUpdateRemote(src_dir, git_repo, remote_name):
-    try:
-        proc.check_call(['git', 'remote', 'set-url', remote_name, git_repo],
-                        cwd=src_dir)
-    except proc.CalledProcessError:
-        # If proc.check_call fails it throws an exception. 'git remote set-url'
-        # fails when the remote doesn't exist, so we should try to add it.
-        proc.check_call(['git', 'remote', 'add', remote_name, git_repo],
-                        cwd=src_dir)
-
-
 class Filter(object):
     """Filter for source or build rules, to allow including or excluding only
      selected targets.
@@ -454,91 +412,21 @@ class Filter(object):
 
 class Source(object):
     """Metadata about a sync-able source repo on the waterfall"""
-    def __init__(self, name, src_dir, git_repo,
-                 checkout=RemoteBranch('main'), depth=None,
+    def __init__(self, name, src_dir,
                  custom_sync=None, os_filter=None):
         self.name = name
         self.src_dir = src_dir
-        self.git_repo = git_repo
-        self.checkout = checkout
-        self.depth = depth
         self.custom_sync = custom_sync
         self.os_filter = os_filter
 
-        # Ensure that git URLs end in .git.  We have had issues in the past
-        # where github would not recognize the requests correctly otherwise due
-        # to chromium's builders setting custom GIT_USER_AGENT:
-        # https://bugs.chromium.org/p/chromium/issues/detail?id=711775
-        if git_repo:
-            assert git_repo.endswith('.git'), 'Git URLs should end in .git'
 
-    def Sync(self, good_hashes=None):
+    def Sync(self):
         if self.os_filter and not self.os_filter.Check(BuilderPlatformName()):
             print("Skipping %s: Doesn't work on %s" %
                   (self.name, BuilderPlatformName()))
             return
-        if good_hashes and good_hashes.get(self.name):
-            self.checkout = good_hashes[self.name]
-        if self.custom_sync:
-            self.custom_sync(self.name, self.src_dir, self.git_repo)
-        else:
-            self.GitCloneFetchCheckout()
-
-    def GitCloneFetchCheckout(self):
-        """Clone a git repo if not already cloned, then fetch and checkout."""
-        if os.path.isdir(self.src_dir):
-            print('%s directory already exists' % self.name)
-        else:
-            clone = ['clone', self.git_repo, self.src_dir]
-            if self.depth:
-                clone.append('--depth')
-                clone.append(str(self.depth))
-            proc.check_call(['git'] + clone)
-
-        GitUpdateRemote(self.src_dir, self.git_repo, WATERFALL_REMOTE)
-        proc.check_call(['git', 'fetch', '--force', '--prune', '--tags',
-                         WATERFALL_REMOTE],
-                        cwd=self.src_dir)
-        if not self.checkout.startswith(WATERFALL_REMOTE + '/'):
-            sys.stderr.write(
-                ('WARNING: `git checkout %s` not based on waterfall '
-                 'remote (%s), checking out local branch' %
-                 (self.checkout, WATERFALL_REMOTE)))
-        proc.check_call(['git', 'checkout', self.checkout], cwd=self.src_dir)
-        proc.check_call(['git', 'submodule', 'update', '--init'],
-                        cwd=self.src_dir)
-
-    def CurrentGitInfo(self):
-        if not os.path.exists(self.src_dir):
-            return None
-
-        def pretty(fmt):
-            return proc.check_output(
-                ['git', 'log', '-n1',
-                 '--pretty=format:%s' % fmt],
-                cwd=self.src_dir).strip()
-
-        try:
-            remote = GitRemoteUrl(self.src_dir, WATERFALL_REMOTE)
-        except proc.CalledProcessError:
-            # Not all checkouts have the '_waterfall' remote (e.g. the
-            # waterfall itself) so fall back to origin on failure
-            remote = GitRemoteUrl(self.src_dir, 'origin')
-
-        return {
-            'hash': pretty('%H'),
-            'name': pretty('%aN'),
-            'email': pretty('%ae'),
-            'subject': pretty('%s'),
-            'remote': remote,
-        }
-
-    def PrintGitStatus(self):
-        """"Print the current git status for the sync target."""
-        print('<<<<<<<<<< STATUS FOR', self.name, '>>>>>>>>>>')
-        if os.path.exists(self.src_dir):
-            proc.check_call(['git', 'status'], cwd=self.src_dir)
-        print()
+        assert self.custom_sync
+        self.custom_sync(self.name, self.src_dir)
 
 
 def RevisionModifiesFile(f):
@@ -565,27 +453,7 @@ def RevisionModifiesFile(f):
     return head_rev == last_rev
 
 
-def ChromiumFetchSync(name, work_dir, git_repo,
-                      checkout=RemoteBranch('master')):
-    """Some Chromium projects want to use gclient for clone and
-    dependencies."""
-    if os.path.isdir(work_dir):
-        print('%s directory already exists' % name)
-    else:
-        # Create Chromium repositories one deeper, separating .gclient files.
-        parent = os.path.split(work_dir)[0]
-        Mkdir(parent)
-        proc.check_call(['gclient', 'config', git_repo], cwd=parent)
-        proc.check_call(['git', 'clone', git_repo], cwd=parent)
-
-    GitUpdateRemote(work_dir, git_repo, WATERFALL_REMOTE)
-    proc.check_call(['git', 'fetch', WATERFALL_REMOTE], cwd=work_dir)
-    proc.check_call(['git', 'checkout', checkout], cwd=work_dir)
-    proc.check_call(['gclient', 'sync'], cwd=work_dir)
-    return (name, work_dir)
-
-
-def SyncToolchain(name, src_dir, git_repo):
+def SyncToolchain(name, src_dir):
     if IsWindows():
         host_toolchains.SyncWinToolchain()
     else:
@@ -647,13 +515,13 @@ def SyncArchive(out_dir, name, url, create_out_dir=False):
         f.write(url + '\n')
 
 
-def SyncPrebuiltCMake(name, src_dir, git_repo):
+def SyncPrebuiltCMake(name, src_dir):
     extension = '.zip' if IsWindows() else '.tar.gz'
     url = WASM_STORAGE_BASE + PREBUILT_CMAKE_BASE_NAME + extension
     SyncArchive(PrebuiltCMakeDir(), 'cmake', url)
 
 
-def SyncPrebuiltNodeJS(name, src_dir, git_repo):
+def SyncPrebuiltNodeJS(name, src_dir):
     extension = {
         'darwin': 'tar.xz',
         'linux': 'tar.xz',
@@ -666,14 +534,14 @@ def SyncPrebuiltNodeJS(name, src_dir, git_repo):
 
 
 # Utilities needed for running LLVM regression tests on Windows
-def SyncGNUWin32(name, src_dir, git_repo):
+def SyncGNUWin32(name, src_dir):
     if not IsWindows():
         return
     url = WASM_STORAGE_BASE + GNUWIN32_ZIP
     return SyncArchive(GetPrebuilt('gnuwin32'), name, url)
 
 
-def SyncPrebuiltJava(name, src_dir, git_repo):
+def SyncPrebuiltJava(name, src_dir):
     platform = {
         'linux': 'linux',
         'linux2': 'linux',
@@ -685,7 +553,7 @@ def SyncPrebuiltJava(name, src_dir, git_repo):
     SyncArchive(JavaDir(), name, java_url)
 
 
-def SyncLinuxSysroot(name, src_dir, git_repo):
+def SyncLinuxSysroot(name, src_dir):
     if not (IsLinux() and host_toolchains.ShouldUseSysroot()):
         return
     SyncArchive(GetPrebuilt(LINUX_SYSROOT),
@@ -694,7 +562,7 @@ def SyncLinuxSysroot(name, src_dir, git_repo):
                 create_out_dir=True)
 
 
-def SyncReleaseDeps(name, src_dir, git_repo):
+def SyncReleaseDeps(name, src_dir):
     if not ShouldUseLTO():
         print('ShouldUseLTO is false, skipping release DEPS')
         return
@@ -708,36 +576,19 @@ def NoSync(*args):
 
 def AllSources():
     return [
-        Source('waterfall', SCRIPT_DIR, None, custom_sync=NoSync),
-        Source('llvm', GetSrcDir('llvm-project'),
-               LLVM_GIT_BASE + 'llvm-project.git'),
-        Source('llvm-test-suite', GetSrcDir('llvm-test-suite'),
-               LLVM_GIT_BASE + 'llvm-test-suite.git'),
-        Source('emscripten', GetSrcDir('emscripten'),
-               EMSCRIPTEN_GIT_BASE + 'emscripten.git'),
-        Source('gcc', GetSrcDir('gcc'),
-               GIT_MIRROR_BASE + 'chromiumos/third_party/gcc.git',
-               checkout=GCC_REVISION, depth=GCC_CLONE_DEPTH),
-        Source('v8', work_dirs.GetV8(), GIT_MIRROR_BASE + 'v8/v8.git',
-               custom_sync=ChromiumFetchSync, checkout=RemoteBranch('master')),
-        Source('host-toolchain', work_dirs.GetV8(), '',
+        Source('host-toolchain', work_dirs.GetV8(),
                custom_sync=SyncToolchain),
-        Source('cmake', '', '',  # The source and git args are ignored.
+        Source('cmake', '', # The source arg is ignored.
                custom_sync=SyncPrebuiltCMake),
-        Source('nodejs', '', '',  # The source and git args are ignored.
+        Source('nodejs', '',  # The source arg is ignored.
                custom_sync=SyncPrebuiltNodeJS),
-        Source('gnuwin32', '', '',  # The source and git args are ignored.
+        Source('gnuwin32', '', # The source arg is ignored.
                custom_sync=SyncGNUWin32),
-        Source('wabt', GetSrcDir('wabt'), WASM_GIT_BASE + 'wabt.git'),
-        Source('binaryen', GetSrcDir('binaryen'),
-               WASM_GIT_BASE + 'binaryen.git'),
-        Source('wasi-libc', GetSrcDir('wasi-libc'),
-               'https://github.com/CraneStation/wasi-libc.git'),
-        Source('java', '', '',  # The source and git args are ignored.
+        Source('java', '', # The source arg is ignored.
                custom_sync=SyncPrebuiltJava),
-        Source('sysroot', '', '',  # The source and git args are ignored.
+        Source('sysroot', '', # The source arg is ignored.
                custom_sync=SyncLinuxSysroot),
-        Source('deps', '', '', custom_sync=SyncReleaseDeps)
+        Source('deps', '', custom_sync=SyncReleaseDeps)
     ]
 
 
@@ -788,27 +639,8 @@ def SyncRepos(filter, sync_lkgr=False):
     if not filter.Any():
         return
     buildbot.Step('Sync Repos')
-
-    good_hashes = None
-    if sync_lkgr:
-        lkgr_file = GetBuildDir('lkgr.json')
-        cloud.Download('%s/lkgr.json' % BuilderPlatformName(), lkgr_file)
-        lkgr = json.loads(open(lkgr_file).read())
-        good_hashes = {}
-        for k, v in lkgr['repositories'].iteritems():
-            good_hashes[k] = v.get('hash') if v else None
-
     for repo in filter.Apply(AllSources()):
-        repo.Sync(good_hashes)
-
-
-def GetRepoInfo():
-    """Collect a readable form of all repo information here, preventing the
-  summary from getting out of sync with the actual list of repos."""
-    info = {}
-    for r in AllSources():
-        info[r.name] = r.CurrentGitInfo()
-    return info
+        repo.Sync()
 
 
 # Build rules
@@ -1582,23 +1414,6 @@ class Build(object):
 def Summary():
     buildbot.Step('Summary')
 
-    # Emscripten-releases bots run the stages separately so LKGR has no way of
-    # knowing whether everything passed or not.
-    should_upload = (buildbot.IsUploadingBot() and
-                     not buildbot.IsEmscriptenReleasesBot())
-
-    if should_upload:
-        info = {'repositories': GetRepoInfo()}
-        info['build'] = buildbot.BuildNumber()
-        info['scheduler'] = buildbot.Scheduler()
-        info_file = GetInstallDir('buildinfo.json')
-        info_json = json.dumps(info, indent=2)
-        print(info_json)
-
-        with open(info_file, 'w+') as f:
-            f.write(info_json)
-            f.write('\n')
-
     print('Failed steps: %s.' % buildbot.Failed())
     for step in buildbot.FailedList():
         print('    %s' % step)
@@ -1606,16 +1421,8 @@ def Summary():
     for step in buildbot.WarnedList():
         print('    %s' % step)
 
-    if should_upload:
-        latest_file = '%s/%s' % (buildbot.BuilderName(), 'latest.json')
-        buildbot.Link('latest.json', cloud.Upload(info_file, latest_file))
-
     if buildbot.Failed():
         buildbot.Fail()
-    else:
-        if should_upload:
-            lkgr_file = '%s/%s' % (buildbot.BuilderName(), 'lkgr.json')
-            buildbot.Link('lkgr.json', cloud.Upload(info_file, lkgr_file))
 
 
 def AllBuilds():
@@ -1969,10 +1776,6 @@ def ParseArgs():
         '--torture-filter',
         help='Limit which torture tests are run by applying the given glob')
     parser.add_argument(
-        '--git-status', dest='git_status', default=False, action='store_true',
-        help='Show git status for each sync target. '
-             "Doesn't sync, build, or test")
-    parser.add_argument(
         '--no-host-clang', dest='host_clang', action='store_false',
         help="Don't force chrome clang as the host compiler")
     parser.add_argument(
@@ -1998,11 +1801,6 @@ def AddToPath(path):
 
 
 def run(sync_filter, build_filter, test_filter):
-    if options.git_status:
-        for s in AllSources():
-            s.PrintGitStatus()
-        return 0
-
     Clobber()
     Chdir(SCRIPT_DIR)
     for work_dir in work_dirs.GetAll():
