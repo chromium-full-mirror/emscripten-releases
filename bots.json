@@ -15,7 +15,7 @@
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
       },
       {
         "name": "Archive Binaries",
@@ -58,7 +58,7 @@
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
       },
       {
         "name": "Archive Binaries",
@@ -111,7 +111,7 @@
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
       },
       {
         "name": "Archive Binaries",
@@ -152,7 +152,7 @@
       },
       {
         "name": "Build Emscripten (upstream)",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten-upstream"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=emscripten"]
       }
     ],
     "test_steps": [

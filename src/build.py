@@ -1446,7 +1446,7 @@ def AllBuilds():
         Build('binaryen-cross', Binaryen,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-cross-out'), mac_cross=True),
-        Build('emscripten-upstream', Emscripten),
+        Build('emscripten', Emscripten),
         # Target libs
         # TODO: re-enable wasi on windows, see #517
         Build('wasi-libc', WasiLibc, os_filter=Filter(exclude=['windows'])),
@@ -1466,7 +1466,7 @@ def AllBuilds():
 # on wasm-stat.us
 DEFAULT_BUILDS = [
     'llvm', 'v8', 'jsvu', 'wabt', 'binaryen',
-    'emscripten-upstream', 'wasi-libc', 'compiler-rt',
+    'emscripten', 'wasi-libc', 'compiler-rt',
     'libcxx', 'libcxxabi', 'archive'
 ]
 
