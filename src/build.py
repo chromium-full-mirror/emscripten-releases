@@ -1010,7 +1010,7 @@ def InstallEmscripten():
                     cwd=src_dir)
 
     print('Running npm install ...')
-    proc.check_call(['npm', 'ci', '--no-optional'], cwd=em_install_dir)
+    proc.check_call(['npm', 'ci', '--production', '--no-optional'], cwd=em_install_dir)
 
     # Manually install the appropriate native Closure Compiler package
     # This is currently needed because npm ci will install the packages
@@ -1030,7 +1030,7 @@ def InstallEmscripten():
         native = 'google-closure-compiler-windows'
     elif IsLinux():
         native = 'google-closure-compiler-linux'
-    proc.check_call(['npm', 'install', '--no-optional', native],
+    proc.check_call(['npm', 'install', '--production', '--no-optional', native],
                     cwd=em_install_dir)
 
 
@@ -1576,12 +1576,20 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     # Before we can run the tests we prepare the installed emscripten
     # directory by copying of some test data which is otherwise excluded by
     # emscripten install script (tools/install.py).
+    # We also need to run npm to get the devDependencies needed by the
+    # test suite.
     em_install_dir = GetInstallDir('emscripten')
     installed_tests = os.path.join(em_install_dir, 'tests', 'third_party')
     if not os.path.exists(installed_tests):
         src_dir = GetSrcDir('emscripten', 'tests', 'third_party')
         print('Copying directory %s to %s' % (src_dir, em_install_dir))
         shutil.copytree(src_dir, installed_tests)
+
+    # Ideally we would put this inside the above block/condition but there
+    # is a bug on win32 that is currently causing 'tests/third_party' to
+    # be installed by install.py.
+    print('Running npm install ...')
+    proc.check_call(['npm', 'ci'], cwd=em_install_dir)
 
     cmd = [
         GetInstallDir('emscripten', 'tests', 'runner.py'),
