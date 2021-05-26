@@ -16,19 +16,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'dc516f10b5fa8fa7bf270eda97950d6e714956d3',
+  'binaryen_revision': '7f31823120ba25075d783df863f6be536543f805',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '002374041ab769340e824aa3ba549170e6728d91',
+  'emscripten_revision': 'b15ca40ca02f469de3bf9a4de67a2655aede8974',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '6e1c1dac4c72cc57f4cd2bc8554e8ac9f2f50b6e',
+  'llvm_project_revision': '5852582532b3eb3ea8da51a1e272d8d017bd36c9',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': '0e7767f0c2c3e1c32184a3b1c336a283798ea483',
+  'v8_revision': '59d158d07d33fefa1e52f84ae24a58d434b889ab',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling wabt
   # and whatever else without interference from each other.
@@ -57,7 +57,6 @@ hooks = [
                '--prebuilt-dir=emscripten-releases', '--v8-dir=v8'],
   },
 ]
-
 
 recursedeps = [
   'v8'
