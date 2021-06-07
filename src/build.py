@@ -1596,6 +1596,7 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
         '--em-config', config
     ] + tests
     test_env = os.environ.copy()
+    test_env['EMTEST_NO_V8'] = '1'
     if buildbot.IsBot() and IsWindows():
         test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
     try:
