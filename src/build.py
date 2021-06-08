@@ -53,6 +53,7 @@ EMSCRIPTEN_CONFIG_UPSTREAM = 'emscripten_config_upstream'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
 WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
+CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 
 GNUWIN32_ZIP = 'gnuwin32.zip'
 
@@ -791,6 +792,7 @@ def LLVM(build_dir, mac_cross=False):
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
+        '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
     ]
 
     if not IsMac():
