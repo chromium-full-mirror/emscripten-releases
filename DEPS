@@ -16,7 +16,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'f09bb989a15451960c1078426b61dcc50f232a0a',
+  'binaryen_revision': '8b606524401bf6fc9e0f46f51a66c5e37ec6e707',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
