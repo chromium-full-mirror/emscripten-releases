@@ -32,9 +32,9 @@ import subprocess
 import sys
 import urllib.request
 
-TAG_INFO_URL = 'https://raw.githubusercontent.com/emscripten-core/emsdk/master/emscripten-releases-tags.txt'
+TAG_INFO_URL = 'https://raw.githubusercontent.com/emscripten-core/emsdk/main/emscripten-releases-tags.txt'
 EMR_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAIN_BRANCH = 'origin/master'
+MAIN_BRANCH = 'origin/main'
 
 
 def Git(*args, **kwargs):
