@@ -763,7 +763,6 @@ def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
     bin_dir = build_dir if not bin_subdir else os.path.join(build_dir, 'bin')
     Mkdir(bin_dir)
     assert runtime in ['Release', 'Debug']
-    host_toolchains.CopyDlls(bin_dir, runtime)
     return cc_env
 
 
@@ -790,6 +789,8 @@ def LLVM(build_dir, mac_cross=False):
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
+        '-DLLVM_USE_CRT_RELEASE=MT',
+        '-DLLVM_USE_CRT_DEBUG=MTd',
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
@@ -1829,10 +1830,6 @@ def run(sync_filter, build_filter, test_filter):
     # `npm` uses whatever `node` is in `PATH`. To make sure it uses the
     # Node.js version we want, we prepend the node bin dir to `PATH`.
     AddToPath(NodeBinDir())
-
-    # TODO(dschuff): Figure out how to make these statically linked?
-    if IsWindows() and build_filter.Any():
-        host_toolchains.CopyDlls(GetInstallDir('bin'), 'Debug')
 
     try:
         BuildRepos(build_filter)

@@ -75,15 +75,6 @@ def GetVSEnv(dir):
     return env
 
 
-def GetRuntimeDir():
-    # Get the chromium-packaged toolchain directory info in a JSON file
-    proc.check_call(VSToolchainPy() + ['get_toolchain_dir'])
-    with open(WinToolchainJson()) as f:
-        paths = json.load(f)
-    # Extract the 64-bit runtime path
-    return [path for path in paths['runtime_dirs'] if path.endswith('64')][0]
-
-
 def SetUpVSEnv(outdir):
     """Set up the VS build environment used by Chromium bots"""
 
@@ -100,17 +91,6 @@ def SetUpVSEnv(outdir):
                      'x64', 'environment.x64'],
                     cwd=outdir)
     return GetVSEnv(outdir)
-
-
-def CopyDlls(dir, configuration):
-    """Copy MSVS Runtime dlls into a build directory"""
-    file_util.Mkdir(dir)
-    proc.check_call(VSToolchainPy() + ['copy_dlls', dir, configuration, 'x64'])
-    # LLD needs also concrt140.dll, which the Chromium copy_dlls doesn't
-    # include.
-    for dll in glob.glob(os.path.join(GetRuntimeDir(), 'concrt140*.dll')):
-        print('Copying %s to %s' % (dll, dir))
-        shutil.copy2(dll, dir)
 
 
 def UsingGoma():
