@@ -3,7 +3,7 @@ Emscripten Releases
 
 This is meta-repository which brings together all the repositories needed to
 produce and [emscripten](https://emscripten.org) release.  The revisions used
-in each release are tracked in a DEPS file (See
+in each release are tracked in a `DEPS` file (See
 [depot_tools](https://dev.chromium.org/developers/how-tos/depottools for more
 information).  This file contains a history of revisions that have been built
 and tested together and represent a known good state.
@@ -26,7 +26,7 @@ Update working trees:
 * `git pull`
 * `gclient sync`
 
-Update a DEPS entry:
+Update a `DEPS` entry:
 
 * `cd emscripten-releases`
 * `git checkout -b <branch>`
@@ -34,7 +34,7 @@ Update a DEPS entry:
 * `git cl upload`
 
 The argument to roll-dep must match one of the keys in the 'deps' dictionary in
-the DEPS file. See `roll-dep -h` for more options.
+the `DEPS` file. See `roll-dep -h` for more options.
 
 ༼ ༎ຶ ෴ ༎ຶ༽ Build and test scripts in `src/`
 ==========================================
