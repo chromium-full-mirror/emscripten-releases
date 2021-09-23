@@ -148,7 +148,7 @@ luci.builder(
     dimensions = {"os": "Ubuntu", "pool": "luci.emscripten-releases.try"},
     executable = luci.recipe(
         cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
-        cipd_version = "refs/heads/master",
+        cipd_version = "refs/heads/main",
         name = "run_presubmit",
     ),
     service_account = "emscripten-releases-try-bldr@chops-service-accounts.iam.gserviceaccount.com",

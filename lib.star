@@ -27,7 +27,7 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         dimensions = {"os": os, "pool": "luci.emscripten-releases." + bucket},
         executable = luci.recipe(
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
-            cipd_version = "refs/heads/master",
+            cipd_version = "refs/heads/main",
             name = "emscripten_releases",
         ),
         service_account = service_account,
