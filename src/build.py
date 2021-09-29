@@ -1081,117 +1081,6 @@ def Emscripten():
         os.remove(sanity)
 
 
-def CompilerRT():
-    # TODO(sbc): Figure out how to do this step as part of the llvm build.
-    # I suspect that this can be done using the llvm/runtimes directory but
-    # have yet to make it actually work this way.
-    buildbot.Step('compiler-rt')
-
-    build_dir = os.path.join(work_dirs.GetBuild(), 'compiler-rt-out')
-    # TODO(sbc): Remove this.
-    # The compiler-rt doesn't currently rebuild libraries when a new -DCMAKE_AR
-    # value is specified.
-    if os.path.isdir(build_dir):
-        Remove(build_dir)
-
-    Mkdir(build_dir)
-    src_dir = GetLLVMSrcDir('compiler-rt')
-    cc_env = BuildEnv(src_dir, bin_subdir=True)
-    command = CMakeCommandWasi([
-        os.path.join(src_dir, 'lib', 'builtins'),
-        '-DCMAKE_C_COMPILER_WORKS=ON', '-DCOMPILER_RT_BAREMETAL_BUILD=On',
-        '-DCOMPILER_RT_BUILD_XRAY=OFF', '-DCOMPILER_RT_INCLUDE_TESTS=OFF',
-        '-DCOMPILER_RT_ENABLE_IOS=OFF', '-DCOMPILER_RT_DEFAULT_TARGET_ONLY=On',
-        '-DLLVM_CONFIG_PATH=' + Executable(
-            os.path.join(work_dirs.GetBuild(), 'llvm-out', 'bin',
-                         'llvm-config')),
-        '-DCMAKE_INSTALL_PREFIX=' + GetInstallDir('lib', 'clang', LLVM_VERSION)
-    ])
-
-    proc.check_call(command, cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', '-v'], cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
-
-
-def LibCXX():
-    buildbot.Step('libcxx')
-    build_dir = os.path.join(work_dirs.GetBuild(), 'libcxx-out')
-    if os.path.isdir(build_dir):
-        Remove(build_dir)
-    Mkdir(build_dir)
-    src_dir = GetLLVMSrcDir('libcxx')
-    cc_env = BuildEnv(src_dir, bin_subdir=True)
-    command = CMakeCommandWasi([
-        src_dir,
-        '-DCMAKE_EXE_LINKER_FLAGS=-nostdlib++',
-        '-DLIBCXX_ENABLE_THREADS=OFF',
-        '-DLIBCXX_ENABLE_SHARED=OFF',
-        '-DLIBCXX_ENABLE_FILESYSTEM=OFF',
-        '-DLIBCXX_HAS_MUSL_LIBC=ON',
-        '-DLIBCXX_CXX_ABI=libcxxabi',
-        '-DLIBCXX_LIBDIR_SUFFIX=/wasm32-wasi',
-        '-DLIBCXX_CXX_ABI_INCLUDE_PATHS=' +
-        GetLLVMSrcDir('libcxxabi', 'include'),
-        '-DLLVM_PATH=' + GetLLVMSrcDir('llvm'),
-    ])
-
-    proc.check_call(command, cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', '-v'], cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
-
-
-def LibCXXABI():
-    buildbot.Step('libcxxabi')
-    build_dir = os.path.join(work_dirs.GetBuild(), 'libcxxabi-out')
-    if os.path.isdir(build_dir):
-        Remove(build_dir)
-    Mkdir(build_dir)
-    src_dir = GetLLVMSrcDir('libcxxabi')
-    cc_env = BuildEnv(src_dir, bin_subdir=True)
-    command = CMakeCommandWasi([
-        src_dir,
-        '-DCMAKE_EXE_LINKER_FLAGS=-nostdlib++',
-        '-DLIBCXXABI_ENABLE_PIC=OFF',
-        '-DLIBCXXABI_ENABLE_SHARED=OFF',
-        '-DLIBCXXABI_ENABLE_THREADS=OFF',
-        '-DLIBCXXABI_LIBDIR_SUFFIX=/wasm32-wasi',
-        '-DLIBCXXABI_LIBCXX_PATH=' + GetLLVMSrcDir('libcxx'),
-        '-DLIBCXXABI_LIBCXX_INCLUDES=' +
-        GetInstallDir('sysroot', 'include', 'c++', 'v1'),
-        '-DLLVM_PATH=' + GetLLVMSrcDir('llvm'),
-    ])
-
-    proc.check_call(command, cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', '-v'], cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
-    CopyLibraryToSysroot(os.path.join(SCRIPT_DIR, 'libc++abi.imports'))
-
-
-def WasiLibc():
-    buildbot.Step('Wasi')
-    build_dir = os.path.join(work_dirs.GetBuild(), 'wasi-libc-out')
-    if os.path.isdir(build_dir):
-        Remove(build_dir)
-    cc_env = BuildEnv(build_dir, use_gnuwin32=True)
-    src_dir = GetSrcDir('wasi-libc')
-    cmd = [
-        proc.Which('make'),
-        '-j%s' % NPROC, 'SYSROOT=' + build_dir,
-        'WASM_CC=' + GetInstallDir('bin', 'clang')
-    ]
-    proc.check_call(cmd, env=cc_env, cwd=src_dir)
-    CopyTree(build_dir, GetInstallDir('sysroot'))
-
-    # We add the cmake toolchain file and out JS polyfill script to make using
-    # the wasi toolchain easier.
-    shutil.copy2(os.path.join(SCRIPT_DIR, CMAKE_TOOLCHAIN_FILE),
-                 GetInstallDir(CMAKE_TOOLCHAIN_FILE))
-    Remove(GetInstallDir('cmake'))
-    shutil.copytree(os.path.join(SCRIPT_DIR, 'cmake'), GetInstallDir('cmake'))
-
-    shutil.copy2(os.path.join(SCRIPT_DIR, 'wasi.js'), GetInstallDir())
-
-
 def VerifyEmscriptenCrossBuild():
     # Ensure that all binaries have the correct architecture. There is
     # currently one exception which is allowed to be x86_64:
@@ -1450,13 +1339,6 @@ def AllBuilds():
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-cross-out'), mac_cross=True),
         Build('emscripten', Emscripten),
-        # Target libs
-        # TODO: re-enable wasi on windows, see #517
-        Build('wasi-libc', WasiLibc, os_filter=Filter(exclude=['windows'])),
-        Build('compiler-rt', CompilerRT,
-              os_filter=Filter(exclude=['windows'])),
-        Build('libcxx', LibCXX, os_filter=Filter(exclude=['windows'])),
-        Build('libcxxabi', LibCXXABI, os_filter=Filter(exclude=['windows'])),
         # Archive
         Build('archive', ArchiveBinaries),
         Build('archive-cross', ArchiveBinaries, mac_cross=True),
@@ -1465,12 +1347,8 @@ def AllBuilds():
     ]
 
 
-# For now, just the builds used to test WASI and emscripten torture tests
-# on wasm-stat.us
 DEFAULT_BUILDS = [
-    'llvm', 'v8', 'jsvu', 'wabt', 'binaryen',
-    'emscripten', 'wasi-libc', 'compiler-rt',
-    'libcxx', 'libcxxabi', 'archive'
+    'llvm', 'binaryen', 'emscripten', 'archive'
 ]
 
 
