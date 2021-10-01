@@ -66,7 +66,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 23
+CLOBBER_BUILD_TAG = 24
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -157,18 +157,18 @@ def NodeBin():
 
 def CMakePlatformName():
     return {
-        'linux': 'Linux',
-        'linux2': 'Linux',
-        'darwin': 'Darwin',
-        'win32': 'win64'
+        'linux': 'linux',
+        'linux2': 'linux',
+        'darwin': 'macos',
+        'win32': 'windows'
     }[sys.platform]
 
 
 def CMakeArch():
-    return 'x64' if IsWindows() else 'x86_64'
+    return 'universal' if IsMac() else 'x86_64'
 
 
-PREBUILT_CMAKE_VERSION = '3.15.3'
+PREBUILT_CMAKE_VERSION = '3.21.3'
 PREBUILT_CMAKE_BASE_NAME = 'cmake-%s-%s-%s' % (
     PREBUILT_CMAKE_VERSION, CMakePlatformName(), CMakeArch())
 
@@ -665,7 +665,7 @@ def OverrideCMakeCompiler():
 def CMakeCommandBase():
     command = [PrebuiltCMakeBin(), '-G', 'Ninja']
     # Python's location could change, so always update CMake's cache
-    command.append('-DPYTHON_EXECUTABLE=%s' % sys.executable)
+    command.append('-DPython3_EXECUTABLE=%s' % sys.executable)
     command.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
     command.append('-DCMAKE_BUILD_TYPE=Release')
     if IsMac():
