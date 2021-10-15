@@ -66,7 +66,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 24
+CLOBBER_BUILD_TAG = 25
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -678,28 +678,38 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, mac_cross=False):
+def CMakeCommandNative(args, build_dir, mac_cross=False, llvm_stage1=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
-    if IsLinux() and host_toolchains.ShouldUseSysroot():
-        command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
-        command.append('-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++')
-        command.append('-DCMAKE_SHARED_LINKER_FLAGS=-static-libstdc++')
+    if not IsWindows() and host_toolchains.ShouldUseSysroot():
+        if not llvm_stage1:
+            # Use our own libc++ to get around the Linux sysroot's very old
+            # libstdc++. Also use it on mac for consistency.
+            # Don't use it for stage1/tablegen (because that could be a native
+            # build when the local libc++ is a cross build)
+            inc = GetInstallDir('include', 'c++', 'v1')
+            command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
+            lib = GetInstallDir('lib')
+            command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+            command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+            command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
 
-    elif IsMac() and host_toolchains.ShouldUseSysroot():
-        # Get XCode SDK path.
-        xcode_sdk_path = proc.check_output(['xcrun',
-                                            '--show-sdk-path']).strip()
-        # Create relpath symlink if it doesn't exist.
-        # If it does exist, but points to a different location, update it.
-        symlink_path = os.path.join(build_dir, 'xcode_sdk')
-        if os.path.lexists(
+        if IsLinux():
+            command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
+        else: # IsMac()
+            # Get XCode SDK path.
+            xcode_sdk_path = proc.check_output(['xcrun',
+                                                '--show-sdk-path']).strip()
+            # Create relpath symlink if it doesn't exist.
+            # If it does exist, but points to a different location, update it.
+            symlink_path = os.path.join(build_dir, 'xcode_sdk')
+            if os.path.lexists(
                 symlink_path) and os.readlink(symlink_path) != xcode_sdk_path:
-            os.remove(symlink_path)
-        if not os.path.exists(symlink_path):
-            os.symlink(xcode_sdk_path, symlink_path)
-        command.append('-DCMAKE_OSX_SYSROOT=%s' % symlink_path)
-        command.append('-DCMAKE_SYSROOT=%s' % symlink_path)
+                os.remove(symlink_path)
+            if not os.path.exists(symlink_path):
+                os.symlink(xcode_sdk_path, symlink_path)
+            command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
+            command.append(f'-DCMAKE_SYSROOT={symlink_path}')
 
     if mac_cross:
         command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
@@ -774,7 +784,6 @@ def LLVM(build_dir, mac_cross=False):
     if IsWindows() or ShouldUseLTO() or options.link_static:
         build_dylib = 'OFF'
     cmake_flags_common = [
-        '-DCMAKE_CXX_FLAGS=-Wno-nonportable-include-path',
         '-DLLVM_ENABLE_LIBXML2=OFF',
         '-DLLVM_INCLUDE_EXAMPLES=OFF',
         '-DLLVM_BUILD_LLVM_DYLIB=%s' % build_dylib,
@@ -832,7 +841,7 @@ def LLVM(build_dir, mac_cross=False):
         Mkdir(stage1_build_dir)
         stage1_cmake_cmd = CMakeCommandNative(
             [GetLLVMSrcDir('llvm')] + cmake_flags_common,
-            stage1_build_dir)
+            stage1_build_dir, llvm_stage1=True)
 
         proc.check_call(stage1_cmake_cmd, cwd=stage1_build_dir, env=cc_env)
         proc.check_call(['ninja', '-v', 'llvm-tblgen', 'clang-tblgen'] + jobs,
@@ -844,6 +853,11 @@ def LLVM(build_dir, mac_cross=False):
 
 
     proc.check_call(stage2_cmake_cmd, cwd=build_dir, env=cc_env)
+    # Copy the libc++ library to the build dir so that tablegen will run
+    for suffix in ('2.dylib', 'so.2'):
+        dylib = GetInstallDir('lib', f'libc++.{suffix}')
+        if os.path.isfile(dylib):
+            shutil.copy(dylib, os.path.join(build_dir, 'lib'))
     proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
                     cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', ninja_targets[1]] + jobs,
@@ -983,6 +997,35 @@ def Wabt(build_dir):
                     cwd=build_dir,
                     env=cc_env)
     proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
+
+
+def LibCXX(build_dir, mac_cross=False):
+    buildbot.Step('libcxx')
+    Mkdir(build_dir)
+
+    cmd = CMakeCommandNative(
+        [GetLLVMSrcDir('llvm'),
+         '-DLLVM_ENABLE_PROJECTS=libcxx;libcxxabi',
+         # ABI version 2 gives some libc++ improvements, but the real reason is
+         # to avoid any possibility of accidentally depending on system libc++
+         '-DLIBCXX_ABI_VERSION=2',
+         '-DLIBCXX_ENABLE_SHARED=%s' % ('OFF' if ShouldUseLTO() else 'ON'),
+         '-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF',
+         '-DLIBCXXABI_ENABLE_SHARED=OFF',
+         '-DLIBCXX_INCLUDE_TESTS=OFF',
+         '-DLIBCXXABI_INCLUDE_TESTS=OFF',
+         '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
+         '-DLIBCXX_INSTALL_STATIC_LIBRARY=OFF',
+         '-DLIBCXXABI_INSTALL_STATIC_LIBRARY=OFF',
+         ], build_dir, mac_cross=mac_cross)
+    # Filter out the stdlib flags because we are bootstrapping stdlib
+    cmd = [x for x in cmd if not 'stdlib' in x]
+    if IsMac():
+        cmd.append('-DLIBCXX_USE_COMPILER_RT=ON')
+    proc.check_call(cmd, cwd=build_dir)
+    proc.check_call(['ninja', '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
+                    cwd=build_dir)
+    proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
 
 
 def Binaryen(build_dir, mac_cross=False):
@@ -1320,6 +1363,12 @@ def Summary():
 def AllBuilds():
     return [
         # Host tools
+        Build('libcxx', LibCXX,
+              incremental_build_dir=os.path.join(
+                  work_dirs.GetBuild(),'libcxx-out')),
+        Build('libcxx-cross', LibCXX,
+              incremental_build_dir=os.path.join(
+                  work_dirs.GetBuild(),'libcxx-cross-out'), mac_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-out')),
