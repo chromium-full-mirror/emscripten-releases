@@ -815,9 +815,10 @@ def LLVM(build_dir, mac_cross=False):
 
     if ShouldUseLTO():
         targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cxxfilt',
-                   'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm', 'llvm-objcopy',
-                   'llvm-objdump', 'llvm-ranlib', 'llvm-readobj', 'llvm-size',
-                   'llvm-strings', 'llvm-symbolizer', 'clang-resource-headers']
+                   'llvm-dwarfdump', 'llvm-dwp', 'llvm-link', 'llvm-nm',
+                   'llvm-objcopy', 'llvm-objdump', 'llvm-ranlib',
+                   'llvm-readobj', 'llvm-size', 'llvm-strings',
+                   'llvm-symbolizer', 'clang-resource-headers']
         ninja_targets = ('distribution', 'install-distribution')
         targets.extend(['llc', 'opt'])  # TODO: remove uses of these upstream
         cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
