@@ -129,7 +129,7 @@ function dbg(message) {
 }
 
 // WASI implemenation
-// See: https://github.com/WebAssembly/WASI/blob/master/design/WASI-core.md
+// See: https://github.com/WebAssembly/WASI/blob/main/design/WASI-core.md
 var wasi_interface = (function() {
   const STDIN  = 0;
   const STDOUT = 1;
