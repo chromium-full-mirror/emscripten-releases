@@ -1004,6 +1004,7 @@ def LibCXX(build_dir, mac_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
 
+    on_if_lto = ('ON' if ShouldUseLTO() else 'OFF')
     cmd = CMakeCommandNative(
         [GetLLVMSrcDir('llvm'),
          '-DLLVM_ENABLE_PROJECTS=libcxx;libcxxabi',
@@ -1016,8 +1017,8 @@ def LibCXX(build_dir, mac_cross=False):
          '-DLIBCXX_INCLUDE_TESTS=OFF',
          '-DLIBCXXABI_INCLUDE_TESTS=OFF',
          '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
-         '-DLIBCXX_INSTALL_STATIC_LIBRARY=OFF',
-         '-DLIBCXXABI_INSTALL_STATIC_LIBRARY=OFF',
+         f'-DLIBCXX_INSTALL_STATIC_LIBRARY={on_if_lto}',
+         f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={on_if_lto}',
          ], build_dir, mac_cross=mac_cross)
     # Filter out the stdlib flags because we are bootstrapping stdlib
     cmd = [x for x in cmd if not 'stdlib' in x]
