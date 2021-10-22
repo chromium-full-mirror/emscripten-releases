@@ -66,7 +66,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 25
+CLOBBER_BUILD_TAG = 26
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -1006,8 +1006,8 @@ def LibCXX(build_dir, mac_cross=False):
 
     on_if_lto = ('ON' if ShouldUseLTO() else 'OFF')
     cmd = CMakeCommandNative(
-        [GetLLVMSrcDir('llvm'),
-         '-DLLVM_ENABLE_PROJECTS=libcxx;libcxxabi',
+        [GetLLVMSrcDir('runtimes'),
+         '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi',
          # ABI version 2 gives some libc++ improvements, but the real reason is
          # to avoid any possibility of accidentally depending on system libc++
          '-DLIBCXX_ABI_VERSION=2',
