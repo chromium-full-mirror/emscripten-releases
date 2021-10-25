@@ -66,7 +66,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 26
+CLOBBER_BUILD_TAG = 27
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -678,11 +678,11 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, mac_cross=False, llvm_stage1=False):
+def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
     if not IsWindows() and host_toolchains.ShouldUseSysroot():
-        if not llvm_stage1:
+        if use_local_libcxx:
             # Use our own libc++ to get around the Linux sysroot's very old
             # libstdc++. Also use it on mac for consistency.
             # Don't use it for stage1/tablegen (because that could be a native
@@ -833,7 +833,8 @@ def LLVM(build_dir, mac_cross=False):
     stage2_cmake_cmd =  CMakeCommandNative(
         [GetLLVMSrcDir('llvm')] + cmake_flags_common + cmake_flags_stage2,
         build_dir,
-        mac_cross=mac_cross)
+        mac_cross=mac_cross,
+        use_local_libcxx=not options.link_static)
     jobs = host_toolchains.NinjaJobs()
 
     if mac_cross:
@@ -842,7 +843,7 @@ def LLVM(build_dir, mac_cross=False):
         Mkdir(stage1_build_dir)
         stage1_cmake_cmd = CMakeCommandNative(
             [GetLLVMSrcDir('llvm')] + cmake_flags_common,
-            stage1_build_dir, llvm_stage1=True)
+            stage1_build_dir, use_local_libcxx=False)
 
         proc.check_call(stage1_cmake_cmd, cwd=stage1_build_dir, env=cc_env)
         proc.check_call(['ninja', '-v', 'llvm-tblgen', 'clang-tblgen'] + jobs,
