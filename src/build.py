@@ -88,11 +88,6 @@ def GetPrebuilt(*args):
     return os.path.join(work_dirs.GetPrebuilt(), *args)
 
 
-def GetPrebuiltClang(binary):
-    return os.path.join(work_dirs.GetV8(), 'third_party', 'llvm-build',
-                        'Release+Asserts', 'bin', binary)
-
-
 def GetSrcDir(*args):
     return os.path.join(work_dirs.GetSync(), *args)
 
@@ -459,8 +454,8 @@ def SyncToolchain(name, src_dir):
         host_toolchains.SyncWinToolchain()
     else:
         host_toolchains.SyncPrebuiltClang(src_dir)
-        cc = GetPrebuiltClang('clang')
-        cxx = GetPrebuiltClang('clang++')
+        cc = host_toolchains.GetPrebuiltClang('clang')
+        cxx = host_toolchains.GetPrebuiltClang('clang++')
         assert os.path.isfile(cc), 'Expect clang at %s' % cc
         assert os.path.isfile(cxx), 'Expect clang++ at %s' % cxx
 
@@ -652,13 +647,16 @@ def OverrideCMakeCompiler():
     cc = 'clang-cl' if IsWindows() else 'clang'
     cxx = 'clang-cl' if IsWindows() else 'clang++'
     tools = [
-        '-DCMAKE_C_COMPILER=' + Executable(GetPrebuiltClang(cc)),
-        '-DCMAKE_CXX_COMPILER=' + Executable(GetPrebuiltClang(cxx)),
+        '-DCMAKE_C_COMPILER=' + Executable(
+            host_toolchains.GetPrebuiltClang(cc)),
+        '-DCMAKE_CXX_COMPILER=' + Executable(
+            host_toolchains.GetPrebuiltClang(cxx)),
     ]
     if IsWindows():
         tools.append('-DCMAKE_LINKER=' +
-                     Executable(GetPrebuiltClang('lld-link')))
-
+                     Executable(host_toolchains.GetPrebuiltClang('lld-link')))
+        tools.append('-DCMAKE_AR=' +
+                     host_toolchains.GetPrebuiltClang('lib.bat'))
     return tools
 
 

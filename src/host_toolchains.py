@@ -46,6 +46,11 @@ def WinToolchainJson():
     return os.path.join(work_dirs.GetV8(), 'build', 'win_toolchain.json')
 
 
+def GetPrebuiltClang(binary):
+    return os.path.join(work_dirs.GetV8(), 'third_party', 'llvm-build',
+                        'Release+Asserts', 'bin', binary)
+
+
 def SyncPrebuiltClang(src_dir):
     """Update the prebuilt clang toolchain used by chromium bots"""
     tools_clang = os.path.join(src_dir, 'tools', 'clang')
@@ -90,6 +95,20 @@ def SetUpVSEnv(outdir):
                     [paths['path'], paths['win_sdk'], runtime_dirs, 'win',
                      'x64', 'environment.x64'],
                     cwd=outdir)
+
+
+    # Recent versions of CMake use lib.exe to create archives. We need LLVM's
+    # lib to use LTO, but it's not included in Chrome's packaging. lld-link
+    # can be used as lib.exe (via the /lib flag) but CMake can't be forced to
+    # inject the extra flag into every invocation. So we create a wrapper script
+    # to replace lib.exe and redirect to lld-link with the extra flag.
+    lld = GetPrebuiltClang('lld-link.exe')
+    batch = f'''
+@echo off
+{lld} /lib %*
+'''
+    with open(GetPrebuiltClang('lib.bat'), 'w') as f:
+        f.write(batch)
     return GetVSEnv(outdir)
 
 
