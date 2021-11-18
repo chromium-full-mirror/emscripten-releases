@@ -1012,6 +1012,7 @@ def LibCXX(build_dir, mac_cross=False):
          # ABI version 2 gives some libc++ improvements, but the real reason is
          # to avoid any possibility of accidentally depending on system libc++
          '-DLIBCXX_ABI_VERSION=2',
+         '-DLIBCXX_HAS_ATOMIC_LIB=OFF',
          '-DLIBCXX_ENABLE_SHARED=%s' % ('OFF' if ShouldUseLTO() else 'ON'),
          '-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF',
          '-DLIBCXXABI_ENABLE_SHARED=OFF',
