@@ -189,6 +189,11 @@
         "name": "Emscripten testsuite (AddressSanitizer)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=asan"]
+      },
+      {
+        "name": "Emscripten testsuite (LTO)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=lto2"]
       }
     ]
   }
