@@ -9,7 +9,14 @@ lucicfg.check_version("1.23.3", "Please update depot_tools")
 lucicfg.enable_experiment("crbug.com/1085650")
 
 # Launch 100% of Swarming tasks for builds in "realms-aware mode"
-luci.builder.defaults.experiments.set({"luci.use_realms": 100})
+# Use python3 for all builds
+luci.builder.defaults.experiments.set(
+    {
+        "luci.use_realms": 100,
+        "luci.recipes.use_python3": 100,
+    }
+)
+
 
 load(
     "//lib.star",
