@@ -1004,6 +1004,7 @@ def LibCXX(build_dir, mac_cross=False):
     Mkdir(build_dir)
 
     on_if_lto = ('ON' if ShouldUseLTO() else 'OFF')
+    on_if_not_lto = ('OFF' if ShouldUseLTO() else 'ON')
     cmd = CMakeCommandNative(
         [GetLLVMSrcDir('runtimes'),
          '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi',
@@ -1019,6 +1020,7 @@ def LibCXX(build_dir, mac_cross=False):
          '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
          f'-DLIBCXX_INSTALL_STATIC_LIBRARY={on_if_lto}',
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={on_if_lto}',
+         f'-DCMAKE_POSITION_INDEPENDENT_CODE={on_if_not_lto}',
          ], build_dir, mac_cross=mac_cross)
     # Filter out the stdlib flags because we are bootstrapping stdlib
     cmd = [x for x in cmd if not 'stdlib' in x]
