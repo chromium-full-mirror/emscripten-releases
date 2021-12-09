@@ -17,14 +17,15 @@
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_WORK_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), 'src', 'work')
+DEFAULT_WORK_DIR = os.path.dirname(SCRIPT_DIR)
+GCLIENT_DIR = os.path.dirname(DEFAULT_WORK_DIR)
 
 DEFAULT_SYNC_DIR = DEFAULT_WORK_DIR
-DEFAULT_BUILD_DIR = DEFAULT_WORK_DIR
+DEFAULT_BUILD_DIR = os.path.join(DEFAULT_WORK_DIR, 'build')
 DEFAULT_PREBUILT_DIR = DEFAULT_WORK_DIR
-DEFAULT_V8_DIR = os.path.join(DEFAULT_WORK_DIR, 'v8', 'v8')
+DEFAULT_V8_DIR = os.path.join(GCLIENT_DIR, 'v8')
 DEFAULT_TEST_DIR = DEFAULT_WORK_DIR
-DEFAULT_INSTALL_DIR = os.path.join(DEFAULT_WORK_DIR, 'wasm-install')
+DEFAULT_INSTALL_DIR = os.path.join(GCLIENT_DIR, 'install')
 
 dirs = {}
 
