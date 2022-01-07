@@ -989,7 +989,10 @@ def Wabt(build_dir):
     cc_env = BuildEnv(build_dir)
 
     cmd = CMakeCommandNative([GetSrcDir('wabt'),
-                              '-DBUILD_TESTS=OFF', '-DBUILD_LIBWASM=OFF'],
+                              '-DBUILD_TESTS=OFF',
+                              '-DBUILD_LIBWASM=OFF',
+                              '-DCMAKE_INSTALL_RPATH=$ORIGIN/../lib',
+                              '-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON'],
                              build_dir)
     proc.check_call(cmd, cwd=build_dir, env=cc_env)
 
