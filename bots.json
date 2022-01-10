@@ -191,6 +191,11 @@
                     "--test-include=emtest", "--test-param=asan"]
       },
       {
+        "name": "Emscripten testsuite (SAFE_HEAP)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=wasm2s"]
+      },
+      {
         "name": "Emscripten testsuite (LTO)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=lto2"]
