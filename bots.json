@@ -191,6 +191,11 @@
                     "--test-include=emtest", "--test-param=asan"]
       },
       {
+        "name": "Emscripten testsuite (LeakSanitizer)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=lsan"]
+      },
+      {
         "name": "Emscripten testsuite (SAFE_HEAP)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=wasm2s"]
