@@ -47,7 +47,6 @@ deps = {
   'emscripten-releases/wabt': Var('wabt_url') + '@' + Var('wabt_revision'),
   'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
 }
-
 hooks = [
   {
     'name': 'cmake',
