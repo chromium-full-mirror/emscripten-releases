@@ -156,7 +156,7 @@
       },
       {
         "name": "Build LLVM",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--link-static", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=llvm", "--link-static"]
       },
       {
         "name": "Build Test Deps",
