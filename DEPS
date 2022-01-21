@@ -16,7 +16,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'c918679ec50d4a404bd06244e79691651bdee95b',
+  'binaryen_revision': 'a1b38c796629f8042d1e1accf4708a6a86bfd408',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
@@ -55,6 +55,12 @@ hooks = [
     'action': ['python3', 'emscripten-releases/src/build.py',
                '--sync-include=cmake,nodejs,java,sysroot','--no-build', '--no-test',
                '--prebuilt-dir=emscripten-releases', '--v8-dir=v8'],
+  },
+  {
+    'name': 'binaryen_submodule_init',
+    'pattern': '.',
+    'action': ['git', '-C', 'emscripten-releases/binaryen',
+               'submodule', 'update', '--init'],
   },
 ]
 
