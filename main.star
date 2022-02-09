@@ -3,16 +3,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-lucicfg.check_version("1.23.3", "Please update depot_tools")
+lucicfg.check_version("1.30.9", "Please update depot_tools")
 
-# Enable LUCI Realms support.
-lucicfg.enable_experiment("crbug.com/1085650")
+# Use LUCI Scheduler BBv2 names and add Scheduler realms configs.
+lucicfg.enable_experiment("crbug.com/1182002")
 
-# Launch 100% of Swarming tasks for builds in "realms-aware mode"
 # Use python3 for all builds
 luci.builder.defaults.experiments.set(
     {
-        "luci.use_realms": 100,
         "luci.recipes.use_python3": 100,
     }
 )
