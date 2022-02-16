@@ -66,7 +66,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 27
+CLOBBER_BUILD_TAG = 28
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -765,6 +765,13 @@ def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
     if not IsWindows():
         return None
     cc_env = host_toolchains.SetUpVSEnv(build_dir)
+    # This value matches the version of cl.exe currently used by the bots, but
+    # it needs to be made explicit in order to run on Goma
+    # (crbug.com/1292405). This will need to be updated when LLVM or another of
+    # our projects requires a newer MSVC version.
+    # Flags need to be injected via the env (rather than on the CMake command
+    # line) so they add to rather than overriding the default flags.
+    cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1926'
     if use_gnuwin32:
         cc_env['PATH'] = cc_env['PATH'] + os.pathsep + GetSrcDir(
             'gnuwin32', 'bin')
