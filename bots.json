@@ -204,6 +204,11 @@
         "name": "Emscripten testsuite (LTO)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=lto2"]
+      },
+      {
+        "name": "Emscripten testsuite (ThinLTO)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=thinltoz"]
       }
     ]
   }
