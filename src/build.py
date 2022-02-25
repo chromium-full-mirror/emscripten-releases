@@ -45,6 +45,10 @@ from urllib.request import urlopen, URLError
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 JSVU_OUT_DIR = os.path.expanduser(os.path.join('~', '.jsvu'))
+# Python executable that will be used by emscripten subprocesses.
+# For now we just use the running executable, but in the future we could use
+# a different one (for the python binary in emsdk).
+EMSDK_PYTHON = sys.executable
 
 # This file has a special path to avoid warnings about the system being unknown
 CMAKE_TOOLCHAIN_FILE = 'Wasi.cmake'
@@ -1118,15 +1122,13 @@ def Emscripten():
 
     env = os.environ.copy()
     env['EM_CONFIG'] = config
+    env['EMSDK_PYTHON'] = EMSDK_PYTHON
     try:
         # Use emscripten's embuilder to prebuild the system libraries.
         # This depends on binaryen already being built and installed into the
         # archive/install dir.
-        proc.check_call([
-            sys.executable,
-            os.path.join(GetInstallDir('emscripten'), 'embuilder.py'), 'build',
-            'SYSTEM'
-        ], env=env)
+        embuilder = Executable(GetInstallDir('emscripten', 'embuilder'), '.bat')
+        proc.check_call([embuilder, 'build', 'SYSTEM'], env=env)
 
     except proc.CalledProcessError:
         # Note the failure but allow the build to continue.
@@ -1252,6 +1254,7 @@ def CompileLLVMTortureEmscripten(name, em_config, outdir, fails, opt):
     Remove(outdir)
     Mkdir(outdir)
     os.environ['EM_CONFIG'] = em_config
+    os.environ['EMSDK_PYTHON'] = EMSDK_PYTHON
     unexpected_result_count = compile_torture_tests.run(
         cc=cc,
         cxx=cxx,
@@ -1537,11 +1540,12 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     proc.check_call(['npm', 'ci'], cwd=em_install_dir)
 
     cmd = [
-        GetInstallDir('emscripten', 'tests', 'runner.py'),
+        Executable(GetInstallDir('emscripten', 'tests', 'runner'), '.bat'),
         '--em-config', config
     ] + tests
     test_env = os.environ.copy()
     test_env['EMTEST_SKIP_V8'] = '1'
+    test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     if buildbot.IsBot() and IsWindows():
         test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
     try:
@@ -1801,6 +1805,8 @@ def main():
     start = time.time()
     options = ParseArgs()
     print('Python version %s' % sys.version)
+    print('sys.executable = %s' % sys.executable)
+    print('EMSDK_PYTHON = %s' % EMSDK_PYTHON)
 
     if options.no_threads:
         testing.single_threaded = True
