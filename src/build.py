@@ -33,11 +33,8 @@ import zipfile
 
 import buildbot
 import cloud
-import compile_torture_tests
-import execute_files
-from file_util import Chdir, CopyTree, Mkdir, Remove
+from file_util import Chdir, Mkdir, Remove
 import host_toolchains
-import link_assembly_files
 import proc
 import testing
 import work_dirs
@@ -49,9 +46,6 @@ JSVU_OUT_DIR = os.path.expanduser(os.path.join('~', '.jsvu'))
 # For now we just use the running executable, but in the future we could use
 # a different one (for the python binary in emsdk).
 EMSDK_PYTHON = sys.executable
-
-# This file has a special path to avoid warnings about the system being unknown
-CMAKE_TOOLCHAIN_FILE = 'Wasi.cmake'
 
 EMSCRIPTEN_CONFIG_UPSTREAM = 'emscripten_config_upstream'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
@@ -78,10 +72,6 @@ LINUX_SYSROOT = 'sysroot_debian_stretch_amd64'
 LINUX_SYSROOT_URL = WASM_STORAGE_BASE + LINUX_SYSROOT + '_v2.tar.xz'
 
 options = None
-
-
-def GccTestDir():
-    return GetSrcDir('gcc', 'gcc', 'testsuite')
 
 
 def GetBuildDir(*args):
@@ -193,12 +183,6 @@ def BuilderPlatformName():
     }[sys.platform]
 
 
-def D8Bin():
-    if IsMac():
-        return os.path.join(JSVU_OUT_DIR, 'v8')
-    return Executable(GetInstallDir('bin', 'd8'))
-
-
 # Java installed in the buildbots are too old while emscripten uses closure
 # compiler that requires Java SE 8.0 (version 52) or above
 JAVA_VERSION = '9.0.1'
@@ -220,28 +204,6 @@ def JavaBin():
 
 
 # Known failures.
-IT_IS_KNOWN = 'known_gcc_test_failures.txt'
-ASM2WASM_KNOWN_TORTURE_COMPILE_FAILURES = [
-    os.path.join(SCRIPT_DIR, 'test', 'asm2wasm_compile_' + IT_IS_KNOWN)
-]
-EMWASM_KNOWN_TORTURE_COMPILE_FAILURES = [
-    os.path.join(SCRIPT_DIR, 'test', 'emwasm_compile_' + IT_IS_KNOWN)
-]
-
-RUN_KNOWN_TORTURE_FAILURES = [
-    os.path.join(SCRIPT_DIR, 'test', 'run_' + IT_IS_KNOWN)
-]
-LLD_KNOWN_TORTURE_FAILURES = [
-    os.path.join(SCRIPT_DIR, 'test', 'lld_' + IT_IS_KNOWN)
-]
-
-# Exclusions (known failures are compiled and run, and expected to fail,
-# whereas exclusions are not even run, e.g. because they have UB which
-# results in infinite loops)
-LLVM_TORTURE_EXCLUSIONS = [
-    os.path.join(SCRIPT_DIR, 'test', 'llvm_torture_exclusions')
-]
-
 RUN_LLVM_TESTSUITE_FAILURES = [
     os.path.join(SCRIPT_DIR, 'test', 'llvmtest_known_failures.txt')
 ]
@@ -635,7 +597,7 @@ def Clobber():
         f.write('%s\n' % CLOBBER_BUILD_TAG)
 
 
-def SyncRepos(filter, sync_lkgr=False):
+def SyncRepos(filter):
     if not filter.Any():
         return
     buildbot.Step('Sync Repos')
@@ -726,14 +688,6 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
     # the command line. Probably they just need to be escaped, but using '/'
     # instead is easier and works just as well.
     return [arg.replace('\\', '/') for arg in command]
-
-
-def CMakeCommandWasi(args):
-    command = CMakeCommandBase()
-    command.append('-DCMAKE_TOOLCHAIN_FILE=%s' %
-                   GetInstallDir(CMAKE_TOOLCHAIN_FILE))
-    command.extend(args)
-    return command
 
 
 def CopyLLVMTools(build_dir, prefix=''):
@@ -1223,109 +1177,6 @@ def DebianPackage():
         return
 
 
-def CompileLLVMTorture(outdir, opt):
-    name = 'Compile LLVM Torture (%s)' % opt
-    buildbot.Step(name)
-    install_bin = GetInstallDir('bin')
-    cc = Executable(os.path.join(install_bin, 'wasm32-wasi-clang'))
-    cxx = Executable(os.path.join(install_bin, 'wasm32-wasi-clang++'))
-    Remove(outdir)
-    Mkdir(outdir)
-    unexpected_result_count = compile_torture_tests.run(
-        cc=cc,
-        cxx=cxx,
-        testsuite=GccTestDir(),
-        sysroot_dir=GetInstallDir('sysroot'),
-        fails=[
-            GetLLVMSrcDir('llvm', 'lib', 'Target', 'WebAssembly', IT_IS_KNOWN)
-        ],
-        exclusions=LLVM_TORTURE_EXCLUSIONS,
-        out=outdir,
-        config='clang',
-        opt=opt)
-    if 0 != unexpected_result_count:
-        buildbot.Fail()
-
-
-def CompileLLVMTortureEmscripten(name, em_config, outdir, fails, opt):
-    buildbot.Step('Compile LLVM Torture (%s, %s)' % (name, opt))
-    cc = Executable(GetInstallDir('emscripten', 'emcc'), '.bat')
-    cxx = Executable(GetInstallDir('emscripten', 'em++'), '.bat')
-    Remove(outdir)
-    Mkdir(outdir)
-    os.environ['EM_CONFIG'] = em_config
-    os.environ['EMSDK_PYTHON'] = EMSDK_PYTHON
-    unexpected_result_count = compile_torture_tests.run(
-        cc=cc,
-        cxx=cxx,
-        testsuite=GccTestDir(),
-        sysroot_dir=GetInstallDir('sysroot'),
-        fails=fails,
-        exclusions=LLVM_TORTURE_EXCLUSIONS,
-        out=outdir,
-        config='emscripten',
-        opt=opt)
-
-    if 0 != unexpected_result_count:
-        buildbot.Fail()
-
-
-def LinkLLVMTorture(name, linker, fails, indir, outdir, extension,
-                    opt, args=None):
-    buildbot.Step('Link LLVM Torture (%s, %s)' % (name, opt))
-    assert os.path.isfile(linker), 'Cannot find linker at %s' % linker
-    Remove(outdir)
-    Mkdir(outdir)
-    input_pattern = os.path.join(indir, '*.' + extension)
-    unexpected_result_count = link_assembly_files.run(linker=linker,
-                                                      files=input_pattern,
-                                                      fails=fails,
-                                                      attributes=[opt],
-                                                      out=outdir,
-                                                      args=args)
-    if 0 != unexpected_result_count:
-        buildbot.Fail()
-
-
-def ExecuteLLVMTorture(name, runner, indir, fails, attributes, extension, opt,
-                       outdir='', wasmjs='', extra_files=None,
-                       warn_only=False):
-    extra_files = [] if extra_files is None else extra_files
-
-    buildbot.Step('Execute LLVM Torture (%s, %s)' % (name, opt))
-    if not indir:
-        print('Step skipped: no input')
-        buildbot.Warn()
-        return None
-    assert os.path.isfile(runner), 'Cannot find runner at %s' % runner
-    files = os.path.join(indir, '*.%s' % extension)
-    if len(glob.glob(files)) == 0:
-        print("No files found by", files)
-        buildbot.Fail()
-        return
-    unexpected_result_count = execute_files.run(runner=runner,
-                                                files=files,
-                                                fails=fails,
-                                                attributes=attributes + [opt],
-                                                out=outdir,
-                                                wasmjs=wasmjs,
-                                                extra_files=extra_files)
-    if 0 != unexpected_result_count:
-        buildbot.FailUnless(lambda: warn_only)
-
-
-def ValidateLLVMTorture(indir, ext, opt):
-    validate = Executable(os.path.join(GetInstallDir('bin'), 'wasm-validate'))
-    # Object files contain a DataCount section, so enable bulk memory
-    ExecuteLLVMTorture(name='validate',
-                       runner=validate,
-                       indir=indir,
-                       fails=None,
-                       attributes=[opt],
-                       extension=ext,
-                       opt=opt)
-
-
 class Build(object):
     def __init__(self, name_, runnable_, os_filter=None,
                  incremental_build_dir=None, *args, **kwargs):
@@ -1436,85 +1287,6 @@ class Test(object):
                   (self.name, BuilderPlatformName()))
             return
         self.runnable()
-
-
-def GetTortureDir(name, opt):
-    dirs = {
-        'asm2wasm': GetTestDir('asm2wasm-torture-out', opt),
-        'emwasm': GetTestDir('emwasm-torture-out', opt),
-    }
-    if name in dirs:
-        return dirs[name]
-    return GetTestDir('torture-' + name, opt)
-
-
-def TestBare():
-    # Compile
-    for opt in BARE_TEST_OPT_FLAGS:
-        CompileLLVMTorture(GetTortureDir('o', opt), opt)
-        ValidateLLVMTorture(GetTortureDir('o', opt), 'o', opt)
-
-    # Link/Assemble
-    for opt in BARE_TEST_OPT_FLAGS:
-        LinkLLVMTorture(name='lld',
-                        linker=Executable(
-                            GetInstallDir('bin', 'wasm32-wasi-clang++')),
-                        fails=LLD_KNOWN_TORTURE_FAILURES,
-                        indir=GetTortureDir('o', opt),
-                        outdir=GetTortureDir('lld', opt),
-                        extension='o',
-                        opt=opt)
-
-    # Execute
-    common_attrs = ['bare']
-    common_attrs += ['win'] if IsWindows() else ['posix']
-
-    # Avoid d8 execution on windows because of flakiness,
-    # https://bugs.chromium.org/p/v8/issues/detail?id=8211
-    if not IsWindows():
-        for opt in BARE_TEST_OPT_FLAGS:
-            ExecuteLLVMTorture(name='d8',
-                               runner=D8Bin(),
-                               indir=GetTortureDir('lld', opt),
-                               fails=RUN_KNOWN_TORTURE_FAILURES,
-                               attributes=common_attrs + ['d8', 'lld', opt],
-                               extension='wasm',
-                               opt=opt,
-                               wasmjs=os.path.join(SCRIPT_DIR, 'wasi.js'))
-
-    if IsMac() and not buildbot.DidStepFailOrWarn('jsvu'):
-        for opt in BARE_TEST_OPT_FLAGS:
-            ExecuteLLVMTorture(name='jsc',
-                               runner=os.path.join(JSVU_OUT_DIR, 'jsc'),
-                               indir=GetTortureDir('lld', opt),
-                               fails=RUN_KNOWN_TORTURE_FAILURES,
-                               attributes=common_attrs + ['jsc', 'lld'],
-                               extension='wasm',
-                               opt=opt,
-                               warn_only=True,
-                               wasmjs=os.path.join(SCRIPT_DIR, 'wasi.js'))
-
-
-def TestEmwasm():
-    for opt in EMSCRIPTEN_TEST_OPT_FLAGS:
-        CompileLLVMTortureEmscripten('emwasm',
-                                     GetInstallDir(EMSCRIPTEN_CONFIG_UPSTREAM),
-                                     GetTortureDir('emwasm', opt),
-                                     EMWASM_KNOWN_TORTURE_COMPILE_FAILURES,
-                                     opt)
-
-    # Avoid d8 execution on windows because of flakiness,
-    # https://bugs.chromium.org/p/v8/issues/detail?id=8211
-    if not IsWindows():
-        for opt in EMSCRIPTEN_TEST_OPT_FLAGS:
-            ExecuteLLVMTorture(name='emwasm',
-                               runner=D8Bin(),
-                               indir=GetTortureDir('emwasm', opt),
-                               fails=RUN_KNOWN_TORTURE_FAILURES,
-                               attributes=['emwasm', 'lld', 'd8'],
-                               extension='c.js',
-                               opt=opt,
-                               outdir=GetTortureDir('emwasm', opt))
 
 
 def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
@@ -1630,16 +1402,12 @@ def TestLLVMTestSuite():
 
 ALL_TESTS = [
     Test('llvm-regression', TestLLVMRegression),
-    # TODO: re-enable wasi on windows, see #517
-    Test('bare', TestBare, Filter(exclude=['windows'])),
-    Test('emwasm', TestEmwasm, Filter(exclude=['mac'])),
     # These tests do have interesting differences on OSes (especially the
     # 'other' tests) and eventually should run everywhere.
     Test('emtest', TestEmtest),
     Test('llvmtest', TestLLVMTestSuite, Filter(include=['linux'])),
 ]
 
-# The default tests to run on wasm-stat.us (just WASI and emwasm torture)
 DEFAULT_TESTS = ['bare', 'emwasm', 'llvmtest']
 
 
@@ -1697,11 +1465,6 @@ def ParseArgs():
         '--sync-exclude', dest='sync_exclude', default='', type=SplitComma,
         help='Exclude the comma-separated list of sync targets')
 
-    parser.add_argument(
-        '--sync-lkgr', dest='sync_lkgr', default=False, action='store_true',
-        help='When syncing, only sync up to the Last Known Good Revision '
-             'for each sync target')
-
     build_grp = parser.add_mutually_exclusive_group()
     build_grp.add_argument(
         '--no-build', dest='build', default=True, action='store_false',
@@ -1730,9 +1493,6 @@ def ParseArgs():
     parser.add_argument(
         '--no-threads', action='store_true',
         help='Disable use of thread pool to building and testing')
-    parser.add_argument(
-        '--torture-filter',
-        help='Limit which torture tests are run by applying the given glob')
     parser.add_argument(
         '--no-host-clang', dest='host_clang', action='store_false',
         help="Don't force chrome clang as the host compiler")
@@ -1763,7 +1523,7 @@ def run(sync_filter, build_filter, test_filter):
     Chdir(SCRIPT_DIR)
     for work_dir in work_dirs.GetAll():
         Mkdir(work_dir)
-    SyncRepos(sync_filter, options.sync_lkgr)
+    SyncRepos(sync_filter)
     if build_filter.All():
         Remove(GetInstallDir())
         Mkdir(GetInstallDir())
@@ -1810,8 +1570,6 @@ def main():
 
     if options.no_threads:
         testing.single_threaded = True
-    if options.torture_filter:
-        compile_torture_tests.test_filter = options.torture_filter
 
     if options.sync_dir:
         work_dirs.SetSync(options.sync_dir)
