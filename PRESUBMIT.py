@@ -9,6 +9,9 @@ for more details about the presubmit API built into gcl.
 
 import json
 
+
+USE_PYTHON3 = True
+
 def _CheckJSONFiles(input_api, output_api):
   def FilterFile(affected_file):
     return input_api.FilterSourceFile(
