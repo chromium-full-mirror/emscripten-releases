@@ -183,26 +183,6 @@ def BuilderPlatformName():
     }[sys.platform]
 
 
-# Java installed in the buildbots are too old while emscripten uses closure
-# compiler that requires Java SE 8.0 (version 52) or above
-JAVA_VERSION = '9.0.1'
-
-
-def JavaDir():
-    outdir = GetPrebuilt('jre-' + JAVA_VERSION)
-    if IsMac():
-        outdir += '.jre'
-    return outdir
-
-
-def JavaBin():
-    if IsMac():
-        bin_dir = os.path.join('Contents', 'Home', 'bin')
-    else:
-        bin_dir = 'bin'
-    return Executable(os.path.join(JavaDir(), bin_dir, 'java'))
-
-
 # Known failures.
 RUN_LLVM_TESTSUITE_FAILURES = [
     os.path.join(SCRIPT_DIR, 'test', 'llvmtest_known_failures.txt')
@@ -503,18 +483,6 @@ def SyncGNUWin32(name, src_dir):
     return SyncArchive(GetPrebuilt('gnuwin32'), name, url)
 
 
-def SyncPrebuiltJava(name, src_dir):
-    platform = {
-        'linux': 'linux',
-        'linux2': 'linux',
-        'darwin': 'osx',
-        'win32': 'windows'
-    }[sys.platform]
-    tarball = 'jre-' + JAVA_VERSION + '_' + platform + '-x64_bin.tar.gz'
-    java_url = WASM_STORAGE_BASE + tarball
-    SyncArchive(JavaDir(), name, java_url)
-
-
 def SyncLinuxSysroot(name, src_dir):
     if not (IsLinux() and host_toolchains.ShouldUseSysroot()):
         return
@@ -546,8 +514,6 @@ def AllSources():
                custom_sync=SyncPrebuiltNodeJS),
         Source('gnuwin32', '', # The source arg is ignored.
                custom_sync=SyncGNUWin32),
-        Source('java', '', # The source arg is ignored.
-               custom_sync=SyncPrebuiltJava),
         Source('sysroot', '', # The source arg is ignored.
                custom_sync=SyncLinuxSysroot),
         Source('deps', '', custom_sync=SyncReleaseDeps)
@@ -1062,8 +1028,6 @@ def Emscripten():
                                          WindowsFSEscape(GetInstallDir()))
             text = text.replace('{{PREBUILT_NODE}}',
                                 WindowsFSEscape(NodeBin()))
-            text = text.replace('{{PREBUILT_JAVA}}',
-                                WindowsFSEscape(JavaBin()))
         with open(outfile, 'w') as config:
             config.write(text)
 
