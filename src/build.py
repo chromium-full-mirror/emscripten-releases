@@ -64,7 +64,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 28
+CLOBBER_BUILD_TAG = 29
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -599,8 +599,8 @@ def CMakeCommandBase():
     command.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
     command.append('-DCMAKE_BUILD_TYPE=Release')
     if IsMac():
-        # Target MacOS Sierra (10.12)
-        command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=10.12')
+        # Target MacOS Mojave (10.14). Keep this in sync with emsdk.py
+        command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=10.14')
     elif IsWindows():
         # CMake's usual logic fails to find LUCI's git on Windows
         git_exe = proc.Which('git')
@@ -612,19 +612,19 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
     if not IsWindows() and host_toolchains.ShouldUseSysroot():
-        if use_local_libcxx:
-            # Use our own libc++ to get around the Linux sysroot's very old
-            # libstdc++. Also use it on mac for consistency.
-            # Don't use it for stage1/tablegen (because that could be a native
-            # build when the local libc++ is a cross build)
-            inc = GetInstallDir('include', 'c++', 'v1')
-            command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
-            lib = GetInstallDir('lib')
-            command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-            command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-            command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-
         if IsLinux():
+            if use_local_libcxx:
+                # Use our own libc++ to get around the Linux sysroot's very old
+                # libstdc++. Also use it on mac for consistency.
+                # Don't use it for stage1/tablegen (because that could be a native
+                # build when the local libc++ is a cross build)
+                inc = GetInstallDir('include', 'c++', 'v1')
+                command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
+                lib = GetInstallDir('lib')
+                command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+                command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+                command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
         else: # IsMac()
             # Get XCode SDK path.
@@ -1199,9 +1199,6 @@ def AllBuilds():
         Build('libcxx', LibCXX,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(),'libcxx-out')),
-        Build('libcxx-cross', LibCXX,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(),'libcxx-cross-out'), mac_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-out')),

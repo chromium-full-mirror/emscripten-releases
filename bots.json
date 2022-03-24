@@ -53,10 +53,6 @@
         "command": ["src/build.py", "--sync-include=deps", "--no-build", "--no-test", "--use-lto=auto"]
       },
       {
-        "name": "Build libcxx",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=libcxx", "--use-lto=auto"]
-      },
-      {
         "name": "Build Binaryen",
         "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=binaryen", "--use-lto=auto"]
       },
@@ -71,10 +67,6 @@
       {
         "name": "Archive Binaries",
         "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=archive"]
-      },
-      {
-        "name": "Build libcxx (arm64)",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=libcxx-cross", "--use-lto=auto"]
       },
       {
         "name": "Build Binaryen (arm64)",
