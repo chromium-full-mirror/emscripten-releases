@@ -106,6 +106,10 @@ def IsLinux():
     return sys.platform.startswith('linux')
 
 
+def IsArm64():
+    return platform.machine() in ('aarch64', 'arm64')
+
+
 def IsMac():
     return sys.platform == 'darwin'
 
@@ -125,12 +129,15 @@ NODE_BASE_NAME = 'node-v' + NODE_VERSION + '-'
 
 
 def NodePlatformName():
-    return {
-        'darwin': 'darwin-x64',
-        'linux': 'linux-x64',
-        'linux2': 'linux-x64',
-        'win32': 'win-x64'
-    }[sys.platform]
+    if IsMac():
+        return 'darwin-x64'
+    elif IsWindows():
+        return 'win-x64'
+    elif IsLinux():
+        if IsArm64():
+            return 'linux-arm64'
+        else:
+            return 'linux-x64'
 
 
 def NodeBinDir():
@@ -154,7 +161,12 @@ def CMakePlatformName():
 
 
 def CMakeArch():
-    return 'universal' if IsMac() else 'x86_64'
+    if IsMac():
+        return 'universal'
+    elif IsLinux() and IsArm64():
+        return 'aarch64'
+    else:
+        return 'x86_64'
 
 
 PREBUILT_CMAKE_VERSION = '3.21.3'
@@ -573,9 +585,15 @@ def SyncRepos(filter):
 
 # Build rules
 
-def OverrideCMakeCompiler():
+def MaybeOverrideCMakeCompiler():
     if not host_toolchains.ShouldForceHostClang():
-        return []
+        if IsLinux() and IsArm64():
+            return [
+                '-DCMAKE_C_COMPILER=clang',
+                '-DCMAKE_CXX_COMPILER=clang++'
+            ]
+        else:
+            return []
     cc = 'clang-cl' if IsWindows() else 'clang'
     cxx = 'clang-cl' if IsWindows() else 'clang++'
     tools = [
@@ -644,8 +662,9 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
     if mac_cross:
         command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
 
+    command.extend(MaybeOverrideCMakeCompiler())
+
     if host_toolchains.ShouldForceHostClang():
-        command.extend(OverrideCMakeCompiler())
         # Goma doesn't have the "default" SDK compilers in its cache, so only
         # use Goma when using our prebuilt Clang.
         command.extend(host_toolchains.CMakeLauncherFlags())
@@ -722,7 +741,7 @@ def LLVM(build_dir, mac_cross=False):
         # Our mac bot's toolchain's ld64 is too old for trunk libLTO.
         '-DLLVM_TOOL_LTO_BUILD=OFF',
         '-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON',
-        '-DLLVM_TARGETS_TO_BUILD=X86;WebAssembly',
+        '-DLLVM_TARGETS_TO_BUILD=host;WebAssembly',
         '-DLLVM_ENABLE_PROJECTS=lld;clang',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
@@ -993,11 +1012,11 @@ def InstallEmscripten():
     print('Installing emscripten into %s' % em_install_dir)
     proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
                     cwd=src_dir)
-
     print('Running npm install ...')
     proc.check_call(['npm', 'ci', '--production', '--no-optional'], cwd=em_install_dir)
-
     # Manually install the appropriate native Closure Compiler package
+    # if available.
+    #
     # This is currently needed because npm ci will install the packages
     # for Closure for all platforms, adding 180MB to the download size
     # There are two problems here:
@@ -1013,10 +1032,11 @@ def InstallEmscripten():
         native = 'google-closure-compiler-osx'
     elif IsWindows():
         native = 'google-closure-compiler-windows'
-    elif IsLinux():
+    elif IsLinux() and platform.machine() == 'x86_64':
         native = 'google-closure-compiler-linux'
-    proc.check_call(['npm', 'install', '--production', '--no-optional', native],
-                    cwd=em_install_dir)
+    if native:
+        proc.check_call(['npm', 'install', '--production', '--no-optional', native],
+                        cwd=em_install_dir)
 
 
 def Emscripten():
@@ -1270,7 +1290,7 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     # is a bug on win32 that is currently causing 'tests/third_party' to
     # be installed by install.py.
     print('Running npm install ...')
-    proc.check_call(['npm', 'ci'], cwd=em_install_dir)
+    proc.check_call(['npm', 'ci', '--no-optional'], cwd=em_install_dir)
 
     cmd = [
         Executable(GetInstallDir('emscripten', 'tests', 'runner'), '.bat'),
