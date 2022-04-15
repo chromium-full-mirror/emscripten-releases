@@ -602,11 +602,22 @@ def MaybeOverrideCMakeCompiler():
         '-DCMAKE_CXX_COMPILER=' + Executable(
             host_toolchains.GetPrebuiltClang(cxx)),
     ]
+    # We need to use tools that work with LTO (i.e. they understand bitcode
+    # when linking and creating archives).
     if IsWindows():
         tools.append('-DCMAKE_LINKER=' +
                      Executable(host_toolchains.GetPrebuiltClang('lld-link')))
         tools.append('-DCMAKE_AR=' +
                      host_toolchains.GetPrebuiltClang('lib.bat'))
+    elif IsMac():
+        tools.append('-DCMAKE_AR=' +
+                     host_toolchains.GetPrebuiltClang('llvm-ar'))
+        tools.append('-DCMAKE_RANLIB=' +
+                     host_toolchains.GetPrebuiltClang('llvm-ranlib'))
+        # LLVM's CMake wants to use libtool isntead of llvm-ar, but the Chrome
+        # clang package doesn't have libtool. If we set CMAKE_LIBTOOL empty, it
+        # will fall back to the default.
+        tools.append('-DCMAKE_LIBTOOL=')
     return tools
 
 
@@ -705,6 +716,13 @@ def CopyLLVMTools(build_dir, prefix=''):
 
 def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
              runtime='Release'):
+    if IsMac():
+        # We need a ranlib that understands bitcode, but llvm-ranlib is not
+        # included in Chrome's packaging. But ranlib is just ar by another name
+        ranlib = host_toolchains.GetPrebuiltClang('llvm-ranlib')
+        if not os.path.exists(ranlib):
+            os.symlink(host_toolchains.GetPrebuiltClang('llvm-ar'), ranlib)
+        return None
     if not IsWindows():
         return None
     cc_env = host_toolchains.SetUpVSEnv(build_dir)
@@ -751,11 +769,8 @@ def LLVM(build_dir, mac_cross=False):
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
+        '-DLLVM_ENABLE_LLD=ON',
     ]
-
-    if not IsMac():
-        # LLD isn't fully baked on mac yet.
-        cmake_flags_common.append('-DLLVM_ENABLE_LLD=ON')
 
     # Only cross builds have a "stage1" build. Native builds only use stage 2.
     cmake_flags_stage2 = []
@@ -1569,9 +1584,6 @@ def main():
     if not options.use_sysroot:
         host_toolchains.SetUseSysroot(False)
 
-    if ShouldUseLTO() and IsMac():
-        # The prebuilt clang on mac doesn't include libLTO, so use the SDK
-        host_toolchains.SetForceHostClang(False)
 
     sync_include = options.sync_include if options.sync else []
     sync_filter = Filter('sync', sync_include, options.sync_exclude)
