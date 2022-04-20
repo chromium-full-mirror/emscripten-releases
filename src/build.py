@@ -653,6 +653,10 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
                 command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
                 command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
                 command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+            else:
+                # The version of libstdc++ used in the sysroot old and
+                # currently requires this temporary opt-in.
+                command.append('-DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=ON')
 
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
         else: # IsMac()
