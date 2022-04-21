@@ -2,7 +2,6 @@
 binaryen
 emscripten
 llvm-project
-wabt
 llvm-test-suite
 
 # Managed by DEPS hooks

@@ -953,25 +953,6 @@ def Jsvu():
         buildbot.Warn()
 
 
-def Wabt(build_dir):
-    buildbot.Step('WABT')
-    Mkdir(build_dir)
-    cc_env = BuildEnv(build_dir)
-
-    cmd = CMakeCommandNative([GetSrcDir('wabt'),
-                              '-DBUILD_TESTS=OFF',
-                              '-DBUILD_LIBWASM=OFF',
-                              '-DCMAKE_INSTALL_RPATH=$ORIGIN/../lib',
-                              '-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON'],
-                             build_dir)
-    proc.check_call(cmd, cwd=build_dir, env=cc_env)
-
-    proc.check_call(['ninja', '-v'] + host_toolchains.NinjaJobs(),
-                    cwd=build_dir,
-                    env=cc_env)
-    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
-
-
 def LibCXX(build_dir, mac_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
@@ -1247,9 +1228,6 @@ def AllBuilds():
         Build('llvm-test-depends', LLVMTestDepends),
         Build('v8', V8, os_filter=Filter(exclude=['mac'])),
         Build('jsvu', Jsvu, os_filter=Filter(exclude=['windows'])),
-        Build('wabt', Wabt,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'wabt-out')),
         Build('binaryen', Binaryen,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-out')),

@@ -65,9 +65,9 @@ test exclusions are specified separately.  For example:
 
 1. Do not sync any sources, build everything except LLVM, and run all tests:
   `$ src/build.py --no-sync --build-exclude=llvm`
-2. Sync only WABT, build WABT and Binaryen, run everything other than the
+2. Sync only binaryen, build LLVM and Binaryen, run everything other than the
    emscripten testsuites:
-  `$ src/build.py --sync-include=wabt --build-include=wabt,binaryen --test-exclude=emtest,emtest-asm`
+  `$ src/build.py --sync-include=binaryen --build-include=llvm,binaryen --test-exclude=emtest,emtest-asm`
 
 The script should throw an error if you specify nonexistent steps or if you
 specify both includes and excludes for the same type of action.
