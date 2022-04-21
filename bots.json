@@ -178,14 +178,19 @@
         "command": ["src/build.py", "--no-sync", "--no-build", "--test-include=llvmtest"]
       },
       {
-        "name": "Emscripten testsuite (AddressSanitizer)",
+        "name": "Emscripten testsuite (ASan)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=asan"]
       },
       {
-        "name": "Emscripten testsuite (LeakSanitizer)",
+        "name": "Emscripten testsuite (LSan)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=lsan"]
+      },
+      {
+        "name": "Emscripten testsuite (UBSan)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=ubsan"]
       },
       {
         "name": "Emscripten testsuite (SAFE_HEAP)",
