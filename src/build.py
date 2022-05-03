@@ -995,7 +995,9 @@ def Binaryen(build_dir, mac_cross=False):
     cmake_command = CMakeCommandNative(
         [GetSrcDir('binaryen')],build_dir, mac_cross=mac_cross)
     cmake_command.append('-DBYN_INSTALL_TOOLS_ONLY=ON')
-    if ShouldUseLTO():
+    # Mac lld currently has a bug resulting in bad ThinLTO Binaryen builds.
+    # https://github.com/emscripten-core/emscripten/issues/16826
+    if ShouldUseLTO() and not mac_cross:
         cmake_command.append('-DBUILD_STATIC_LIB=ON')
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
 
