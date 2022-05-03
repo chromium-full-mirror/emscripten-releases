@@ -64,7 +64,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 31
+CLOBBER_BUILD_TAG = 32
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -802,7 +802,7 @@ def LLVM(build_dir, mac_cross=False):
         [GetLLVMSrcDir('llvm')] + cmake_flags_common + cmake_flags_stage2,
         build_dir,
         mac_cross=mac_cross,
-        use_local_libcxx=not options.link_static)
+        use_local_libcxx=IsLinux())
     jobs = host_toolchains.NinjaJobs()
 
     if mac_cross:
