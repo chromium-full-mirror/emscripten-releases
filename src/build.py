@@ -957,8 +957,9 @@ def LibCXX(build_dir, mac_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
 
-    on_if_lto = ('ON' if ShouldUseLTO() else 'OFF')
-    on_if_not_lto = ('OFF' if ShouldUseLTO() else 'ON')
+    should_use_static = ShouldUseLTO() or options.link_static
+    on_if_static = ('ON' if should_use_static else 'OFF')
+    on_if_not_static = ('OFF' if should_use_static else 'ON')
     cmd = CMakeCommandNative(
         [GetLLVMSrcDir('runtimes'),
          '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi',
@@ -966,15 +967,15 @@ def LibCXX(build_dir, mac_cross=False):
          # to avoid any possibility of accidentally depending on system libc++
          '-DLIBCXX_ABI_VERSION=2',
          '-DLIBCXX_HAS_ATOMIC_LIB=OFF',
-         '-DLIBCXX_ENABLE_SHARED=%s' % ('OFF' if ShouldUseLTO() else 'ON'),
+         f'-DLIBCXX_ENABLE_SHARED={on_if_not_static}',
          '-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF',
          '-DLIBCXXABI_ENABLE_SHARED=OFF',
          '-DLIBCXX_INCLUDE_TESTS=OFF',
          '-DLIBCXXABI_INCLUDE_TESTS=OFF',
          '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
-         f'-DLIBCXX_INSTALL_STATIC_LIBRARY={on_if_lto}',
-         f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={on_if_lto}',
-         f'-DCMAKE_POSITION_INDEPENDENT_CODE={on_if_not_lto}',
+         f'-DLIBCXX_INSTALL_STATIC_LIBRARY={on_if_static}',
+         f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={on_if_static}',
+         f'-DCMAKE_POSITION_INDEPENDENT_CODE={on_if_not_static}',
          ], build_dir, mac_cross=mac_cross)
     # Filter out the stdlib flags because we are bootstrapping stdlib
     cmd = [x for x in cmd if not 'stdlib' in x]
@@ -1488,7 +1489,8 @@ def ParseArgs():
         help='Use extra optimization for host binaries')
     parser.add_argument(
         '--link-static', dest='link_static', default=False, action='store_true',
-        help="Link LLVM statically instead of using the libLLVM dylib")
+        help='Link LLVM statically instead of using the libLLVM dylib'
+             ' (required to run the LLVM regression tests)')
 
     return parser.parse_args()
 
