@@ -144,7 +144,7 @@
       },
       {
         "name": "Build libcxx",
-        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=libcxx", "--use-lto=auto"]
+        "command": ["src/build.py", "--no-sync", "--no-test", "--build-include=libcxx", "--link-static"]
       },
       {
         "name": "Build LLVM",

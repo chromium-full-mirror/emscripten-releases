@@ -64,7 +64,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 33
+CLOBBER_BUILD_TAG = 34
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -957,9 +957,14 @@ def LibCXX(build_dir, mac_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
 
+    # We include either the shared library or the static library. The shared
+    # version is used for the non-release builds to save space. However as an
+    # extra special weird case, the LLVM regression test version (which does not
+    # use LTO) needs to use static linking but also needs to be PIC because of the
+    # dynamic loading tests.
+    cmake_on = { False: 'OFF', True: 'ON' }
     should_use_static = ShouldUseLTO() or options.link_static
-    on_if_static = ('ON' if should_use_static else 'OFF')
-    on_if_not_static = ('OFF' if should_use_static else 'ON')
+
     cmd = CMakeCommandNative(
         [GetLLVMSrcDir('runtimes'),
          '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi',
@@ -967,15 +972,15 @@ def LibCXX(build_dir, mac_cross=False):
          # to avoid any possibility of accidentally depending on system libc++
          '-DLIBCXX_ABI_VERSION=2',
          '-DLIBCXX_HAS_ATOMIC_LIB=OFF',
-         f'-DLIBCXX_ENABLE_SHARED={on_if_not_static}',
+         f'-DLIBCXX_ENABLE_SHARED={cmake_on[not should_use_static]}',
          '-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF',
          '-DLIBCXXABI_ENABLE_SHARED=OFF',
          '-DLIBCXX_INCLUDE_TESTS=OFF',
          '-DLIBCXXABI_INCLUDE_TESTS=OFF',
          '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
-         f'-DLIBCXX_INSTALL_STATIC_LIBRARY={on_if_static}',
-         f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={on_if_static}',
-         f'-DCMAKE_POSITION_INDEPENDENT_CODE={on_if_not_static}',
+         f'-DLIBCXX_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
+         f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
+         f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
          ], build_dir, mac_cross=mac_cross)
     # Filter out the stdlib flags because we are bootstrapping stdlib
     cmd = [x for x in cmd if not 'stdlib' in x]
