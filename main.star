@@ -148,6 +148,7 @@ ci_builder("mac", "Mac")
 ci_builder("win", "Windows-10")
 
 try_builder("linux", "Ubuntu")
+try_builder("linux-test-suites", "Ubuntu")
 try_builder("mac", "Mac")
 try_builder("win", "Windows-10")
 
@@ -207,7 +208,7 @@ luci.console_view(
         luci.console_view_entry(builder = "ci/linux", short_name = "Linux", category = "Release builders"),
         luci.console_view_entry(builder = "ci/mac", short_name = "Mac", category = "Release builders"),
         luci.console_view_entry(builder = "ci/win", short_name = "Windows", category = "Release builders"),
-        luci.console_view_entry(builder = "linux-test-suites", short_name = "Test suites", category = "Testers"),
+        luci.console_view_entry(builder = "ci/linux-test-suites", short_name = "Test suites", category = "Testers"),
     ],
 )
 
@@ -220,6 +221,7 @@ luci.list_view(
         "try/linux",
         "try/mac",
         "try/win",
+        "try/linux-test-suites",
     ],
 )
 
