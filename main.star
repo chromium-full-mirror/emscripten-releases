@@ -138,7 +138,7 @@ luci.bucket(name = "ci", acls = [
 luci.bucket(name = "try", acls = [
     acl.entry(
         [acl.BUILDBUCKET_TRIGGERER],
-        groups = ["service-account-cq", "project-wasm-tools-committers"],
+        groups = ["service-account-cq", "project-chromium-tryjob-access"],
     ),
 ])
 
