@@ -43,6 +43,11 @@
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
+      },
+      {
+        "name": "Emscripten testsuite (wasm64l)",
+        "command": ["src/build.py", "--no-sync", "--no-build",
+                    "--test-include=emtest", "--test-param=wasm64l"]
       }
     ]
   },
