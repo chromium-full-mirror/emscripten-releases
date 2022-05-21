@@ -4,7 +4,7 @@ Emscripten Releases
 This is meta-repository which brings together all the repositories needed to
 produce and [emscripten](https://emscripten.org) release.  The revisions used
 in each release are tracked in a `DEPS` file (See
-[depot_tools](https://dev.chromium.org/developers/how-tos/depottools for more
+[depot_tools](https://dev.chromium.org/developers/how-tos/depottools) for more
 information).  This file contains a history of revisions that have been built
 and tested together and represent a known good state.
 
