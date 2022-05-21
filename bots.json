@@ -28,18 +28,18 @@
     ],
     "test_steps": [
       {
-        "name": "Emscripten testsuite (upstream, cores)",
+        "name": "Emscripten testsuite (cores)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=cores"]
       },
       {
-        "name": "Emscripten testsuite (upstream, core3)",
+        "name": "Emscripten testsuite (core3)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=core3,wasm2js1.test_pthread_create"]
       },
       {
-        "name": "Emscripten testsuite (upstream, other)",
+        "name": "Emscripten testsuite (other)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
@@ -92,12 +92,12 @@
     ],
     "test_steps": [
       {
-        "name": "Emscripten testsuite (upstream, core0)",
+        "name": "Emscripten testsuite (core0)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=core0"]
       },
       {
-        "name": "Emscripten testsuite (upstream, other)",
+        "name": "Emscripten testsuite (other)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
@@ -129,12 +129,12 @@
     ],
     "test_steps": [
             {
-        "name": "Emscripten testsuite (upstream, core2)",
+        "name": "Emscripten testsuite (core2)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest", "--test-param=core2"]
       },
       {
-        "name": "Emscripten testsuite (upstream, other)",
+        "name": "Emscripten testsuite (other)",
         "command": ["src/build.py", "--no-sync", "--no-build",
                     "--test-include=emtest",
                     "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
