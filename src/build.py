@@ -1304,9 +1304,11 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     test_env = os.environ.copy()
     test_env['EMTEST_SKIP_V8'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
-    if buildbot.IsBot() and IsWindows():
-        test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
-        test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
+    if buildbot.IsBot():
+        if IsWindows():
+            test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
+        if not IsLinux():
+            test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
     try:
         proc.check_call(cmd, cwd=outdir, env=test_env)
     except proc.CalledProcessError:
