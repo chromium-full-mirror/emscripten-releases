@@ -1285,20 +1285,20 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     # We also need to run npm to get the devDependencies needed by the
     # test suite.
     em_install_dir = GetInstallDir('emscripten')
-    installed_tests = os.path.join(em_install_dir, 'tests', 'third_party')
+    installed_tests = os.path.join(em_install_dir, 'test', 'third_party')
     if not os.path.exists(installed_tests):
-        src_dir = GetSrcDir('emscripten', 'tests', 'third_party')
+        src_dir = GetSrcDir('emscripten', 'test', 'third_party')
         print('Copying directory %s to %s' % (src_dir, em_install_dir))
         shutil.copytree(src_dir, installed_tests)
 
     # Ideally we would put this inside the above block/condition but there
-    # is a bug on win32 that is currently causing 'tests/third_party' to
+    # is a bug on win32 that is currently causing 'test/third_party' to
     # be installed by install.py.
     print('Running npm install ...')
     proc.check_call(['npm', 'ci', '--no-optional'], cwd=em_install_dir)
 
     cmd = [
-        Executable(GetInstallDir('emscripten', 'tests', 'runner'), '.bat'),
+        Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat'),
         '--em-config', config
     ] + tests
     test_env = os.environ.copy()
