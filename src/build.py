@@ -64,7 +64,7 @@ LLVM_VERSION = '12.0.0'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 36
+CLOBBER_BUILD_TAG = 37
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -641,23 +641,23 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
     if not IsWindows() and host_toolchains.ShouldUseSysroot():
-        if IsLinux():
-            if use_local_libcxx:
-                # Use our own libc++ to get around the Linux sysroot's very old
-                # libstdc++. Also use it on mac for consistency.
-                # Don't use it for stage1/tablegen (because that could be a native
-                # build when the local libc++ is a cross build)
-                inc = GetInstallDir('include', 'c++', 'v1')
-                command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
-                lib = GetInstallDir('lib')
-                command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-                command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-                command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-            else:
-                # The version of libstdc++ used in the sysroot old and
-                # currently requires this temporary opt-in.
-                command.append('-DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=ON')
+        if use_local_libcxx:
+            # Use our own libc++ to get around the Linux sysroot's very old
+            # libstdc++. Also use it on mac for consistency.
+            # Don't use it for stage1/tablegen (because that could be a native
+            # build when the local libc++ is a cross build)
+            inc = GetInstallDir('include', 'c++', 'v1')
+            command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
+            lib = GetInstallDir('lib')
+            command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+            command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+            command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        else:
+            # The version of libstdc++ used in the sysroot old and
+            # currently requires this temporary opt-in.
+            command.append('-DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=ON')
 
+        if IsLinux():
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
         else: # IsMac()
             # Get XCode SDK path.
@@ -1227,6 +1227,9 @@ def AllBuilds():
         Build('libcxx', LibCXX,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(),'libcxx-out')),
+        Build('libcxx-cross', LibCXX,
+              incremental_build_dir=os.path.join(
+                  work_dirs.GetBuild(),'libcxx-cross-out'), mac_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-out')),
