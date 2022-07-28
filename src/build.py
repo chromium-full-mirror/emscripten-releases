@@ -965,6 +965,7 @@ def LibCXX(build_dir, mac_cross=False):
     cmake_on = { False: 'OFF', True: 'ON' }
     should_use_static = ShouldUseLTO() or options.link_static
 
+    BuildEnv(build_dir)
     cmd = CMakeCommandNative(
         [GetLLVMSrcDir('runtimes'),
          '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi',
