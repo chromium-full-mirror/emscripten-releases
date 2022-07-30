@@ -15,11 +15,11 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '58471ad7e2e5d5ce89830620c2b8fd6a2602be71',
+  'binaryen_revision': 'eb157d230c68cdc91c9da8841a53a80246f345d7',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '3dec1bc35dca79203d1e82eeba3ced2440d0ef4c',
+  'emscripten_revision': 'd5ca9bba6513763d5bdddbd0efff759332bd85d7',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
@@ -27,7 +27,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': '6934107ebeb97e7e66994ea8baa506f0436b0cdb',
+  'v8_revision': 'e0b5a83f53ba9b860d72a4ab62e888e2c56b1e7a',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
