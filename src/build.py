@@ -795,8 +795,7 @@ def LLVM(build_dir, mac_cross=False):
     stage2_cmake_cmd =  CMakeCommandNative(
         [GetLLVMSrcDir('llvm')] + cmake_flags_common + cmake_flags_stage2,
         build_dir,
-        mac_cross=mac_cross,
-        use_local_libcxx=IsLinux())
+        mac_cross=mac_cross)
     jobs = host_toolchains.NinjaJobs()
 
     if mac_cross:
