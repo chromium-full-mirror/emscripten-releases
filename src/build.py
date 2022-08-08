@@ -55,12 +55,6 @@ CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 
 GNUWIN32_ZIP = 'gnuwin32.zip'
 
-# This version is the current LLVM version in development. This needs to be
-# manually updated to the latest x.0.0 version whenever LLVM starts development
-# on a new major version. This is so our manual build of compiler-rt is put
-# where LLVM expects it.
-LLVM_VERSION = '12.0.0'
-
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
