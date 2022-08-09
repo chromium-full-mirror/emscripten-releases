@@ -58,7 +58,7 @@ GNUWIN32_ZIP = 'gnuwin32.zip'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 37
+CLOBBER_BUILD_TAG = 38
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -730,7 +730,7 @@ def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
     # our projects requires a newer MSVC version.
     # Flags need to be injected via the env (rather than on the CMake command
     # line) so they add to rather than overriding the default flags.
-    cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1926'
+    cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1929'
     if use_gnuwin32:
         cc_env['PATH'] = cc_env['PATH'] + os.pathsep + GetSrcDir(
             'gnuwin32', 'bin')
