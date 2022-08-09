@@ -631,25 +631,18 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, mac_cross=False, use_local_libcxx=True):
+def CMakeCommandNative(args, build_dir, mac_cross=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
     if not IsWindows() and host_toolchains.ShouldUseSysroot():
-        if use_local_libcxx:
-            # Use our own libc++ to get around the Linux sysroot's very old
-            # libstdc++. Also use it on mac for consistency.
-            # Don't use it for stage1/tablegen (because that could be a native
-            # build when the local libc++ is a cross build)
-            inc = GetInstallDir('include', 'c++', 'v1')
-            command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
-            lib = GetInstallDir('lib')
-            command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-            command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-            command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-        else:
-            # The version of libstdc++ used in the sysroot old and
-            # currently requires this temporary opt-in.
-            command.append('-DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=ON')
+        # Use our own libc++ to get around the Linux sysroot's very old
+        # libstdc++. Also use it on mac.
+        inc = GetInstallDir('include', 'c++', 'v1')
+        command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
+        lib = GetInstallDir('lib')
+        command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
 
         if IsLinux():
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
@@ -747,7 +740,7 @@ def LLVM(build_dir, mac_cross=False):
     build_dylib = 'ON'
     if IsWindows() or ShouldUseLTO() or options.link_static:
         build_dylib = 'OFF'
-    cmake_flags_common = [
+    cmake_flags = [
         '-DLLVM_ENABLE_LIBXML2=OFF',
         '-DLLVM_INCLUDE_EXAMPLES=OFF',
         '-DLLVM_BUILD_LLVM_DYLIB=%s' % build_dylib,
@@ -770,8 +763,6 @@ def LLVM(build_dir, mac_cross=False):
         '-DLLVM_ENABLE_LLD=ON',
     ]
 
-    # Only cross builds have a "stage1" build. Native builds only use stage 2.
-    cmake_flags_stage2 = []
     ninja_targets = ('all', 'install')
 
     if ShouldUseLTO():
@@ -783,44 +774,40 @@ def LLVM(build_dir, mac_cross=False):
                    'llvm-mc']
         ninja_targets = ('distribution', 'install-distribution')
         targets.extend(['llc', 'opt'])  # TODO: remove uses of these upstream
-        cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
-                        '-DLLVM_INCLUDE_TESTS=OFF',
-                        '-DLLVM_TOOLCHAIN_TOOLS=' + ';'.join(targets),
-                        '-DLLVM_DISTRIBUTION_COMPONENTS=' + ';'.join(targets),
-                        '-DLLVM_ENABLE_LTO=Thin'])
+        cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
+                            '-DLLVM_INCLUDE_TESTS=OFF',
+                            '-DLLVM_TOOLCHAIN_TOOLS=' + ';'.join(targets),
+                            '-DLLVM_DISTRIBUTION_COMPONENTS=' + ';'.join(targets),
+                            '-DLLVM_ENABLE_LTO=Thin'])
 
     else:
-        cmake_flags_stage2.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
-
-    stage2_cmake_cmd =  CMakeCommandNative(
-        [GetLLVMSrcDir('llvm')] + cmake_flags_common + cmake_flags_stage2,
-        build_dir,
-        mac_cross=mac_cross)
-    jobs = host_toolchains.NinjaJobs()
+        cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
 
     if mac_cross:
-        # Stage 1 is a native build, and only builds tablegen.
-        stage1_build_dir = os.path.join(build_dir, 'stage1')
-        Mkdir(stage1_build_dir)
-        stage1_cmake_cmd = CMakeCommandNative(
-            [GetLLVMSrcDir('llvm')] + cmake_flags_common,
-            stage1_build_dir, use_local_libcxx=False)
+        # Cross builds need a native version of the tablegen tools to
+        # run on the build machine. These can be built in a separate
+        # "stage 1" build, but since our bots always build the full
+        # toolchain as native before they build the cross toolchain,
+        # we can just use tablegen from its build dir.
+        native_build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
+        lt = os.path.join(native_build_dir, 'bin', 'llvm-tblgen')
+        ct = os.path.join(native_build_dir, 'bin', 'clang-tblgen')
+        cmake_flags.extend(['-DLLVM_TABLEGEN=' + lt, '-DCLANG_TABLEGEN=' + ct])
 
-        proc.check_call(stage1_cmake_cmd, cwd=stage1_build_dir, env=cc_env)
-        proc.check_call(['ninja', '-v', 'llvm-tblgen', 'clang-tblgen'] + jobs,
-                        cwd=stage1_build_dir, env=cc_env)
-        # Stage 2 is a cross build, and uses tablegen on the build machine
-        lt = os.path.join(stage1_build_dir, 'bin', 'llvm-tblgen')
-        ct = os.path.join(stage1_build_dir, 'bin', 'clang-tblgen')
-        stage2_cmake_cmd += ['-DLLVM_TABLEGEN=' + lt, '-DCLANG_TABLEGEN=' + ct]
+    cmake_cmd =  CMakeCommandNative(
+        [GetLLVMSrcDir('llvm')] + cmake_flags,
+        build_dir,
+        mac_cross=mac_cross)
 
+    proc.check_call(cmake_cmd, cwd=build_dir, env=cc_env)
 
-    proc.check_call(stage2_cmake_cmd, cwd=build_dir, env=cc_env)
     # Copy the libc++ library to the build dir so that tablegen will run
     for suffix in ('2.dylib', 'so.2'):
         dylib = GetInstallDir('lib', f'libc++.{suffix}')
         if os.path.isfile(dylib):
             shutil.copy(dylib, os.path.join(build_dir, 'lib'))
+
+    jobs = host_toolchains.NinjaJobs()
     proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
                     cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', ninja_targets[1]] + jobs,
