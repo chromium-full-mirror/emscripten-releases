@@ -306,73 +306,27 @@ def UploadArchive(name, archive):
     UploadFile(archive, 'wasm-%s%s' % (name, extension))
 
 
-class Filter(object):
-    """Filter for source or build rules, to allow including or excluding only
-     selected targets.
-    """
-    def __init__(self, name=None, include=None, exclude=None):
-        """
-        include:
-          if present, only items in it will be included (if empty, nothing will
-          be included).
-        exclude:
-          if present, items in it will be excluded.
-          include ane exclude cannot both be present.
-        """
-        if include and exclude:
-            raise Exception(
-                'Filter cannot include both include and exclude rules')
-
-        self.name = name
-        self.include = include
-        self.exclude = exclude
-
-    def Apply(self, targets):
-        """Return the filtered list of targets."""
-        all_names = [t.name for t in targets]
-        specified_names = self.include or self.exclude or []
-        missing_names = [i for i in specified_names if i not in all_names]
-        if missing_names:
-            raise Exception('Invalid step name(s): {0}\n\n'
-                            'Valid {1} steps:\n{2}'.format(
-                                missing_names, self.name,
-                                TextWrapNameList(prefix='', items=targets)))
-
-        return [t for t in targets if self.Check(t.name)]
-
-    def Check(self, target):
-        """Return true if the specified target will be run."""
-        if self.include is not None:
-            return target in self.include
-
-        if self.exclude is not None:
-            return target not in self.exclude
-        return True
-
-    def All(self):
-        """Return true if all possible targets will be run."""
-        return self.include is None and not self.exclude
-
-    def Any(self):
-        """Return true if any targets can be run."""
-        return self.include is None or len(self.include)
+def FilterTargets(to_run, all_targets):
+    for r in to_run:
+        found = False
+        for t in all_targets:
+            if t.name == r:
+                found = True
+                yield t
+        if not found:
+            pretty_targets = TextWrapNameList(prefix='', items=all_targets)
+            raise Exception(f'{r} not found in target list:\n{pretty_targets}')
 
 
 class Source(object):
     """Metadata about a sync-able source repo on the waterfall"""
     def __init__(self, name, src_dir,
-                 custom_sync=None, os_filter=None):
+                 custom_sync=None):
         self.name = name
         self.src_dir = src_dir
         self.custom_sync = custom_sync
-        self.os_filter = os_filter
-
 
     def Sync(self):
-        if self.os_filter and not self.os_filter.Check(BuilderPlatformName()):
-            print("Skipping %s: Doesn't work on %s" %
-                  (self.name, BuilderPlatformName()))
-            return
         assert self.custom_sync
         self.custom_sync(self.name, self.src_dir)
 
@@ -569,11 +523,11 @@ def Clobber():
         f.write('%s\n' % CLOBBER_BUILD_TAG)
 
 
-def SyncRepos(filter):
-    if not filter.Any():
+def SyncRepos(sync_targets):
+    if not sync_targets:
         return
     buildbot.Step('Sync Repos')
-    for repo in filter.Apply(AllSources()):
+    for repo in FilterTargets(sync_targets, AllSources()):
         repo.Sync()
 
 
@@ -1149,11 +1103,10 @@ def DebianPackage():
 
 
 class Build(object):
-    def __init__(self, name_, runnable_, os_filter=None,
+    def __init__(self, name_, runnable_,
                  incremental_build_dir=None, *args, **kwargs):
         self.name = name_
         self.runnable = runnable_
-        self.os_filter = os_filter
         self.incremental_build_dir = incremental_build_dir
         self.args = args
         self.kwargs = kwargs
@@ -1162,11 +1115,6 @@ class Build(object):
             self.kwargs['build_dir'] = incremental_build_dir
 
     def Run(self):
-        if self.os_filter and not self.os_filter.Check(BuilderPlatformName()):
-            print("Skipping %s: Doesn't work on %s" %
-                  (self.runnable.__name__, BuilderPlatformName()))
-            return
-
         # When using LTO we always want a clean build (the previous
         # build was non-LTO)
         if self.incremental_build_dir and ShouldUseLTO():
@@ -1200,6 +1148,8 @@ def Summary():
         buildbot.Fail()
 
 
+# TODO: Now that we've gotten rid of the complex filtering mechanism, we can
+# use a better data structure for this.
 def AllBuilds():
     return [
         # Host tools
@@ -1216,8 +1166,8 @@ def AllBuilds():
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-cross-out'), mac_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
-        Build('v8', V8, os_filter=Filter(exclude=['mac'])),
-        Build('jsvu', Jsvu, os_filter=Filter(exclude=['windows'])),
+        Build('v8', V8),
+        Build('jsvu', Jsvu),
         Build('binaryen', Binaryen,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-out')),
@@ -1233,27 +1183,17 @@ def AllBuilds():
     ]
 
 
-DEFAULT_BUILDS = [
-    'llvm', 'binaryen', 'emscripten', 'archive'
-]
-
-
-def BuildRepos(filter):
-    for rule in filter.Apply(AllBuilds()):
-        rule.Run()
+def BuildRepos(builds):
+    for b in FilterTargets(builds, AllBuilds()):
+        b.Run()
 
 
 class Test(object):
-    def __init__(self, name_, runnable_, os_filter=None):
+    def __init__(self, name_, runnable_):
         self.name = name_
         self.runnable = runnable_
-        self.os_filter = os_filter
 
     def Test(self):
-        if self.os_filter and not self.os_filter.Check(BuilderPlatformName()):
-            print("Skipping %s: Doesn't work on %s" %
-                  (self.name, BuilderPlatformName()))
-            return
         self.runnable()
 
 
@@ -1376,10 +1316,8 @@ ALL_TESTS = [
     # These tests do have interesting differences on OSes (especially the
     # 'other' tests) and eventually should run everywhere.
     Test('emtest', TestEmtest),
-    Test('llvmtest', TestLLVMTestSuite, Filter(include=['linux'])),
+    Test('llvmtest', TestLLVMTestSuite),
 ]
-
-DEFAULT_TESTS = ['bare', 'emwasm', 'llvmtest']
 
 
 def TextWrapNameList(prefix, items):
@@ -1425,38 +1363,18 @@ def ParseArgs():
         '--install-dir', dest='install_dir',
         help='Directory for installed output')
 
-    sync_grp = parser.add_mutually_exclusive_group()
-    sync_grp.add_argument(
-        '--no-sync', dest='sync', default=True, action='store_false',
-        help='Skip fetching and checking out source repos')
-    sync_grp.add_argument(
+    parser.add_argument(
         '--sync-include', dest='sync_include', default='', type=SplitComma,
         help='Include only the comma-separated list of sync targets')
-    sync_grp.add_argument(
-        '--sync-exclude', dest='sync_exclude', default='', type=SplitComma,
-        help='Exclude the comma-separated list of sync targets')
 
-    build_grp = parser.add_mutually_exclusive_group()
-    build_grp.add_argument(
-        '--no-build', dest='build', default=True, action='store_false',
-        help='Skip building source repos (also skips V8 and LLVM unit tests)')
-    build_grp.add_argument(
+    parser.add_argument(
         '--build-include', dest='build_include', default='', type=SplitComma,
         help='Include only the comma-separated list of build targets')
-    build_grp.add_argument(
-        '--build-exclude', dest='build_exclude', default='', type=SplitComma,
-        help='Exclude the comma-separated list of build targets')
 
-    test_grp = parser.add_mutually_exclusive_group()
-    test_grp.add_argument(
-        '--no-test', dest='test', default=True, action='store_false',
-        help='Skip running tests')
-    test_grp.add_argument(
+    parser.add_argument(
         '--test-include', dest='test_include', default='', type=SplitComma,
         help='Include only the comma-separated list of test targets')
-    test_grp.add_argument(
-        '--test-exclude', dest='test_exclude', default='', type=SplitComma,
-        help='Exclude the comma-separated list of test targets')
+
     parser.add_argument(
         '--test-params', dest='test_params', default='', type=SplitComma,
         help='Test selector to pass through to emscripten testsuite runner')
@@ -1490,17 +1408,12 @@ def AddToPath(path):
     os.environ['PATH'] = path + os.pathsep + os.environ['PATH']
 
 
-def run(sync_filter, build_filter, test_filter):
+def run(sync_targets, build_targets, test_targets):
     Clobber()
     Chdir(SCRIPT_DIR)
     for work_dir in work_dirs.GetAll():
         Mkdir(work_dir)
-    SyncRepos(sync_filter)
-    if build_filter.All():
-        Remove(GetInstallDir())
-        Mkdir(GetInstallDir())
-        Mkdir(GetInstallDir('bin'))
-        Mkdir(GetInstallDir('lib'))
+    SyncRepos(sync_targets)
 
     # Add prebuilt cmake to PATH so any subprocesses use a consistent cmake.
     AddToPath(os.path.dirname(PrebuiltCMakeBin()))
@@ -1510,7 +1423,7 @@ def run(sync_filter, build_filter, test_filter):
     AddToPath(NodeBinDir())
 
     try:
-        BuildRepos(build_filter)
+        BuildRepos(build_targets)
     except Exception:
         # If any exception reaches here, do not attempt to run the tests; just
         # log the error for buildbot and exit
@@ -1520,7 +1433,7 @@ def run(sync_filter, build_filter, test_filter):
         Summary()
         return 1
 
-    for t in test_filter.Apply(ALL_TESTS):
+    for t in FilterTargets(test_targets, ALL_TESTS):
         t.Test()
 
     # Keep the summary step last: it'll be marked as red if the return code is
@@ -1557,18 +1470,13 @@ def main():
     if not options.use_sysroot:
         host_toolchains.SetUseSysroot(False)
 
+    sync_include = options.sync_include if options.sync_include else []
+    build_include = options.build_include if options.build_include else []
+    test_include = options.test_include if options.test_include else []
 
-    sync_include = options.sync_include if options.sync else []
-    sync_filter = Filter('sync', sync_include, options.sync_exclude)
-    build_include = [] if not options.build else (
-        options.build_include if options.build_include else DEFAULT_BUILDS)
-    build_filter = Filter('build', build_include, options.build_exclude)
-    test_include = [] if not options.test else (
-        options.test_include if options.test_include else DEFAULT_TESTS)
-    test_filter = Filter('test', test_include, options.test_exclude)
 
     try:
-        ret = run(sync_filter, build_filter, test_filter)
+        ret = run(sync_include, build_include, test_include)
         print('Completed in {}s'.format(time.time() - start))
         return ret
     except:  # noqa
