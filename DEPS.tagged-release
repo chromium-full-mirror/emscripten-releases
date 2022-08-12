@@ -15,19 +15,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'eb157d230c68cdc91c9da8841a53a80246f345d7',
+  'binaryen_revision': '3b1cc0b7d297086ddec24644722df1839e0579e1',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': 'd5ca9bba6513763d5bdddbd0efff759332bd85d7',
+  'emscripten_revision': 'a5f7b1c9a1c74a830bebedc122d204800ce8dff9',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '48129cf0ed5053ed3fdf4f928180635e84892614',
+  'llvm_project_revision': '30171e76f0e5ea8037bc4d1450dd3e12af4d9938',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'e0b5a83f53ba9b860d72a4ab62e888e2c56b1e7a',
+  'v8_revision': 'dc041929eba1b3977d1792b7eb2b2c01934661c3',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -61,4 +61,3 @@ hooks = [
 recursedeps = [
   'v8'
 ]
-# This file includes a no-op change to trigger a release build.
