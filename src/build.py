@@ -782,6 +782,12 @@ def LLVM(build_dir, mac_cross=False):
                 shutil.copy2(Executable(os.path.join(install_bin, target)),
                              Executable(link))
 
+    # LTO builds clobber their working directories after build to avoid
+    # incremental build problems. But we saved native_build_dir for the cross
+    # build, so clobber it now.
+    if mac_cross and ShouldUseLTO():
+        RemoveIfBot(native_build_dir)
+
 
 def LLVMTestDepends():
     buildbot.Step('LLVM Test Dependencies')
@@ -1104,10 +1110,13 @@ def DebianPackage():
 
 class Build(object):
     def __init__(self, name_, runnable_,
-                 incremental_build_dir=None, *args, **kwargs):
+                 incremental_build_dir=None,
+                 clobber_lto=True,
+                 *args, **kwargs):
         self.name = name_
         self.runnable = runnable_
         self.incremental_build_dir = incremental_build_dir
+        self.clobber_lto = clobber_lto
         self.args = args
         self.kwargs = kwargs
 
@@ -1130,7 +1139,7 @@ class Build(object):
         finally:
             # When using LTO we want to always clean up afterward,
             # (the next build will be non-LTO).
-            if self.incremental_build_dir and ShouldUseLTO():
+            if self.incremental_build_dir and ShouldUseLTO() and self.clobber_lto:
                 RemoveIfBot(self.incremental_build_dir)
 
 
@@ -1161,7 +1170,7 @@ def AllBuilds():
                   work_dirs.GetBuild(),'libcxx-cross-out'), mac_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'llvm-out')),
+                  work_dirs.GetBuild(), 'llvm-out'), clobber_lto=not IsMac()),
         Build('llvm-cross', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-cross-out'), mac_cross=True),
