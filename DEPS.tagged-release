@@ -61,3 +61,4 @@ hooks = [
 recursedeps = [
   'v8'
 ]
+# non-functional change to trigger an LTO build
