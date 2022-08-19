@@ -32,7 +32,7 @@ import subprocess
 import sys
 import urllib.request
 
-TAG_INFO_URL = 'https://raw.githubusercontent.com/emscripten-core/emsdk/main/emscripten-releases-tags.txt'
+TAG_INFO_URL = 'https://raw.githubusercontent.com/emscripten-core/emsdk/main/emscripten-releases-tags.json'
 EMR_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAIN_BRANCH = 'origin/main'
 
@@ -119,6 +119,10 @@ def PrintTagFullInfo(tag):
 
 
 def TagSortKey(tag):
+    # Strip suffix like "-asserts"
+    suffix = tag.find('-')
+    if suffix != -1:
+        tag = tag[:suffix]
     c = tag.split('.')
     return int(c[0]) * 10000 + int(c[1]) * 100 + int(c[2])
 
