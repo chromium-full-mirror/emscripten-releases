@@ -588,9 +588,7 @@ def CMakeCommandBase():
 def CMakeCommandNative(args, build_dir, mac_cross=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
-    if not IsWindows() and host_toolchains.ShouldUseSysroot():
-        # Use our own libc++ to get around the Linux sysroot's very old
-        # libstdc++. Also use it on mac.
+    if UseLocalLibCXX():
         inc = GetInstallDir('include', 'c++', 'v1')
         command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
         lib = GetInstallDir('lib')
@@ -598,9 +596,10 @@ def CMakeCommandNative(args, build_dir, mac_cross=False):
         command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
         command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
 
+    if host_toolchains.ShouldUseSysroot():
         if IsLinux():
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
-        else: # IsMac()
+        elif IsMac():
             # Get XCode SDK path.
             xcode_sdk_path = proc.check_output(['xcrun',
                                                 '--show-sdk-path']).strip()
@@ -614,6 +613,8 @@ def CMakeCommandNative(args, build_dir, mac_cross=False):
                 os.symlink(xcode_sdk_path, symlink_path)
             command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
             command.append(f'-DCMAKE_SYSROOT={symlink_path}')
+        else:
+            assert(False, 'sysroot not supported on windows')
 
     if mac_cross:
         command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
@@ -716,6 +717,8 @@ def LLVM(build_dir, mac_cross=False):
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
         '-DLLVM_ENABLE_LLD=ON',
     ]
+    if UseStaticLibCXX():
+        cmake_flags += ['-DLLVM_STATIC_LINK_CXX_STDLIB=ON']
 
     ninja_targets = ('all', 'install')
 
@@ -893,6 +896,16 @@ def Jsvu():
         buildbot.Warn()
 
 
+def UseLocalLibCXX():
+    # Use our own libc++ to get around the Linux sysroot's very old
+    # libstdc++. Also use it on mac.
+    return not IsWindows() and host_toolchains.ShouldUseSysroot()
+
+
+def UseStaticLibCXX():
+    return UseLocalLibCXX() and (ShouldUseLTO() or options.link_static)
+
+
 def LibCXX(build_dir, mac_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
@@ -903,7 +916,7 @@ def LibCXX(build_dir, mac_cross=False):
     # use LTO) needs to use static linking but also needs to be PIC because of the
     # dynamic loading tests.
     cmake_on = { False: 'OFF', True: 'ON' }
-    should_use_static = ShouldUseLTO() or options.link_static
+    should_use_static = UseStaticLibCXX()
 
     BuildEnv(build_dir)
     cmd = CMakeCommandNative(
