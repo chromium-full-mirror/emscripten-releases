@@ -53,12 +53,10 @@ RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
 CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 
-GNUWIN32_ZIP = 'gnuwin32.zip'
-
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 38
+CLOBBER_BUILD_TAG = 39
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -435,14 +433,6 @@ def SyncPrebuiltNodeJS(name, src_dir):
     return SyncArchive(out_dir, name, node_url)
 
 
-# Utilities needed for running LLVM regression tests on Windows
-def SyncGNUWin32(name, src_dir):
-    if not IsWindows():
-        return
-    url = WASM_STORAGE_BASE + GNUWIN32_ZIP
-    return SyncArchive(GetPrebuilt('gnuwin32'), name, url)
-
-
 def SyncLinuxSysroot(name, src_dir):
     if not (IsLinux() and host_toolchains.ShouldUseSysroot()):
         return
@@ -472,8 +462,6 @@ def AllSources():
                custom_sync=SyncPrebuiltCMake),
         Source('nodejs', '',  # The source arg is ignored.
                custom_sync=SyncPrebuiltNodeJS),
-        Source('gnuwin32', '', # The source arg is ignored.
-               custom_sync=SyncGNUWin32),
         Source('sysroot', '', # The source arg is ignored.
                custom_sync=SyncLinuxSysroot),
         Source('deps', '', custom_sync=SyncReleaseDeps)
@@ -660,7 +648,7 @@ def CopyLLVMTools(build_dir, prefix=''):
             CopyBinaryToArchive(os.path.join(build_dir, 'bin', e), prefix)
 
 
-def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
+def BuildEnv(build_dir, bin_subdir=False,
              runtime='Release'):
     if IsMac():
         # We need a ranlib that understands bitcode, but llvm-ranlib is not
@@ -679,9 +667,6 @@ def BuildEnv(build_dir, use_gnuwin32=False, bin_subdir=False,
     # Flags need to be injected via the env (rather than on the CMake command
     # line) so they add to rather than overriding the default flags.
     cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1929'
-    if use_gnuwin32:
-        cc_env['PATH'] = cc_env['PATH'] + os.pathsep + GetSrcDir(
-            'gnuwin32', 'bin')
     bin_dir = build_dir if not bin_subdir else os.path.join(build_dir, 'bin')
     Mkdir(bin_dir)
     assert runtime in ['Release', 'Debug']
