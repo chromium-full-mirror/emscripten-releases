@@ -56,7 +56,7 @@ CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 39
+CLOBBER_BUILD_TAG = 40
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
