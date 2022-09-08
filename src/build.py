@@ -1006,16 +1006,11 @@ def Emscripten():
     env = os.environ.copy()
     env['EM_CONFIG'] = config
     env['EMSDK_PYTHON'] = EMSDK_PYTHON
-    try:
-        # Use emscripten's embuilder to prebuild the system libraries.
-        # This depends on binaryen already being built and installed into the
-        # archive/install dir.
-        embuilder = Executable(GetInstallDir('emscripten', 'embuilder'), '.bat')
-        proc.check_call([embuilder, 'build', 'SYSTEM'], env=env)
-
-    except proc.CalledProcessError:
-        # Note the failure but allow the build to continue.
-        buildbot.Fail()
+    # Use emscripten's embuilder to prebuild the system libraries.
+    # This depends on binaryen already being built and installed into the
+    # archive/install dir.
+    embuilder = Executable(GetInstallDir('emscripten', 'embuilder'), '.bat')
+    proc.check_call([embuilder, 'build', 'SYSTEM'], env=env)
 
     # Remove the sanity file.  This means it will get generated on first
     # use without clearing the cache.
