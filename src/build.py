@@ -807,38 +807,6 @@ def TestLLVMRegression():
         buildbot.FailUnless(lambda: IsWindows())
 
 
-def V8():
-    buildbot.Step('V8')
-    src_dir = work_dirs.GetV8()
-    out_dir = os.path.join(src_dir, V8_BUILD_SUBDIR)
-
-    # Generate and write a GN args file.
-    gn_args = 'is_debug = false\ntarget_cpu = "x64"\n'
-    if host_toolchains.UsingGoma():
-        gn_args += 'use_goma = true\n'
-        gn_args += 'goma_dir = "%s"\n' % host_toolchains.GomaDir()
-    Mkdir(out_dir)
-    with open(os.path.join(out_dir, 'args.gn'), 'w') as f:
-        f.write(gn_args)
-    # Invoke GN to generate.
-    # TODO: Use one of V8's GN wrapper scripts (e.g. mb.py).
-    # Because V8 has a different directory layout from Chrome, we can't
-    # just use the GN wrapper in depot_tools, we have to invoke the one in the
-    # V8 buildtools dir directly.
-    gn_platform = 'linux64' if IsLinux() else 'mac' if IsMac() else 'win'
-    gn_exe = Executable(os.path.join(src_dir, 'buildtools', gn_platform, 'gn'))
-    proc.check_call([gn_exe, 'gen', out_dir], cwd=src_dir)
-
-    jobs = host_toolchains.NinjaJobs()
-    proc.check_call(['ninja', '-v', '-C', out_dir, 'd8', 'unittests'] + jobs,
-                    cwd=src_dir)
-    # Copy the V8 snapshot as well as the ICU data file for timezone data.
-    # icudtl.dat is the little-endian version, which goes with x64.
-    to_archive = [Executable('d8'), 'snapshot_blob.bin', 'icudtl.dat']
-    for a in to_archive:
-        CopyBinaryToArchive(os.path.join(out_dir, a))
-
-
 def Jsvu():
     buildbot.Step('jsvu')
     jsvu_dir = os.path.join(work_dirs.GetBuild(), 'jsvu')
@@ -1165,7 +1133,6 @@ def AllBuilds():
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-cross-out'), mac_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
-        Build('v8', V8),
         Build('jsvu', Jsvu),
         Build('binaryen', Binaryen,
               incremental_build_dir=os.path.join(
