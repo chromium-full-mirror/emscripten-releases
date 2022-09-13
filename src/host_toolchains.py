@@ -16,6 +16,7 @@
 
 import json
 import os
+import sys
 
 import proc
 import work_dirs
@@ -26,7 +27,7 @@ use_sysroot = True
 
 def SetupToolchain():
     return [
-        'vpython.bat',
+        sys.executable,
         os.path.join(work_dirs.GetV8(), 'build', 'toolchain', 'win',
                      'setup_toolchain.py')
     ]
@@ -34,7 +35,7 @@ def SetupToolchain():
 
 def VSToolchainPy():
     return [
-        'vpython.bat',
+        sys.executable,
         os.path.join(work_dirs.GetV8(), 'build', 'vs_toolchain.py')
     ]
 

@@ -811,7 +811,6 @@ def V8():
     buildbot.Step('V8')
     src_dir = work_dirs.GetV8()
     out_dir = os.path.join(src_dir, V8_BUILD_SUBDIR)
-    vpython = 'vpython' + ('.bat' if IsWindows() else '')
 
     # Generate and write a GN args file.
     gn_args = 'is_debug = false\ntarget_cpu = "x64"\n'
@@ -821,16 +820,14 @@ def V8():
     Mkdir(out_dir)
     with open(os.path.join(out_dir, 'args.gn'), 'w') as f:
         f.write(gn_args)
-    # Invoke GN to generate. We need to use vpython as the script interpreter
-    # since GN's scripts seem to require python2. Hence we need to invoke GN
-    # directly rather than using one of V8's GN wrapper scripts (e.g. mb.py).
-    # But because V8 has a different directory layout from Chrome, we can't
+    # Invoke GN to generate.
+    # TODO: Use one of V8's GN wrapper scripts (e.g. mb.py).
+    # Because V8 has a different directory layout from Chrome, we can't
     # just use the GN wrapper in depot_tools, we have to invoke the one in the
     # V8 buildtools dir directly.
     gn_platform = 'linux64' if IsLinux() else 'mac' if IsMac() else 'win'
     gn_exe = Executable(os.path.join(src_dir, 'buildtools', gn_platform, 'gn'))
-    proc.check_call([gn_exe, 'gen', out_dir, '--script-executable=' + vpython],
-                    cwd=src_dir)
+    proc.check_call([gn_exe, 'gen', out_dir], cwd=src_dir)
 
     jobs = host_toolchains.NinjaJobs()
     proc.check_call(['ninja', '-v', '-C', out_dir, 'd8', 'unittests'] + jobs,
