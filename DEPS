@@ -40,6 +40,15 @@ deps = {
   'emscripten-releases/llvm-project': Var('llvm_project_url') + '@' + Var('llvm_project_revision'),
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
+  'emscripten-releases/third_party/ninja': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/ninja/${{platform}}',
+        'version': 'version:2@1.8.2.chromium.3',
+      }
+    ],
+    'dep_type': 'cipd',
+  },
 }
 
 hooks = [

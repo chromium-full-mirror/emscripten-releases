@@ -14,3 +14,7 @@ build
 
 *~
 *.pyc
+
+# Third party repos.
+third_party/ninja/ninja
+third_party/ninja/ninja.exe
