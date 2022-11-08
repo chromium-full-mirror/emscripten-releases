@@ -15,19 +15,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '2f722471e55b3bc7c013763d6dc9043fba7317d8',
+  'binaryen_revision': '52079ae8ea3abec509c3184720d1824b9093cb2f',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '68a9f990429e0bcfb63b1cde68bad792554350a5',
+  'emscripten_revision': 'febd44b21ecaca86e2cb2a25ef3ed4a0a2076365',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '277c382760bf9575cfa2eac73d5ad1db91466d3f',
+  'llvm_project_revision': 'effd75bda4b1a9b26e554c1cda3e3b4c72fa0aa8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'e3863ef41c70a3665085b369e39b4eea8589ef75',
+  'v8_revision': 'ccddc6d605348bdb138dd22020a70102721a19af',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -40,6 +40,15 @@ deps = {
   'emscripten-releases/llvm-project': Var('llvm_project_url') + '@' + Var('llvm_project_revision'),
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
+  'emscripten-releases/third_party/ninja': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/ninja/${{platform}}',
+        'version': 'version:2@1.8.2.chromium.3',
+      }
+    ],
+    'dep_type': 'cipd',
+  },
 }
 
 hooks = [
