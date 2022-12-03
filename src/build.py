@@ -58,7 +58,7 @@ CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 40
+CLOBBER_BUILD_TAG = 41
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -628,10 +628,14 @@ def CopyLLVMTools(build_dir, prefix=''):
     for unneeded_tool in ('clang-check', 'clang-cl', 'clang-cpp',
                           'clang-extdef-mapping', 'clang-format',
                           'clang-func-mapping', 'clang-import-test',
-                          'clang-offload-bundler', 'clang-refactor',
-                          'clang-rename', 'clang-scan-deps', 'libclang.dll',
-                          'lld-link', 'ld.lld', 'ld64.lld', 'llvm-lib',
-                          'ld64.lld.darwinnew', 'ld64.lld.darwinold'):
+                          'clang-linker-wrapper', 'clang-offload-bundler',
+                          'clang-offload-packager', 'clang-refactor',
+                          'clang-rename', 'clang-repl', 'clang-scan-deps',
+                          'diagtool', 'git-clang-format', 'hmaptool', 'ld.lld',
+                          'ld64.lld', 'ld64.lld.darwinnew', 'ld64.lld.darwinold',
+                          'lld-link', 'libclang.dll', 'llvm-cov', 'llvm-ml',
+                          'llvm-lib', 'llvm-pdbutil', 'llvm-profdata',
+                          'llvm-rc'):
         Remove(GetInstallDir(prefix, 'bin', Executable(unneeded_tool)))
 
     for lib in ['libclang.%s' for suffix in ('so.*', 'dylib')]:
@@ -639,9 +643,8 @@ def CopyLLVMTools(build_dir, prefix=''):
 
     # The following are useful, LLVM_INSTALL_TOOLCHAIN_ONLY did away with them.
     extra_bins = map(Executable, [
-        'FileCheck', 'llc', 'llvm-as', 'llvm-dis', 'llvm-link', 'llvm-mc',
-        'llvm-nm', 'llvm-objdump', 'llvm-readobj', 'llvm-size', 'opt',
-        'llvm-dwarfdump', 'llvm-dwp'
+        'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm', 'llvm-objdump', 'llvm-readobj',
+        'llvm-size',
     ])
     for p in [
             glob.glob(os.path.join(build_dir, 'bin', b)) for b in extra_bins
@@ -711,13 +714,11 @@ def LLVM(build_dir, mac_cross=False):
 
     if ShouldUseLTO():
         targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cxxfilt',
-                   'llvm-dwarfdump', 'llvm-dwp', 'llvm-link', 'llvm-nm',
+                   'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm',
                    'llvm-objcopy', 'llvm-objdump', 'llvm-ranlib',
                    'llvm-readobj', 'llvm-size', 'llvm-strings',
-                   'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers',
-                   'llvm-mc']
+                   'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers']
         ninja_targets = ('distribution', 'install-distribution')
-        targets.extend(['llc', 'opt'])  # TODO: remove uses of these upstream
         cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
                             '-DLLVM_INCLUDE_TESTS=OFF',
                             '-DLLVM_TOOLCHAIN_TOOLS=' + ';'.join(targets),
