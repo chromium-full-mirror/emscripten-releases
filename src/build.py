@@ -1236,7 +1236,7 @@ def TestLLVMTestSuite():
         '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
         '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
-        '-lnodefs.js -sNODERAWFS',
+        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=128KB',
         '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py')
     ]
 
