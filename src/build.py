@@ -41,6 +41,8 @@ import work_dirs
 from urllib.request import urlopen, URLError
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+NINJA_PATH = os.path.join(ROOT_DIR, 'third_party', 'ninja', 'ninja')
 JSVU_OUT_DIR = os.path.expanduser(os.path.join('~', '.jsvu'))
 # Python executable that will be used by emscripten subprocesses.
 # For now we just use the running executable, but in the future we could use
@@ -750,9 +752,9 @@ def LLVM(build_dir, mac_cross=False):
             shutil.copy(dylib, os.path.join(build_dir, 'lib'))
 
     jobs = host_toolchains.NinjaJobs()
-    proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
+    proc.check_call([NINJA_PATH, '-v', ninja_targets[0]] + jobs,
                     cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', ninja_targets[1]] + jobs,
+    proc.check_call([NINJA_PATH, ninja_targets[1]] + jobs,
                     cwd=build_dir, env=cc_env)
 
     CopyLLVMTools(build_dir)
@@ -780,7 +782,7 @@ def LLVM(build_dir, mac_cross=False):
 def LLVMTestDepends():
     buildbot.Step('LLVM Test Dependencies')
     build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
-    proc.check_call(['ninja', '-v', 'test-depends'] +
+    proc.check_call([NINJA_PATH, '-v', 'test-depends'] +
                     host_toolchains.NinjaJobs(),
                     cwd=build_dir,
                     env=BuildEnv(build_dir, bin_subdir=True))
@@ -802,7 +804,7 @@ def TestLLVMRegression():
 
     try:
         buildbot.Step('LLVM regression tests')
-        RunWithUnixUtils(['ninja', 'check-all'], cwd=build_dir, env=cc_env)
+        RunWithUnixUtils([NINJA_PATH, 'check-all'], cwd=build_dir, env=cc_env)
     except proc.CalledProcessError:
         buildbot.FailUnless(lambda: IsWindows())
 
@@ -891,9 +893,9 @@ def LibCXX(build_dir, mac_cross=False):
     if IsMac():
         cmd.append('-DLIBCXX_USE_COMPILER_RT=ON')
     proc.check_call(cmd, cwd=build_dir)
-    proc.check_call(['ninja', '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
+    proc.check_call([NINJA_PATH, '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir)
-    proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
+    proc.check_call([NINJA_PATH, 'install-cxx', 'install-cxxabi'], cwd=build_dir)
 
 
 def Binaryen(build_dir, mac_cross=False):
@@ -910,9 +912,9 @@ def Binaryen(build_dir, mac_cross=False):
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
 
     proc.check_call(cmake_command, cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', '-v'] + host_toolchains.NinjaJobs(),
+    proc.check_call([NINJA_PATH, '-v'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir, env=cc_env)
-    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
+    proc.check_call([NINJA_PATH, 'install'], cwd=build_dir, env=cc_env)
 
 
 def InstallEmscripten():
@@ -1043,21 +1045,20 @@ def DebianPackage():
         return
 
     buildbot.Step('Debian package')
-    top_dir = os.path.dirname(SCRIPT_DIR)
     try:
         if buildbot.BuildNumber():
             message = ('Automatic build %s produced on http://wasm-stat.us' %
                        buildbot.BuildNumber())
             version = '0.1.' + buildbot.BuildNumber()
             proc.check_call(['dch', '-D', 'unstable', '-v', version, message],
-                            cwd=top_dir)
+                            cwd=ROOT_DIR)
         proc.check_call(['debuild', '--no-lintian', '-i', '-us', '-uc', '-b'],
-                        cwd=top_dir)
+                        cwd=ROOT_DIR)
         if buildbot.BuildNumber():
             proc.check_call(['git', 'checkout', 'debian/changelog'],
-                            cwd=top_dir)
+                            cwd=ROOT_DIR)
 
-            debfile = os.path.join(os.path.dirname(top_dir),
+            debfile = os.path.join(os.path.dirname(ROOT_DIR),
                                    'wasm-toolchain_%s_amd64.deb' % version)
             UploadFile(debfile, os.path.basename(debfile))
     except proc.CalledProcessError:
@@ -1241,7 +1242,7 @@ def TestLLVMTestSuite():
     ]
 
     proc.check_call(command, cwd=outdir)
-    proc.check_call(['ninja', '-v'], cwd=outdir)
+    proc.check_call([NINJA_PATH, '-v'], cwd=outdir)
     results_file = 'results.json'
     lit = GetBuildDir('llvm-out', 'bin', 'llvm-lit')
     proc.call([lit, '-v', '-o', results_file, '.'], cwd=outdir)
