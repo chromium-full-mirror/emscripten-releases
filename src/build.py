@@ -562,9 +562,10 @@ def MaybeOverrideCMakeCompiler():
 def CMakeCommandBase():
     command = [PrebuiltCMakeBin(), '-G', 'Ninja']
     # Python's location could change, so always update CMake's cache
-    command.append('-DPython3_EXECUTABLE=%s' % sys.executable)
-    command.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
-    command.append('-DCMAKE_BUILD_TYPE=Release')
+    command.extend(['-DPython3_EXECUTABLE=' + sys.executable,
+                    '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+                    '-DCMAKE_BUILD_TYPE=Release',
+                    '-DCMAKE_MAKE_PROGRAM=' + NINJA_PATH])
     if IsMac():
         # Target MacOS Mojave (10.14). Keep this in sync with emsdk.py
         command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=10.14')
