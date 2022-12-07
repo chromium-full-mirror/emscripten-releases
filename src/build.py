@@ -42,7 +42,7 @@ from urllib.request import urlopen, URLError
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
-NINJA_PATH = os.path.join(ROOT_DIR, 'third_party', 'ninja', 'ninja')
+NINJA_DIR = os.path.join(ROOT_DIR, 'third_party', 'ninja')
 JSVU_OUT_DIR = os.path.expanduser(os.path.join('~', '.jsvu'))
 # Python executable that will be used by emscripten subprocesses.
 # For now we just use the running executable, but in the future we could use
@@ -564,8 +564,7 @@ def CMakeCommandBase():
     # Python's location could change, so always update CMake's cache
     command.extend(['-DPython3_EXECUTABLE=' + sys.executable,
                     '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-                    '-DCMAKE_BUILD_TYPE=Release',
-                    '-DCMAKE_MAKE_PROGRAM=' + NINJA_PATH])
+                    '-DCMAKE_BUILD_TYPE=Release'])
     if IsMac():
         # Target MacOS Mojave (10.14). Keep this in sync with emsdk.py
         command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=10.14')
@@ -754,9 +753,9 @@ def LLVM(build_dir, mac_cross=False):
             shutil.copy(dylib, os.path.join(build_dir, 'lib'))
 
     jobs = host_toolchains.NinjaJobs()
-    proc.check_call([NINJA_PATH, '-v', ninja_targets[0]] + jobs,
+    proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
                     cwd=build_dir, env=cc_env)
-    proc.check_call([NINJA_PATH, ninja_targets[1]] + jobs,
+    proc.check_call(['ninja', ninja_targets[1]] + jobs,
                     cwd=build_dir, env=cc_env)
 
     CopyLLVMTools(build_dir)
@@ -784,7 +783,7 @@ def LLVM(build_dir, mac_cross=False):
 def LLVMTestDepends():
     buildbot.Step('LLVM Test Dependencies')
     build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
-    proc.check_call([NINJA_PATH, '-v', 'test-depends'] +
+    proc.check_call(['ninja', '-v', 'test-depends'] +
                     host_toolchains.NinjaJobs(),
                     cwd=build_dir,
                     env=BuildEnv(build_dir, bin_subdir=True))
@@ -806,7 +805,7 @@ def TestLLVMRegression():
 
     try:
         buildbot.Step('LLVM regression tests')
-        RunWithUnixUtils([NINJA_PATH, 'check-all'], cwd=build_dir, env=cc_env)
+        RunWithUnixUtils(['ninja', 'check-all'], cwd=build_dir, env=cc_env)
     except proc.CalledProcessError:
         buildbot.FailUnless(lambda: IsWindows())
 
@@ -895,9 +894,9 @@ def LibCXX(build_dir, mac_cross=False):
     if IsMac():
         cmd.append('-DLIBCXX_USE_COMPILER_RT=ON')
     proc.check_call(cmd, cwd=build_dir)
-    proc.check_call([NINJA_PATH, '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
+    proc.check_call(['ninja', '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir)
-    proc.check_call([NINJA_PATH, 'install-cxx', 'install-cxxabi'], cwd=build_dir)
+    proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
 
 
 def Binaryen(build_dir, mac_cross=False):
@@ -914,9 +913,9 @@ def Binaryen(build_dir, mac_cross=False):
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
 
     proc.check_call(cmake_command, cwd=build_dir, env=cc_env)
-    proc.check_call([NINJA_PATH, '-v'] + host_toolchains.NinjaJobs(),
+    proc.check_call(['ninja', '-v'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir, env=cc_env)
-    proc.check_call([NINJA_PATH, 'install'], cwd=build_dir, env=cc_env)
+    proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
 
 
 def InstallEmscripten():
@@ -1244,7 +1243,7 @@ def TestLLVMTestSuite():
     ]
 
     proc.check_call(command, cwd=outdir)
-    proc.check_call([NINJA_PATH, '-v'], cwd=outdir)
+    proc.check_call(['ninja', '-v'], cwd=outdir)
     results_file = 'results.json'
     lit = GetBuildDir('llvm-out', 'bin', 'llvm-lit')
     proc.call([lit, '-v', '-o', results_file, '.'], cwd=outdir)
@@ -1386,6 +1385,10 @@ def run(sync_targets, build_targets, test_targets):
 
     # Add prebuilt cmake to PATH so any subprocesses use a consistent cmake.
     AddToPath(os.path.dirname(PrebuiltCMakeBin()))
+
+    # Add ninja to the PATH (needed for both cmake and for running emscripten
+    # tests).
+    AddToPath(NINJA_DIR)
 
     # `npm` uses whatever `node` is in `PATH`. To make sure it uses the
     # Node.js version we want, we prepend the node bin dir to `PATH`.
