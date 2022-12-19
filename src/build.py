@@ -118,7 +118,7 @@ def WindowsFSEscape(path):
 
 # Use prebuilt Node.js because the buildbots don't have node preinstalled
 # Keep in sync with node version used in emsdk.
-NODE_VERSION = '14.15.5'
+NODE_VERSION = '14.18.2'
 NODE_BASE_NAME = 'node-v' + NODE_VERSION + '-'
 
 
