@@ -948,6 +948,8 @@ def InstallEmscripten():
     elif IsLinux() and platform.machine() == 'x86_64':
         native = 'google-closure-compiler-linux'
     if native:
+        # Keep this in sync with package.json
+        native += '@20220502.0.0'
         proc.check_call(['npm', 'install', '--production', '--no-optional', native],
                         cwd=em_install_dir)
 
