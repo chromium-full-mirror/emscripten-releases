@@ -8,6 +8,7 @@ llvm-test-suite
 jre-*
 node-*
 cmake-*
+sysroot_debian_stretch_amd64
 
 # Build directory for buildbots
 build
