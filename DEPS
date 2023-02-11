@@ -65,6 +65,12 @@ hooks = [
     'action': ['git', '-C', 'emscripten-releases/binaryen',
                'submodule', 'update', '--init'],
   },
+  {
+    'name': 'emscripten_submodule_init',
+    'pattern': '.',
+    'action': ['git', '-C', 'emscripten-releases/emscripten',
+               'submodule', 'update', '--init'],
+  },
 ]
 
 recursedeps = [
