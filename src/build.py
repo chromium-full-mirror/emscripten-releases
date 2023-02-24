@@ -1196,8 +1196,9 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     test_env = os.environ.copy()
     test_env['EMTEST_SKIP_V8'] = '1'
     # Our bots don't currently have a recent enough version of node installed
-    # to run wasm64 or wasm EH tests.
+    # to run wasm64, wasm EH, or simd tests.
     test_env['EMTEST_SKIP_WASM64'] = '1'
+    test_env['EMTEST_SKIP_SIMD'] = '1'
     test_env['EMTEST_SKIP_EH'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     if buildbot.IsBot():
