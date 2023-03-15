@@ -1200,6 +1200,7 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     test_env['EMTEST_SKIP_WASM64'] = '1'
     test_env['EMTEST_SKIP_SIMD'] = '1'
     test_env['EMTEST_SKIP_EH'] = '1'
+    test_env['EMTEST_SKIP_SCONS'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     if buildbot.IsBot():
         if IsWindows():
