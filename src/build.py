@@ -1181,7 +1181,7 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     if not os.path.exists(installed_tests):
         src_dir = GetSrcDir('emscripten', 'test', 'third_party')
         print('Copying directory %s to %s' % (src_dir, em_install_dir))
-        shutil.copytree(src_dir, installed_tests)
+        shutil.copytree(src_dir, installed_tests, symlinks=True)
 
     # Ideally we would put this inside the above block/condition but there
     # is a bug on win32 that is currently causing 'test/third_party' to
