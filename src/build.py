@@ -700,6 +700,7 @@ def LLVM(build_dir, mac_cross=False):
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
         '-DLLVM_USE_CRT_RELEASE=MT',
         '-DLLVM_USE_CRT_DEBUG=MTd',
+        '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
