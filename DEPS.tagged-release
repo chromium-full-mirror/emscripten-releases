@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+
 vars = {
   'binaryen_url': 'https://chromium.googlesource.com/external/github.com/WebAssembly/binaryen',
   'emscripten_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten',
@@ -15,19 +16,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'd7d17c925af6ee1fd78f39d3fbf2cb22de9e74eb',
+  'binaryen_revision': '26ad3ffc326d54f893eee3f1d520b8f4c1cbfe11',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '36f871819b566281d160470a1ec4515f379e9f77',
+  'emscripten_revision': '5c27e79dd0a9c4e27ef2326841698cdd4f6b5784',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'c672c3fe05adbb590abc99da39143b55ad510538',
+  'llvm_project_revision': '2922e7cd9334797c24a317d41275f1258ef9ddd3',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'e90d929e5eec0bfe83d485714f97640455f230ea',
+  'v8_revision': 'db1e90d0a7d1470b6bc70bd6623dd6e23f2f76f8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
