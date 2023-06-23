@@ -13,7 +13,6 @@ SingleSource/Regression/C++/EH/Regression-C++-simple_throw.js.test
 SingleSource/Regression/C++/EH/Regression-C++-throw_rethrow_test.js.test
 
 # All of these are currently untriaged.
-SingleSource/Benchmarks/Misc-C++-EH/spirit.js.test
 SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.js.test
 SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.js.test
 SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.js.test
@@ -44,6 +43,3 @@ SingleSource/Benchmarks/Shootout-C++/Shootout-C++-ackermann.js.test
 SingleSource/Regression/C++/EH/Regression-C++-exception_spec_test.js.test
 SingleSource/Regression/C++/Regression-C++-BuiltinTypeInfo.js.test
 SingleSource/Regression/C/Regression-C-2003-05-23-TransparentUnion.js.test
-SingleSource/UnitTests/C++11/stdthreadbug.js.test
-SingleSource/UnitTests/Threads/2010-12-08-tls.js.test
-SingleSource/UnitTests/Threads/tls.js.test
