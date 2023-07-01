@@ -55,6 +55,8 @@ RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
 CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 
+EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-releases-builds/deps/'
+
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
@@ -124,14 +126,11 @@ NODE_BASE_NAME = 'node-v' + NODE_VERSION + '-'
 
 def NodePlatformName():
     if IsMac():
-        return 'darwin-x64'
+        return 'darwin-arm64' if IsArm64() else 'darwin-x64'
     elif IsWindows():
         return 'win-x64'
     elif IsLinux():
-        if IsArm64():
-            return 'linux-arm64'
-        else:
-            return 'linux-x64'
+        return 'linux-arm64' if IsArm64() else 'linux-x64'
 
 
 def NodeBinDir():
@@ -429,7 +428,7 @@ def SyncPrebuiltNodeJS(name, src_dir):
     }[sys.platform]
     out_dir = GetPrebuilt(NODE_BASE_NAME + NodePlatformName())
     tarball = NODE_BASE_NAME + NodePlatformName() + '.' + extension
-    node_url = WASM_STORAGE_BASE + tarball
+    node_url = EMSDK_STORAGE_BASE + tarball
     return SyncArchive(out_dir, name, node_url)
 
 
