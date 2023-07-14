@@ -60,7 +60,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 43
+CLOBBER_BUILD_TAG = 44
 
 V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
@@ -697,8 +697,6 @@ def LLVM(build_dir, mac_cross=False):
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
-        '-DLLVM_USE_CRT_RELEASE=MT',
-        '-DLLVM_USE_CRT_DEBUG=MTd',
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
