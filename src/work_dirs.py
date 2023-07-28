@@ -52,3 +52,16 @@ GetInstall, SetInstall = MakeGetterSetter('install', DEFAULT_INSTALL_DIR)
 
 def GetAll():
     return [GetSync(), GetBuild(), GetTest(), GetInstall()]
+
+
+def GetExecRoot():
+    '''Returns a base path that includes all of sync build, v8, and install paths.
+
+    The path should include all inputs and outputs used for the execution of the build actions.
+    '''
+    paths = [
+        os.path.abspath(x)
+        for x in [GetSync(), GetBuild(),
+                  GetV8(), GetInstall()]
+    ]
+    return os.path.commonpath(paths)

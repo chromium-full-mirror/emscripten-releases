@@ -114,13 +114,61 @@ def UsingGoma():
     return 'GOMA_DIR' in os.environ
 
 
+def UsingReclient():
+    return 'USE_RECLIENT' in os.environ
+
+
+def _GetReclientCfgBase():
+    return os.path.join(work_dirs.GetV8(), 'buildtools', 'reclient_cfgs')
+
+
+def _ParseConfigLine(line):
+    line = line.strip()
+    if not len(line) or line.startswith('#'):
+        return None
+
+    parts = line.split('=', 1)
+    parts[0].lstrip('-')
+    return (parts[0], True if len(parts) == 1 else parts[1])
+
+
+def SetReclientEnv(host_platform):
+    os.environ['PLATFORM'] = host_platform
+    exec_root = work_dirs.GetExecRoot()
+    os.environ['RBE_exec_root'] = exec_root
+    # Reclient's canonicalize working_dir feature doesn't work with CMake's absolute paths.
+    os.environ['RBE_canonicalize_working_dir'] = 'False'
+
+    rewrapper_cfg = os.path.join(_GetReclientCfgBase(),
+                                 'chromium-browser-clang',
+                                 f'rewrapper_{host_platform}.cfg')
+    if not os.path.exists(rewrapper_cfg):
+        return
+
+    rbe_platform = ''
+    with open(rewrapper_cfg) as f:
+        for line in f.readlines():
+            flag = _ParseConfigLine(line)
+            if flag and flag[0] == 'platform':
+                rbe_platform = flag[1]
+                break
+    if not rbe_platform or 'InputRootAbsolutePath' in rbe_platform:
+        return
+
+    os.environ[
+        'RBE_platform'] = f'{rbe_platform},InputRootAbsolutePath={exec_root}'
+
+
 def GomaDir():
     return os.environ['GOMA_DIR']
 
 
-def CMakeLauncherFlags():
+def CMakeLauncherFlags(host_platform):
     flags = []
-    if UsingGoma():
+    # TODO: add Windows support
+    if UsingReclient() and host_platform != 'windows':
+        compiler_launcher = os.path.join(work_dirs.SCRIPT_DIR, 'rewrapper.sh')
+    elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:
         try:

@@ -110,6 +110,14 @@ def IsMac():
     return sys.platform == 'darwin'
 
 
+def GetHostPlatform():
+    if IsWindows():
+        return 'windows'
+    if IsMac():
+        return 'mac'
+    return 'linux'
+
+
 def Executable(name, extension='.exe'):
     return name + extension if IsWindows() else name
 
@@ -611,7 +619,7 @@ def CMakeCommandNative(args, build_dir, mac_cross=False):
     if host_toolchains.ShouldForceHostClang():
         # Goma doesn't have the "default" SDK compilers in its cache, so only
         # use Goma when using our prebuilt Clang.
-        command.extend(host_toolchains.CMakeLauncherFlags())
+        command.extend(host_toolchains.CMakeLauncherFlags(GetHostPlatform()))
     command.extend(args)
     # On Windows, CMake chokes on paths containing backslashes that come from
     # the command line. Probably they just need to be escaped, but using '/'
@@ -652,6 +660,8 @@ def CopyLLVMTools(build_dir, prefix=''):
 
 def BuildEnv(build_dir, bin_subdir=False,
              runtime='Release'):
+    if host_toolchains.UsingReclient():
+        host_toolchains.SetReclientEnv(GetHostPlatform())
     if IsMac():
         # We need a ranlib that understands bitcode, but llvm-ranlib is not
         # included in Chrome's packaging. But ranlib is just ar by another name
