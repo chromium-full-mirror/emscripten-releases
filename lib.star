@@ -10,6 +10,11 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         "rpc_extra_params": "?prod",
         "use_luci_auth": True,
     }
+    reclient_props = {
+        "instance": "rbe-chromium-trusted" if bucket == "ci" else "rbe-chromium-untrusted",
+        "metrics_project": "chromium-reclient-metrics",
+        "scandeps_server": True,
+    }
     if os.startswith("Mac"):
         goma_props.pop("enable_ats")
         caches = [
@@ -20,6 +25,8 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         ]
 
     props = {"$build/goma": goma_props}
+    if bucket == "ci" and not os.lower().startswith("windows"):
+        props.update({"$build/reclient": reclient_props})
     luci.builder(
         name = name,
         bucket = bucket,
