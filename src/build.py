@@ -1209,6 +1209,10 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     test_env['EMTEST_SKIP_EH'] = '1'
     test_env['EMTEST_SKIP_JSPI'] = '1'
     test_env['EMTEST_SKIP_NODE_CANARY'] = '1'
+    # Don't run known flaky tests on the emscripten-releases waterfall.  This
+    # avoid the rollers failing due to a flaky test.  We continue to run these
+    # on the github CI.
+    test_env['EMTEST_SKIP_FLAKY'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     if buildbot.IsBot():
         if IsWindows():
