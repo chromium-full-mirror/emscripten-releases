@@ -25,7 +25,7 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         ]
 
     props = {"$build/goma": goma_props}
-    if bucket == "ci" and not os.lower().startswith("windows"):
+    if not os.lower().startswith("windows"):
         props.update({"$build/reclient": reclient_props})
     luci.builder(
         name = name,
