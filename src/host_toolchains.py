@@ -118,11 +118,19 @@ def UsingReclient():
     return 'USE_RECLIENT' in os.environ
 
 
-def _GetReclientCfgBase():
-    return os.path.join(work_dirs.GetV8(), 'buildtools', 'reclient_cfgs')
+def ReclientDir():
+    return os.path.join(work_dirs.GetV8(), 'buildtools', 'reclient')
 
 
-def _ParseConfigLine(line):
+def RewrapperCfg(platform):
+    return os.path.join(work_dirs.GetV8(),
+                        'buildtools',
+                        'reclient_cfgs',
+                        'chromium-browser-clang',
+                        f'rewrapper_{platform}.cfg')
+
+
+def ParseConfigLine(line):
     line = line.strip()
     if not len(line) or line.startswith('#'):
         return None
@@ -133,22 +141,20 @@ def _ParseConfigLine(line):
 
 
 def SetReclientEnv(host_platform):
-    os.environ['PLATFORM'] = host_platform
     exec_root = work_dirs.GetExecRoot()
     os.environ['RBE_exec_root'] = exec_root
     # Reclient's canonicalize working_dir feature doesn't work with CMake's absolute paths.
     os.environ['RBE_canonicalize_working_dir'] = 'False'
+    os.environ['RBE_env_var_allowlist'] = 'INCLUDE,LIB,LIBPATH'
 
-    rewrapper_cfg = os.path.join(_GetReclientCfgBase(),
-                                 'chromium-browser-clang',
-                                 f'rewrapper_{host_platform}.cfg')
+    rewrapper_cfg = RewrapperCfg(host_platform)
     if not os.path.exists(rewrapper_cfg):
         return
 
     rbe_platform = ''
     with open(rewrapper_cfg) as f:
         for line in f.readlines():
-            flag = _ParseConfigLine(line)
+            flag = ParseConfigLine(line)
             if flag and flag[0] == 'platform':
                 rbe_platform = flag[1]
                 break
@@ -165,9 +171,10 @@ def GomaDir():
 
 def CMakeLauncherFlags(host_platform):
     flags = []
-    # TODO: add Windows support
-    if UsingReclient() and host_platform != 'windows':
-        compiler_launcher = os.path.join(work_dirs.SCRIPT_DIR, 'rewrapper.sh')
+    if UsingReclient():
+        compiler_launcher = ';'.join([
+            os.path.join(ReclientDir(), 'rewrapper'),
+            f'-cfg={RewrapperCfg(host_platform)}'])
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:
