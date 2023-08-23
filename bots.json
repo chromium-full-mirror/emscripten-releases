@@ -187,6 +187,10 @@
         "command": ["src/build.py", "--test-include=llvmtest"]
       },
       {
+        "name": "Emscripten testsuite (>2GB)",
+        "command": ["src/build.py", "--test-include=emtest", "--test-param=core_2gb"]
+      },
+      {
         "name": "Emscripten testsuite (ASan)",
         "command": ["src/build.py", "--test-include=emtest", "--test-param=asan"]
       },
