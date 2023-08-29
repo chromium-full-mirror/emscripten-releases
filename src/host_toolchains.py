@@ -198,8 +198,11 @@ def CMakeLauncherFlags(host_platform):
 
 
 def NinjaJobs():
-    if (UsingGoma() or UsingReclient()) and force_host_clang:
-        return ['-j', '50']
+    if force_host_clang:
+        if UsingGoma():
+            return ['-j', '50']
+        elif UsingReclient():
+            return ['-j', '150']
     return []
 
 
