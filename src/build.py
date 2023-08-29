@@ -580,16 +580,25 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, mac_cross=False):
+def CMakeCommandNative(args, build_dir, mac_cross=False, filter_out_stdlib=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
-    if UseLocalLibCXX():
+    # https://blog.llvm.org/2019/11/deterministic-builds-with-clang-and-lld.html:
+    # Pass -no-canonical-prefixes to make clang use relative paths to refer to
+    # compiler internal headers.
+    cflags = '-no-canonical-prefixes'
+    cxxflags = '-no-canonical-prefixes'
+    if UseLocalLibCXX() and not filter_out_stdlib:
         inc = GetInstallDir('include', 'c++', 'v1')
-        command.append(f'-DCMAKE_CXX_FLAGS=-stdlib++-isystem{inc}')
+        cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
         lib = GetInstallDir('lib')
         command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
         command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
         command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+    # On Windows  C(++) FLAGS are set with C(XX)FLAGS environment variables in BuildEnv function
+    if not IsWindows():
+        command.append(f'-DCMAKE_C_FLAGS={cflags}')
+        command.append(f'-DCMAKE_CXX_FLAGS={cxxflags}')
 
     if host_toolchains.ShouldUseSysroot():
         if IsLinux():
@@ -617,8 +626,8 @@ def CMakeCommandNative(args, build_dir, mac_cross=False):
     command.extend(MaybeOverrideCMakeCompiler())
 
     if host_toolchains.ShouldForceHostClang():
-        # Goma doesn't have the "default" SDK compilers in its cache, so only
-        # use Goma when using our prebuilt Clang.
+        # Goma and Reclient don't have the "default" SDK compilers in its cache, so only
+        # use them when using our prebuilt Clang.
         command.extend(host_toolchains.CMakeLauncherFlags(GetHostPlatform()))
     command.extend(args)
     # On Windows, CMake chokes on paths containing backslashes that come from
@@ -894,9 +903,10 @@ def LibCXX(build_dir, mac_cross=False):
          f'-DLIBCXX_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
-         ], build_dir, mac_cross=mac_cross)
-    # Filter out the stdlib flags because we are bootstrapping stdlib
-    cmd = [x for x in cmd if not 'stdlib' in x]
+         ], build_dir,
+         mac_cross=mac_cross,
+         # Filter out the stdlib flags because we are bootstrapping stdlib
+         filter_out_stdlib=True)
     if IsMac():
         cmd.append('-DLIBCXX_USE_COMPILER_RT=ON')
     proc.check_call(cmd, cwd=build_dir)
