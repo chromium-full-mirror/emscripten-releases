@@ -264,13 +264,19 @@ def Archive(directory, print_content=False):
 def Tar(directory, print_content=False):
     assert os.path.isdir(directory), 'Must tar a directory to avoid tarbombs'
     up_directory, basename = os.path.split(directory)
-    tar = os.path.join(up_directory, basename + '.tbz2')
+    tar = os.path.join(up_directory, basename + '.tar.xz')
     Remove(tar)
     if print_content:
         proc.check_call(
             ['find', basename, '-type', 'f', '-exec', 'ls', '-lhS', '{}', '+'],
             cwd=up_directory)
-    proc.check_call(['tar', 'cjf', tar, basename], cwd=up_directory)
+    # Where possible use `--use-compress-program` rather than just `J` so that
+    # we can pass extra arguments to the xz compressor.  In this case `-T0`
+    # tell is to use all the available cores during compression.
+    if IsMac():
+      proc.check_call(['tar', 'cJf', tar, basename], cwd=up_directory)
+    else:
+      proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar, basename], cwd=up_directory)
     proc.check_call(['ls', '-lh', tar], cwd=up_directory)
     return tar
 
@@ -1043,7 +1049,7 @@ def ArchiveBinaries(mac_cross=False):
 
     # Also make a local copy for running tests.
     if IsMac() and not mac_cross:
-        copy = os.path.join(os.path.dirname(archive), 'test-install.tbz2')
+        copy = os.path.join(os.path.dirname(archive), 'test-install.tar.xz')
         print(f'Copying {archive} to {copy}')
         shutil.copy(archive, copy)
     if not buildbot.IsUploadingBot():
@@ -1054,8 +1060,8 @@ def ArchiveBinaries(mac_cross=False):
 def ExtractArchive():
     Remove(GetInstallDir())
     upper_dir = os.path.dirname(GetInstallDir())
-    proc.check_call(['tar', '-xvjf',
-        os.path.join(upper_dir, 'test-install.tbz2')],
+    proc.check_call(['tar', '-xvf',
+        os.path.join(upper_dir, 'test-install.tar.xz')],
         cwd=upper_dir)
 
 
