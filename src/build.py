@@ -292,23 +292,22 @@ def Zip(directory, print_content=False):
     return archive
 
 
-def UploadFile(local_name, remote_name):
-    """Archive the file with the given name, and with the LLVM git hash."""
-    if not buildbot.IsUploadingBot():
-        return
-    buildbot.Link(
-        'download',
-        cloud.Upload(
-            local_name, '%s/%s/%s' %
-            (buildbot.BuilderName(), buildbot.BuildNumber(), remote_name)))
-
-
 def UploadArchive(name, archive):
     """Archive the tar/zip file with the given name and the build number."""
     if not buildbot.IsUploadingBot():
-        return
-    extension = os.path.splitext(archive)[1]
-    UploadFile(archive, 'wasm-%s%s' % (name, extension))
+        pass#return XXX DO NOT SUBMIT
+
+    def extensions(path):
+        """Return all filename extensions (e.g. .tar.xz or .tgz)"""
+        root, ext = os.path.splitext(path)
+        return ext if root == path else extensions(root) + ext
+
+    remote_name = 'name' + extensions(archive)
+    buildbot.Link(
+        'download',
+        cloud.Upload(
+            archive, '%s/%s/%s' %
+            (buildbot.BuilderName(), buildbot.BuildNumber(), remote_name)))
 
 
 def FilterTargets(to_run, all_targets):
@@ -1048,7 +1047,7 @@ def ArchiveBinaries(mac_cross=False):
         shutil.copy(archive, copy)
     if not buildbot.IsUploadingBot():
         return
-    UploadArchive(filename, archive)
+    UploadArchive('wasm-binaries', archive)
 
 
 def ExtractArchive():
@@ -1057,33 +1056,6 @@ def ExtractArchive():
     proc.check_call(['tar', '-xvjf',
         os.path.join(upper_dir, 'test-install.tbz2')],
         cwd=upper_dir)
-
-
-def DebianPackage():
-    if not (IsLinux() and buildbot.IsBot()):
-        return
-
-    buildbot.Step('Debian package')
-    try:
-        if buildbot.BuildNumber():
-            message = ('Automatic build %s produced on http://wasm-stat.us' %
-                       buildbot.BuildNumber())
-            version = '0.1.' + buildbot.BuildNumber()
-            proc.check_call(['dch', '-D', 'unstable', '-v', version, message],
-                            cwd=ROOT_DIR)
-        proc.check_call(['debuild', '--no-lintian', '-i', '-us', '-uc', '-b'],
-                        cwd=ROOT_DIR)
-        if buildbot.BuildNumber():
-            proc.check_call(['git', 'checkout', 'debian/changelog'],
-                            cwd=ROOT_DIR)
-
-            debfile = os.path.join(os.path.dirname(ROOT_DIR),
-                                   'wasm-toolchain_%s_amd64.deb' % version)
-            UploadFile(debfile, os.path.basename(debfile))
-    except proc.CalledProcessError:
-        # Note the failure but allow the build to continue.
-        buildbot.Fail()
-        return
 
 
 class Build(object):
@@ -1165,7 +1137,6 @@ def AllBuilds():
         Build('archive', ArchiveBinaries),
         Build('archive-cross', ArchiveBinaries, mac_cross=True),
         Build('extract-archive', ExtractArchive),
-        Build('debian', DebianPackage),
     ]
 
 
