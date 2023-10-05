@@ -48,7 +48,7 @@ NINJA_DIR = os.path.join(ROOT_DIR, 'third_party', 'ninja')
 # a different one (for the python binary in emsdk).
 EMSDK_PYTHON = sys.executable
 
-EMSCRIPTEN_CONFIG_UPSTREAM = 'emscripten_config_upstream'
+EMSCRIPTEN_CONFIG = 'emscripten_config'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
 WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
@@ -982,7 +982,7 @@ def Emscripten():
 
     # Set up the emscripten config and compile the libraries
     buildbot.Step('emscripten')
-    config = GetInstallDir(EMSCRIPTEN_CONFIG_UPSTREAM)
+    config = GetInstallDir(EMSCRIPTEN_CONFIG)
     print('Config file: ', config)
     src_config = os.path.join(SCRIPT_DIR, os.path.basename(config))
     WriteEmscriptenConfig(src_config, config)
@@ -1152,7 +1152,7 @@ class Test(object):
         self.runnable()
 
 
-def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
+def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     buildbot.Step('Execute emscripten testsuite (%s)' % name)
     Mkdir(outdir)
 
@@ -1175,10 +1175,10 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
     proc.check_call(['npm', 'ci', '--no-optional'], cwd=em_install_dir)
 
     cmd = [
-        Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat'),
-        '--em-config', config
+        Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat')
     ] + tests
     test_env = os.environ.copy()
+    test_env['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     test_env['EMTEST_SKIP_V8'] = '1'
     test_env['EMTEST_SKIP_SCONS'] = '1'
     # Our bots don't currently have a recent enough version of node installed
@@ -1207,7 +1207,6 @@ def ExecuteEmscriptenTestSuite(name, tests, config, outdir, warn_only=False):
 def TestEmtest():
     tests = options.test_params if options.test_params else ['wasm2', 'other']
     ExecuteEmscriptenTestSuite('emwasm', tests,
-                               GetInstallDir(EMSCRIPTEN_CONFIG_UPSTREAM),
                                os.path.join(work_dirs.GetTest(), 'emtest-out'))
 
 
@@ -1226,7 +1225,7 @@ def TestLLVMTestSuite():
                     cwd=outdir)
     # This has to be in the environment and not TEST_SUITE_EXTRA_C_FLAGS
     # because CMake doesn't append the flags to the try-compiles.
-    os.environ['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG_UPSTREAM)
+    os.environ['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     command = [GetInstallDir('emscripten', 'emcmake')] + CMakeCommandBase() + [
         GetSrcDir('llvm-test-suite'), '-DCMAKE_C_COMPILER=' +
         GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
