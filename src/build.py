@@ -43,7 +43,6 @@ from urllib.request import urlopen, URLError
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 NINJA_DIR = os.path.join(ROOT_DIR, 'third_party', 'ninja')
-JSVU_OUT_DIR = os.path.expanduser(os.path.join('~', '.jsvu'))
 # Python executable that will be used by emscripten subprocesses.
 # For now we just use the running executable, but in the future we could use
 # a different one (for the python binary in emsdk).
@@ -61,8 +60,6 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
 CLOBBER_BUILD_TAG = 47
-
-V8_BUILD_SUBDIR = os.path.join('out.gn', 'x64.release')
 
 LINUX_SYSROOT = 'sysroot_debian_stretch_amd64'
 LINUX_SYSROOT_URL = WASM_STORAGE_BASE + LINUX_SYSROOT + '_v2.tar.xz'
@@ -517,9 +514,6 @@ def Clobber():
     for work_dir in dirs:
         RemoveIfBot(work_dir)
         Mkdir(work_dir)
-    # Also clobber v8
-    v8_dir = os.path.join(work_dirs.GetV8(), V8_BUILD_SUBDIR)
-    Remove(v8_dir)
     with open(clobber_file, 'w') as f:
         f.write('%s\n' % CLOBBER_BUILD_TAG)
 

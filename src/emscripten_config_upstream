@@ -11,6 +11,4 @@ if not os.path.isfile(prebuilt_node):
    prebuilt_node = None
 NODE_JS = os.path.expanduser(os.getenv('NODE') or prebuilt_node or '/usr/bin/nodejs')
 
-# For testing only
-V8_ENGINE = os.path.join(WASM_INSTALL, 'bin', 'd8')
 JS_ENGINES = [NODE_JS]
