@@ -617,8 +617,6 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, filter_out_stdlib=False
                 os.symlink(xcode_sdk_path, symlink_path)
             command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
             command.append(f'-DCMAKE_SYSROOT={symlink_path}')
-        else:
-            assert(False, 'sysroot not supported on windows')
 
     if mac_cross:
         command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
@@ -1356,7 +1354,7 @@ def ParseArgs():
         help="Don't force chrome clang as the host compiler")
     parser.add_argument(
         '--no-sysroot', dest='use_sysroot', action='store_false',
-        help="Don't use the V8 sysroot to build on Linux")
+        help="Don't use the V8 sysroot to build on Linux/macOS")
     parser.add_argument(
         '--clobber', dest='clobber', default=False, action='store_true',
         help="Delete working directories, forcing a clean build")
