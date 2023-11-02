@@ -1158,16 +1158,19 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
 
     # Before we can run the tests we prepare the installed emscripten
     # directory by copying of some test data which is otherwise excluded by
-    # emscripten install script (tools/install.py).
+    # emscripten install script (tools/install.py).  Same for tools/maint.
+    em_install_dir = GetInstallDir('emscripten')
+
+    for dirname in (os.path.join('test', 'third_party'),
+                    os.path.join('tools', 'maint')):
+        installed_dir = os.path.join(em_install_dir, dirname)
+        if not os.path.exists(installed_dir):
+            src_dir = GetSrcDir('emscripten', dirname)
+            print('Copying directory %s to %s' % (src_dir, em_install_dir))
+            shutil.copytree(src_dir, installed_dir, symlinks=True)
+
     # We also need to run npm to get the devDependencies needed by the
     # test suite.
-    em_install_dir = GetInstallDir('emscripten')
-    installed_tests = os.path.join(em_install_dir, 'test', 'third_party')
-    if not os.path.exists(installed_tests):
-        src_dir = GetSrcDir('emscripten', 'test', 'third_party')
-        print('Copying directory %s to %s' % (src_dir, em_install_dir))
-        shutil.copytree(src_dir, installed_tests, symlinks=True)
-
     # Ideally we would put this inside the above block/condition but there
     # is a bug on win32 that is currently causing 'test/third_party' to
     # be installed by install.py.
