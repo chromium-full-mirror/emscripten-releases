@@ -115,7 +115,7 @@ def UsingGoma():
 
 
 def UsingReclient():
-    return 'USE_RECLIENT' in os.environ
+    return 'USE_RECLIENT' in os.environ and not sys.platform == 'darwin'
 
 
 def ReclientDir():
