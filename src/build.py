@@ -642,7 +642,7 @@ def CopyLLVMTools(build_dir, prefix=''):
                           'clang-func-mapping', 'clang-import-test',
                           'clang-linker-wrapper', 'clang-offload-bundler',
                           'clang-offload-packager', 'clang-refactor',
-                          'clang-rename', 'clang-repl', 'clang-scan-deps',
+                          'clang-rename', 'clang-repl',
                           'diagtool', 'git-clang-format', 'hmaptool', 'ld.lld',
                           'ld64.lld', 'ld64.lld.darwinnew', 'ld64.lld.darwinold',
                           'lld-link', 'libclang.dll', 'llvm-cov', 'llvm-ml',
