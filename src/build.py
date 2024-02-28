@@ -631,7 +631,7 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, filter_out_stdlib=False
     # On Windows, CMake chokes on paths containing backslashes that come from
     # the command line. Probably they just need to be escaped, but using '/'
     # instead is easier and works just as well.
-    return [arg.replace('\\', '/') for arg in command]
+    return [WindowsFSEscape(arg) for arg in command]
 
 
 def CopyLLVMTools(build_dir, prefix=''):
