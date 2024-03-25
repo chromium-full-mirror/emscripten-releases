@@ -231,22 +231,6 @@ def CopyBinaryToArchive(binary, prefix=''):
     shutil.copy2(binary, install_bin)
 
 
-def CopyLibraryToArchive(library, prefix=''):
-    """All libraries are archived in the same tar file."""
-    install_lib = GetInstallDir(prefix, 'lib')
-    print('Copying library %s to archive %s' % (library, install_lib))
-    Mkdir(install_lib)
-    shutil.copy2(library, install_lib)
-
-
-def CopyLibraryToSysroot(library):
-    """All libraries are archived in the same tar file."""
-    install_lib = GetInstallDir('sysroot', 'lib', 'wasm32-wasi')
-    print('Copying library %s to archive %s' % (library, install_lib))
-    Mkdir(install_lib)
-    shutil.copy2(library, install_lib)
-
-
 def Archive(directory, print_content=False):
     """Create an archive file from directory."""
     # Use the format "native" to the platform
