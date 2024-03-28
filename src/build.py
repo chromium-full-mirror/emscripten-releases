@@ -714,7 +714,8 @@ def LLVM(build_dir, mac_cross=False):
                    'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm',
                    'llvm-objcopy', 'llvm-objdump', 'llvm-ranlib',
                    'llvm-readobj', 'llvm-size', 'llvm-strings',
-                   'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers']
+                   'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers',
+                   'clang-scan-deps']
         ninja_targets = ('distribution', 'install-distribution')
         cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
                             '-DLLVM_INCLUDE_TESTS=OFF',
