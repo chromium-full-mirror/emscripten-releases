@@ -685,6 +685,7 @@ def LLVM(build_dir, mac_cross=False):
         build_dylib = 'OFF'
     cmake_flags = [
         '-DLLVM_ENABLE_LIBXML2=OFF',
+        '-DLLVM_ENABLE_ZSTD=OFF',
         '-DLLVM_INCLUDE_EXAMPLES=OFF',
         '-DLLVM_BUILD_LLVM_DYLIB=%s' % build_dylib,
         '-DLLVM_LINK_LLVM_DYLIB=%s' % build_dylib,
