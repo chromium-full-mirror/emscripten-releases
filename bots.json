@@ -18,12 +18,32 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten (upstream)",
+        "name": "Build Emscripten",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {
         "name": "Archive Binaries",
         "command": ["src/build.py", "--build-include=archive"]
+      },
+      {
+        "name": "Build libcxx (aarch64)",
+        "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
+      },
+      {
+        "name": "Build Binaryen (aarch64)",
+        "command": ["src/build.py", "--build-include=binaryen-cross", "--use-lto=auto"]
+      },
+      {
+        "name": "Build LLVM (aarch64)",
+        "command": ["src/build.py", "--build-include=llvm-cross", "--use-lto=auto"]
+      },
+      {
+        "name": "Archive Binaries (aarch64)",
+        "command": ["src/build.py", "--build-include=archive-cross"]
+      },
+      {
+        "name": "Extract archive for testing",
+        "command": ["src/build.py", "--build-include=extract-archive"]
       }
     ],
     "test_steps": [
@@ -68,7 +88,7 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten (upstream)",
+        "name": "Build Emscripten",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {
@@ -120,7 +140,7 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten (upstream)",
+        "name": "Build Emscripten",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {

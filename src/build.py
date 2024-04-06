@@ -59,10 +59,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 49
-
-LINUX_SYSROOT = 'sysroot_debian_stretch_amd64'
-LINUX_SYSROOT_URL = WASM_STORAGE_BASE + LINUX_SYSROOT + '_v2.tar.xz'
+CLOBBER_BUILD_TAG = 50
 
 options = None
 
@@ -427,13 +424,19 @@ def SyncPrebuiltNodeJS(name, src_dir):
     return SyncArchive(out_dir, name, node_url)
 
 
-def SyncLinuxSysroot(name, src_dir):
+def LinuxSysroot(arch):
+    distro = 'stretch_amd64_v2' if arch == 'x86_64' else 'bullseye_arm64'
+    return 'sysroot_debian_' + distro
+
+
+def SyncLinuxSysroots(name, src_dir):
     if not (IsLinux() and host_toolchains.ShouldUseSysroot()):
         return
-    SyncArchive(GetPrebuilt(LINUX_SYSROOT),
-                name,
-                LINUX_SYSROOT_URL,
-                create_out_dir=True)
+    for arch in ('x86_64', 'arm64'):
+        SyncArchive(GetPrebuilt(LinuxSysroot(arch)),
+                    name,
+                    WASM_STORAGE_BASE + LinuxSysroot(arch) + '.tar.xz',
+                    create_out_dir=True)
 
 
 def SyncReleaseDeps(name, src_dir):
@@ -452,12 +455,12 @@ def AllSources():
     return [
         Source('host-toolchain', work_dirs.GetV8(),
                custom_sync=SyncToolchain),
-        Source('cmake', '', # The source arg is ignored.
+        Source('cmake', '',  # The source arg is ignored.
                custom_sync=SyncPrebuiltCMake),
         Source('nodejs', '',  # The source arg is ignored.
                custom_sync=SyncPrebuiltNodeJS),
-        Source('sysroot', '', # The source arg is ignored.
-               custom_sync=SyncLinuxSysroot),
+        Source('sysroot', '',  # The source arg is ignored.
+               custom_sync=SyncLinuxSysroots),
         Source('deps', '', custom_sync=SyncReleaseDeps)
     ]
 
@@ -564,29 +567,25 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, mac_cross=False, filter_out_stdlib=False):
+def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
+
     # https://blog.llvm.org/2019/11/deterministic-builds-with-clang-and-lld.html:
     # Pass -no-canonical-prefixes to make clang use relative paths to refer to
     # compiler internal headers.
     cflags = '-no-canonical-prefixes'
     cxxflags = '-no-canonical-prefixes'
-    if UseLocalLibCXX() and not filter_out_stdlib:
-        inc = GetInstallDir('include', 'c++', 'v1')
-        cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
-        lib = GetInstallDir('lib')
-        command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-        command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-        command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-    # On Windows  C(++) FLAGS are set with C(XX)FLAGS environment variables in BuildEnv function
-    if not IsWindows():
-        command.append(f'-DCMAKE_C_FLAGS={cflags}')
-        command.append(f'-DCMAKE_CXX_FLAGS={cxxflags}')
 
     if host_toolchains.ShouldUseSysroot():
         if IsLinux():
-            command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LINUX_SYSROOT))
+            arch = 'aarch64' if is_cross else platform.machine()
+            command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LinuxSysroot(arch)))
+            if is_cross:
+                command.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
+                command.append('-DCMAKE_SYSTEM_NAME=Linux')
+                cflags += ' --target=aarch64-linux-gnu'
+                cxxflags += ' --target=aarch64-linux-gnu'
         elif IsMac():
             # Get XCode SDK path.
             xcode_sdk_path = proc.check_output(['xcrun',
@@ -602,7 +601,19 @@ def CMakeCommandNative(args, build_dir, mac_cross=False, filter_out_stdlib=False
             command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
             command.append(f'-DCMAKE_SYSROOT={symlink_path}')
 
-    if mac_cross:
+    if UseLocalLibCXX() and not filter_out_stdlib:
+        inc = GetInstallDir('include', 'c++', 'v1')
+        cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
+        lib = GetInstallDir('lib')
+        command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+    # On Windows  C(++) FLAGS are set with C(XX)FLAGS environment variables in BuildEnv function
+    if not IsWindows():
+        command.append(f'-DCMAKE_C_FLAGS={cflags}')
+        command.append(f'-DCMAKE_CXX_FLAGS={cxxflags}')
+
+    if is_cross and IsMac():
         command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
 
     command.extend(MaybeOverrideCMakeCompiler())
@@ -676,7 +687,7 @@ def BuildEnv(build_dir, bin_subdir=False,
     return cc_env
 
 
-def LLVM(build_dir, mac_cross=False):
+def LLVM(build_dir, is_cross=False):
     buildbot.Step('LLVM')
     Mkdir(build_dir)
     cc_env = BuildEnv(build_dir, bin_subdir=True)
@@ -727,21 +738,20 @@ def LLVM(build_dir, mac_cross=False):
     else:
         cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
 
-    if mac_cross:
+    if is_cross:
         # Cross builds need a native version of the tablegen tools to
         # run on the build machine. These can be built in a separate
         # "stage 1" build, but since our bots always build the full
         # toolchain as native before they build the cross toolchain,
         # we can just use tablegen from its build dir.
         native_build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
-        lt = os.path.join(native_build_dir, 'bin', 'llvm-tblgen')
-        ct = os.path.join(native_build_dir, 'bin', 'clang-tblgen')
-        cmake_flags.extend(['-DLLVM_TABLEGEN=' + lt, '-DCLANG_TABLEGEN=' + ct])
+        cmake_flags.append('-DLLVM_NATIVE_TOOL_DIR=' +
+                           os.path.join(native_build_dir, 'bin'))
 
-    cmake_cmd =  CMakeCommandNative(
+    cmake_cmd = CMakeCommandNative(
         [GetLLVMSrcDir('llvm')] + cmake_flags,
         build_dir,
-        mac_cross=mac_cross)
+        is_cross=is_cross)
 
     proc.check_call(cmake_cmd, cwd=build_dir, env=cc_env)
 
@@ -775,7 +785,7 @@ def LLVM(build_dir, mac_cross=False):
     # LTO builds clobber their working directories after build to avoid
     # incremental build problems. But we saved native_build_dir for the cross
     # build, so clobber it now.
-    if mac_cross and ShouldUseLTO():
+    if is_cross and ShouldUseLTO():
         RemoveIfBot(native_build_dir)
 
 
@@ -858,7 +868,7 @@ def UseStaticLibCXX():
     return UseLocalLibCXX() and (ShouldUseLTO() or options.link_static)
 
 
-def LibCXX(build_dir, mac_cross=False):
+def LibCXX(build_dir, is_cross=False):
     buildbot.Step('libcxx')
     Mkdir(build_dir)
 
@@ -889,7 +899,7 @@ def LibCXX(build_dir, mac_cross=False):
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
          ], build_dir,
-         mac_cross=mac_cross,
+         is_cross=is_cross,
          # Filter out the stdlib flags because we are bootstrapping stdlib
          filter_out_stdlib=True)
     if IsMac():
@@ -900,14 +910,14 @@ def LibCXX(build_dir, mac_cross=False):
     proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
 
 
-def Binaryen(build_dir, mac_cross=False):
+def Binaryen(build_dir, is_cross=False):
     buildbot.Step('binaryen')
     Mkdir(build_dir)
     # Currently it's a bad idea to do a non-asserts build of Binaryen
     cc_env = BuildEnv(build_dir, bin_subdir=True, runtime='Debug')
 
     cmake_command = CMakeCommandNative(
-        [GetSrcDir('binaryen')],build_dir, mac_cross=mac_cross)
+        [GetSrcDir('binaryen')],build_dir, is_cross=is_cross)
     cmake_command.extend(['-DINSTALL_LIBS=OFF', '-DBUILD_TESTS=OFF'])
     if ShouldUseLTO():
         cmake_command.append('-DBUILD_STATIC_LIB=ON')
@@ -1016,22 +1026,25 @@ def VerifyEmscriptenCrossBuild():
                     raise Exception('Native binary in the cross build')
 
 
-def ArchiveBinaries(mac_cross=False):
+def ArchiveBinaries(is_cross=False):
     buildbot.Step('Archive binaries')
     # Archive everything in the install directory.
     filename = 'wasm-binaries'
-    if mac_cross:
-        assert IsMac() and platform.machine() == 'x86_64'
-        filename += '-arm64'
+    if is_cross:
+        assert platform.machine() == 'x86_64'
+        filename += '-arm64' if IsMac() else '-aarch64'
         VerifyEmscriptenCrossBuild()
     archive = Archive(GetInstallDir(), print_content=buildbot.IsBot())
 
     # Also make a local copy for running tests.
-    if IsMac() and not mac_cross:
+    if (IsMac() or IsLinux()) and not is_cross:
         copy = os.path.join(os.path.dirname(archive), 'test-install.tar.xz')
         print(f'Copying {archive} to {copy}')
         shutil.copy(archive, copy)
 
+    # To save space, Only upload release builds of aarch64-linux
+    if is_cross and IsLinux() and not ShouldUseLTO():
+        return
     UploadArchive(filename, archive)
 
 
@@ -1102,13 +1115,13 @@ def AllBuilds():
                   work_dirs.GetBuild(),'libcxx-out')),
         Build('libcxx-cross', LibCXX,
               incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(),'libcxx-cross-out'), mac_cross=True),
+                  work_dirs.GetBuild(),'libcxx-cross-out'), is_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-out'), clobber_lto=not IsMac()),
         Build('llvm-cross', LLVM,
               incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'llvm-cross-out'), mac_cross=True),
+                  work_dirs.GetBuild(), 'llvm-cross-out'), is_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
         Build('jsvu', Jsvu),
         Build('binaryen', Binaryen,
@@ -1116,11 +1129,11 @@ def AllBuilds():
                   work_dirs.GetBuild(), 'binaryen-out')),
         Build('binaryen-cross', Binaryen,
               incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'binaryen-cross-out'), mac_cross=True),
+                  work_dirs.GetBuild(), 'binaryen-cross-out'), is_cross=True),
         Build('emscripten', Emscripten),
         # Archive
         Build('archive', ArchiveBinaries),
-        Build('archive-cross', ArchiveBinaries, mac_cross=True),
+        Build('archive-cross', ArchiveBinaries, is_cross=True),
         Build('extract-archive', ExtractArchive),
     ]
 
