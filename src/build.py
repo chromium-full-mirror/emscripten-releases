@@ -59,7 +59,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 50
+CLOBBER_BUILD_TAG = 51
 
 options = None
 
@@ -1118,7 +1118,7 @@ def AllBuilds():
                   work_dirs.GetBuild(),'libcxx-cross-out'), is_cross=True),
         Build('llvm', LLVM,
               incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'llvm-out'), clobber_lto=not IsMac()),
+                  work_dirs.GetBuild(), 'llvm-out'), clobber_lto=IsWindows()),
         Build('llvm-cross', LLVM,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-cross-out'), is_cross=True),
