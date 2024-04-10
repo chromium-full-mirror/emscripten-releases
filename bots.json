@@ -39,7 +39,7 @@
       },
       {
         "name": "Archive Binaries (aarch64)",
-        "command": ["src/build.py", "--build-include=archive-cross"]
+        "command": ["src/build.py", "--build-include=archive-cross", "--use-lto=auto"]
       },
       {
         "name": "Extract archive for testing",

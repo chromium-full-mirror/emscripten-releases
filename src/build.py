@@ -1032,7 +1032,7 @@ def ArchiveBinaries(is_cross=False):
     filename = 'wasm-binaries'
     if is_cross:
         assert platform.machine() == 'x86_64'
-        filename += '-arm64' if IsMac() else '-aarch64'
+        filename += '-arm64'
         VerifyEmscriptenCrossBuild()
     archive = Archive(GetInstallDir(), print_content=buildbot.IsBot())
 
