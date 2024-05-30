@@ -183,13 +183,6 @@ def CMakeLauncherFlags(host_platform):
         except:  # noqa
             return flags
 
-        if ShouldForceHostClang():
-            # This flag is only present in clang.
-            flags.extend([
-                '-DCMAKE_%s_FLAGS=-Qunused-arguments' % c
-                for c in ['C', 'CXX']
-            ])
-
     flags.extend([
         '-DCMAKE_%s_COMPILER_LAUNCHER=%s' % (c, compiler_launcher)
         for c in ['C', 'CXX']
