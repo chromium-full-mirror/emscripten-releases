@@ -59,7 +59,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 51
+CLOBBER_BUILD_TAG = 52
 
 options = None
 
@@ -602,6 +602,10 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
                 os.symlink(xcode_sdk_path, symlink_path)
             command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
             command.append(f'-DCMAKE_SYSROOT={symlink_path}')
+            # Use an explicit target triple for reclient to correctly handle cross-compiles
+            arch = 'x86_64' if not is_cross else 'arm64'
+            cflags += f' --target={arch}-apple-darwin'
+            cxxflags += f' --target={arch}-apple-darwin'
 
     if UseLocalLibCXX() and not filter_out_stdlib:
         inc = GetInstallDir('include', 'c++', 'v1')
