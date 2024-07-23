@@ -19,6 +19,7 @@ CLOUD_STORAGE_BASE_URL = 'https://storage.googleapis.com/'
 WATERFALL_CLOUD_STORAGE_PATH = 'wasm-llvm/builds/'
 EMSCRIPTEN_RELEASES_CLOUD_STORAGE_PATH = \
     'webassembly/emscripten-releases-builds/'
+SKIA_PERF_STORAGE_PATH = 'emscripten-perf-public/ingest/'
 
 
 def GetCloudStoragePath():
@@ -33,6 +34,15 @@ def Upload(local, remote):
     if not IsUploadingBot():
         return
     remote = GetCloudStoragePath() + remote
+    proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
+    return CLOUD_STORAGE_BASE_URL + remote
+
+def UploadSkiaPerf(local, remote):
+    """Upload file to Cloud Storage."""
+    if not IsUploadingBot():
+        print('Not an uploading bot, not uploading skia perf results.')
+        return
+    remote =  SKIA_PERF_STORAGE_PATH + remote
     proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
     return CLOUD_STORAGE_BASE_URL + remote
 

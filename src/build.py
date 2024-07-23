@@ -30,6 +30,7 @@ import textwrap
 import time
 import traceback
 import zipfile
+from datetime import datetime
 
 import buildbot
 import cloud
@@ -321,6 +322,8 @@ class Source(object):
         assert self.custom_sync
         self.custom_sync(self.name, self.src_dir)
 
+def GitRevision(cwd = None):
+    return proc.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip()
 
 def RevisionModifiesFile(f):
     """Return True if the file f is modified in the index, working tree, or
@@ -339,7 +342,7 @@ def RevisionModifiesFile(f):
         return True
     # Else find the most recent commit that modified f, and return true if
     # that's the HEAD commit.
-    head_rev = proc.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip()
+    head_rev = GitRevision(cwd)
     last_rev = proc.check_output(
         ['git', 'rev-list', '-n1', 'HEAD', f], cwd=cwd).strip()
     print('Last rev modifying %s is %s, HEAD is %s' % (f, last_rev, head_rev))
@@ -1202,6 +1205,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     # on the github CI.
     test_env['EMTEST_SKIP_FLAKY'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
+    test_env['EMTEST_BENCHMARKERS'] = 'size'
     if buildbot.IsBot():
         if IsWindows():
             test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
@@ -1218,6 +1222,24 @@ def TestEmtest():
     ExecuteEmscriptenTestSuite('emwasm', tests,
                                os.path.join(work_dirs.GetTest(), 'emtest-out'))
 
+def TestSizeBenchmarks():
+    test_dir = GetInstallDir('emscripten')
+    ExecuteEmscriptenTestSuite('emwasm', options.test_params,
+                               os.path.join(work_dirs.GetTest(), 'emtest-out'))
+    stats_filename = os.path.join(test_dir, 'out', 'test', 'stats.json')
+    with open(stats_filename) as results_fd:
+        json_results = json.loads(results_fd.read())
+
+    # Embed the git revision in the file.
+    hash = GitRevision().decode('utf-8')
+    json_results['git_hash'] = hash
+    with open(stats_filename, 'w') as results_fd:
+        results_fd.write(json.dumps(json_results, indent=2) + '\n')
+
+    # Follow the filename format specified at
+    # https://skia.googlesource.com/buildbot/+/refs/heads/main/perf/FORMAT.md#storage
+    remote_filename = datetime.today().strftime('%Y/%m/%d') + '/' + hash + '.json'
+    cloud.UploadSkiaPerf(stats_filename, remote_filename)
 
 def TestLLVMTestSuite():
     buildbot.Step('Execute LLVM TestSuite')
@@ -1292,6 +1314,7 @@ ALL_TESTS = [
     # 'other' tests) and eventually should run everywhere.
     Test('emtest', TestEmtest),
     Test('llvmtest', TestLLVMTestSuite),
+    Test('sizebenchmarks', TestSizeBenchmarks),
 ]
 
 

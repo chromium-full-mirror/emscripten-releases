@@ -233,6 +233,10 @@
       {
         "name": "Emscripten testsuite (ThinLTO)",
         "command": ["src/build.py", "--test-include=emtest", "--test-param=thinltoz"]
+      },
+      {
+        "name": "Emscripten benchmark",
+        "command": ["src/build.py", "--test-include=sizebenchmarks", "--test-param=benchmark.test_primes"]
       }
     ]
   }
