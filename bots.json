@@ -236,7 +236,7 @@
       },
       {
         "name": "Emscripten benchmark",
-        "command": ["src/build.py", "--test-include=sizebenchmarks", "--test-param=benchmark.test_primes"]
+        "command": ["src/build.py", "--test-include=sizebenchmarks", "--test-param=benchmark.test_primes,benchmark.test_zzz_zlib,benchmark.test_zzz_coremark,benchmark.test_zzz_box2d,benchmark.test_zzz_bullet"]
       }
     ]
   }
