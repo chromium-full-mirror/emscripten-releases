@@ -16,19 +16,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'a8066e6618b93ea101e82b64690b9b62d7562609',
+  'binaryen_revision': '2d99e10c03e619b01688268319c1cd43f7539e33',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': 'a1fe3902bf73a3802eae0357d273d0e37ea79898',
+  'emscripten_revision': '7f8a05dd4e37cbd7ffde6d624f91fd545f7b52e3',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '4d8e42ea6a89c73f90941fd1b6e899912e31dd34',
+  'llvm_project_revision': '547917aebd1e79a8929b53f0ddf3b5185ee4df74',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'dcc8febef8b09240afbcbb2a37fe5ba17d85281c',
+  'v8_revision': '224d39a41a629d8cf69341dfcc4a1b9cd3054f85',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -45,7 +45,7 @@ deps = {
     'packages': [
       {
         'package': 'infra/3pp/tools/ninja/${{platform}}',
-        'version': 'version:2@1.8.2.chromium.3',
+        'version': 'version:2@1.12.1.chromium.4',
       }
     ],
     'dep_type': 'cipd',
