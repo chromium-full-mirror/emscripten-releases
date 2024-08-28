@@ -43,7 +43,9 @@ def Git(*args, **kwargs):
 
 
 def RevisionDate(rev, cwd):
-    return Git('log', '-n1', '--pretty=format:%cd', rev, cwd=cwd)
+    if os.path.isdir(cwd):
+        return Git('log', '-n1', '--pretty=format:%cd', rev, cwd=cwd)
+    return '(none)'
 
 
 def IsAncestor(rev1, rev2, cwd):
