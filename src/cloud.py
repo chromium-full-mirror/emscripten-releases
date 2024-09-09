@@ -13,36 +13,52 @@
 #   limitations under the License.
 
 import proc
-from buildbot import IsEmscriptenReleasesBot, IsUploadingBot
+import buildbot
 
 CLOUD_STORAGE_BASE_URL = 'https://storage.googleapis.com/'
-WATERFALL_CLOUD_STORAGE_PATH = 'wasm-llvm/builds/'
 EMSCRIPTEN_RELEASES_CLOUD_STORAGE_PATH = \
     'webassembly/emscripten-releases-builds/'
 SKIA_PERF_STORAGE_PATH = 'emscripten-perf-public/ingest/'
 
 
 def GetCloudStoragePath():
-    if IsEmscriptenReleasesBot():
-        return EMSCRIPTEN_RELEASES_CLOUD_STORAGE_PATH
-    else:
-        return WATERFALL_CLOUD_STORAGE_PATH
+    return EMSCRIPTEN_RELEASES_CLOUD_STORAGE_PATH
+
+
+def GetArchivePath(remote_name):
+    return f'{buildbot.BuilderName()}/{buildbot.BuildNumber()}/{remote_name}'
 
 
 def Upload(local, remote):
     """Upload file to Cloud Storage."""
-    if not IsUploadingBot():
+    if not buildbot.IsUploadingBot():
         return
     remote = GetCloudStoragePath() + remote
     proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
     return CLOUD_STORAGE_BASE_URL + remote
 
+
+def ListBuilds(revision):
+    builds = []
+    for builder in ('linux', 'mac', 'win'):
+        try:
+            os_builds = proc.check_output(
+                ['gsutil.py', 'ls',
+                 f'gs://{GetCloudStoragePath()}{builder}/{revision}'
+                 ]).decode().strip().split('\n')
+        except proc.CalledProcessError:
+            os_builds = []
+        builds += os_builds
+
+    return builds
+
+
 def UploadSkiaPerf(local, remote):
     """Upload file to Cloud Storage."""
-    if not IsUploadingBot():
+    if not buildbot.IsUploadingBot():
         print('Not an uploading bot, not uploading skia perf results.')
         return
-    remote =  SKIA_PERF_STORAGE_PATH + remote
+    remote = SKIA_PERF_STORAGE_PATH + remote
     proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
     return CLOUD_STORAGE_BASE_URL + remote
 

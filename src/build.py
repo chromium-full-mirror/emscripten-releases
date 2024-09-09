@@ -293,9 +293,7 @@ def UploadArchive(name, archive):
         return
     buildbot.Link(
         'download',
-        cloud.Upload(
-            archive, '%s/%s/%s' %
-            (buildbot.BuilderName(), buildbot.BuildNumber(), remote_name)))
+        cloud.Upload(archive, cloud.GetArchivePath(remote_name)))
 
 
 def FilterTargets(to_run, all_targets):

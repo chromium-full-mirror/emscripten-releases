@@ -26,6 +26,10 @@
         "command": ["src/build.py", "--build-include=archive"]
       },
       {
+        "name": "Trigger emsdk release workflow",
+        "command": ["src/trigger_emsdk_release.py"]
+      },
+      {
         "name": "Build libcxx (aarch64)",
         "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
       },
