@@ -100,10 +100,11 @@ def main(argv):
             os.path.abspath(build.RELEASE_DEPS_FILE)):
         return 0
 
-    lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode()
+    lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
+                                      text=True).strip()
 
     message_body = subprocess.check_output(
-        ['git', 'log', '-1', '--pretty=%b', lto_sha]).decode()
+        ['git', 'log', '-1', '--pretty=%b', lto_sha], text=True)
 
     match = re.search('DEPS from revision (.*)', message_body)
     if not match:
@@ -117,11 +118,12 @@ def main(argv):
     print('Already-uploaded builds:')
     print(builds)
     # We expect 2 builds each for Linux and Mac, and one for Windows
-    if len(builds) >= 5:
+    builds_done = len(builds)
+    if builds_done >= 5:
         print('All builds found, triggering release workflow.')
         trigger_emsdk_workflow(lto_sha, nonlto_sha)
     else:
-        print(f'{len} of 5 builds found, not triggering release workflow.')
+        print(f'{builds_done} of 5 builds found, not triggering release workflow.')
 
 
 if __name__ == '__main__':

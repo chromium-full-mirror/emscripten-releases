@@ -116,6 +116,10 @@
         "command": ["src/build.py", "--build-include=archive-cross"]
       },
       {
+        "name": "Trigger emsdk release workflow",
+        "command": ["src/trigger_emsdk_release.py"]
+      },
+      {
         "name": "Extract archive for testing",
         "command": ["src/build.py", "--build-include=extract-archive"]
       }
@@ -150,6 +154,10 @@
       {
         "name": "Archive Binaries",
         "command": ["src/build.py", "--build-include=archive"]
+      },
+      {
+        "name": "Trigger emsdk release workflow",
+        "command": ["src/trigger_emsdk_release.py"]
       }
     ],
     "test_steps": [

@@ -16,39 +16,53 @@
 #   limitations under the License.
 
 import os
-from subprocess import check_call, check_output
+import subprocess
 import sys
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(script_dir)
 
 
+def run(cmd):
+    try:
+        return subprocess.run(cmd, cwd=root_dir, capture_output=True,
+                              text=True, check=True).stdout
+    except subprocess.CalledProcessError as e:
+        print('Command failed: ' + ' '.join(cmd))
+        print(e.stdout)
+        print(e.stderr)
+        raise e
+
+
 def create_cl(source_rev, tag):
-    if check_output(['git', 'status', '--porcelain'], cwd=root_dir).strip():
+    if run(['git', 'status', '--porcelain', '--untracked-files=no']):
         print('tree is not clean')
         return 1
 
     # Create a new git branch
     branch_name = f'version_{tag}_rc'
-    check_call(['git', 'checkout', '-b', branch_name], cwd=root_dir)
+    run(['git', 'checkout', '-b', branch_name])
 
     # Copy DEPS from source_rev to DEPS.tagged_release
-    deps = check_output(['git', 'show', f'{source_rev}:DEPS'], cwd=root_dir)
-    with open(os.path.join(root_dir, 'DEPS.tagged_release'), 'w') as f:
+    deps = run(['git', 'show', f'{source_rev}:DEPS'])
+    with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
         f.write(deps)
 
-    check_call(['git', 'add', '-u', 'DEPS.tagged_release'], cwd=root_dir)
-    message = f'Version {tag} RC\n\nDEPS from revision {source_rev}'
-    check_call(['git', 'commit', '-m', message], cwd=root_dir)
-    check_call(['git', 'cl', 'upload'])
+    run(['git', 'add', '-u', 'DEPS.tagged-release'])
+    message = f'Version {tag} RC\n\nDEPS from revision {source_rev}\n'
+    message += 'This CL was created by src/create_release_candidate.py'
+    run(['git', 'commit', '-m', message])
+    run(['git', 'cl', 'upload'])
 
 
 def main(argv):
+    if len(argv) < 2:
+        print('First argument must be the emscripten version (e.g. 3.1.66)')
     tag = argv[1]
     if len(argv) > 2:
         source_rev = argv[2]
     else:
-        source_rev = check_output(['git', 'rev-parse', 'HEAD']).decode()
+        source_rev = run(['git', 'rev-parse', 'HEAD']).strip()
     create_cl(source_rev, tag)
 
 
