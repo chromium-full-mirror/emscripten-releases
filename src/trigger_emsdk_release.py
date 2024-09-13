@@ -43,6 +43,8 @@ SECRET_NAME = 'projects/956827487526/secrets/emscripten-releases-token/versions/
 # To test this script locally or on a trybot, modify this and lto_sha below
 EMSDK_REPO_OWNER = 'emscripten-core'
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(script_dir)
 
 def get_github_token():
     client = secretmanager.SecretManagerServiceClient()
@@ -101,10 +103,10 @@ def main(argv):
         return 0
 
     lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
-                                      text=True).strip()
+                                      cwd=root_dir, text=True).strip()
 
     message_body = subprocess.check_output(
-        ['git', 'log', '-1', '--pretty=%b', lto_sha], text=True)
+        ['git', 'log', '-1', '--pretty=%b', lto_sha], cwd=root_dir, text=True)
 
     match = re.search('DEPS from revision (.*)', message_body)
     if not match:
