@@ -98,8 +98,9 @@ def trigger_emsdk_workflow(lto, nonlto):
 
 
 def main(argv):
-    if not build.RevisionModifiesFile(
-            os.path.abspath(build.RELEASE_DEPS_FILE)):
+    deps_file = os.path.join(root_dir, build.RELEASE_DEPS_FILE)
+    if not build.RevisionModifiesFile(deps_file):
+        print(f'HEAD revision does not modify {deps_file}')
         return 0
 
     lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
