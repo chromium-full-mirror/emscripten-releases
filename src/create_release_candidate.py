@@ -23,9 +23,9 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(script_dir)
 
 
-def run(cmd):
+def run(cmd, capture_output=False):
     try:
-        return subprocess.run(cmd, cwd=root_dir, capture_output=True,
+        return subprocess.run(cmd, cwd=root_dir, capture_output=capture_output,
                               text=True, check=True).stdout
     except subprocess.CalledProcessError as e:
         print('Command failed: ' + ' '.join(cmd))
@@ -44,7 +44,7 @@ def create_cl(source_rev, tag):
     run(['git', 'checkout', '-b', branch_name])
 
     # Copy DEPS from source_rev to DEPS.tagged_release
-    deps = run(['git', 'show', f'{source_rev}:DEPS'])
+    deps = run(['git', 'show', f'{source_rev}:DEPS'], capture_output=True)
     with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
         f.write(deps)
 
