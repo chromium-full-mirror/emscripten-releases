@@ -12,9 +12,8 @@ lucicfg.enable_experiment("crbug.com/1182002")
 luci.builder.defaults.experiments.set(
     {
         "luci.recipes.use_python3": 100,
-    }
+    },
 )
-
 
 load(
     "//lib.star",
@@ -105,6 +104,7 @@ def led_users(*, pool_realm, builder_realms, groups):
             roles = "role/swarming.taskTriggerer",
             groups = groups,
         )
+
 led_users(
     pool_realm = "pools/ci",
     builder_realms = ["ci"],
@@ -144,12 +144,12 @@ luci.bucket(name = "try", acls = [
 
 ci_builder("linux", "Ubuntu")
 ci_builder("linux-test-suites", "Ubuntu", max_concurrent_invocations = 2)
-ci_builder("mac", "Mac")
+ci_builder("mac", "Mac-14", pool = "luci.v8.ci")
 ci_builder("win", "Windows-10")
 
 try_builder("linux", "Ubuntu")
 try_builder("linux-test-suites", "Ubuntu")
-try_builder("mac", "Mac")
+try_builder("mac", "Mac-14")
 try_builder("win", "Windows-10")
 
 luci.builder(

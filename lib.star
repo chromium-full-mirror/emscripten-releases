@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-def emscripten_builder(bucket, name, os, service_account, **kwargs):
+def emscripten_builder(bucket, name, os, service_account, pool = None, **kwargs):
     caches = None
     reclient_props = {
         "instance": "rbe-chromium-trusted" if bucket == "ci" else "rbe-chromium-untrusted",
@@ -18,11 +18,15 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         ]
 
     props = {"$build/reclient": reclient_props}
+
+    if not pool:
+        pool = "luci.emscripten-releases." + bucket
+
     luci.builder(
         name = name,
         bucket = bucket,
         caches = caches,
-        dimensions = {"os": os, "pool": "luci.emscripten-releases." + bucket},
+        dimensions = {"os": os, "pool": pool},
         executable = luci.recipe(
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
             cipd_version = "refs/heads/main",
@@ -35,7 +39,7 @@ def emscripten_builder(bucket, name, os, service_account, **kwargs):
         **kwargs
     )
 
-def ci_builder(name, os, max_concurrent_invocations = 4):
+def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
     emscripten_builder(
         "ci",
         name,
