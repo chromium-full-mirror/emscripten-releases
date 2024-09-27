@@ -50,6 +50,7 @@ def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
             kind = scheduler.GREEDY_BATCHING_KIND,
             max_concurrent_invocations = max_concurrent_invocations,
         ),
+        pool = pool,
     )
 
 def try_builder(name, os):
