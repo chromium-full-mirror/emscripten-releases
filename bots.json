@@ -65,7 +65,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_minimal_runtime_code_size*"]
+                    "--test-param=other,other.test_codesize_*,skip:other.test_minimal_runtime_code_size*"]
       },
       {
         "name": "Emscripten testsuite (wasm64l)",
@@ -129,7 +129,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-param=other,other.test_codesize_*,skip:other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
       }
     ]
   },
@@ -173,7 +173,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-param=other,skip:other.test_codesize_*,other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
       }
     ]
   },
