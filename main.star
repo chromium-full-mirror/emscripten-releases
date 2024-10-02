@@ -106,12 +106,6 @@ def led_users(*, pool_realm, builder_realms, groups):
         )
 
 led_users(
-    pool_realm = "pools/ci",
-    builder_realms = ["ci"],
-    groups = "project-wasm-tools-admins",
-)
-
-led_users(
     pool_realm = "pools/try",
     builder_realms = ["try"],
     groups = "project-wasm-tools-admins",
@@ -142,9 +136,9 @@ luci.bucket(name = "try", acls = [
     ),
 ])
 
-ci_builder("linux", "Ubuntu")
+ci_builder("linux", "Ubuntu-22")
 ci_builder("linux-test-suites", "Ubuntu", max_concurrent_invocations = 2)
-ci_builder("mac", "Mac-14", pool = "luci.v8.ci")
+ci_builder("mac", "Mac-14")
 ci_builder("win", "Windows-10")
 
 try_builder("linux", "Ubuntu")

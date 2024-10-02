@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-def emscripten_builder(bucket, name, os, service_account, pool = None, **kwargs):
+def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
     caches = None
     reclient_props = {
         "instance": "rbe-chromium-trusted" if bucket == "ci" else "rbe-chromium-untrusted",
@@ -18,9 +18,6 @@ def emscripten_builder(bucket, name, os, service_account, pool = None, **kwargs)
         ]
 
     props = {"$build/reclient": reclient_props}
-
-    if not pool:
-        pool = "luci.emscripten-releases." + bucket
 
     luci.builder(
         name = name,
@@ -45,12 +42,12 @@ def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
         name,
         os,
         "emscripten-releases-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
+        "luci.v8.ci",
         triggered_by = ["emscripten-releases-trigger"],
         triggering_policy = scheduler.policy(
             kind = scheduler.GREEDY_BATCHING_KIND,
             max_concurrent_invocations = max_concurrent_invocations,
         ),
-        pool = pool,
     )
 
 def try_builder(name, os):
@@ -59,6 +56,7 @@ def try_builder(name, os):
         name,
         os,
         "emscripten-releases-try-bldr@chops-service-accounts.iam.gserviceaccount.com",
+        "luci.emscripten-releases.try",
         priority = 30,
     )
 
