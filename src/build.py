@@ -1014,17 +1014,16 @@ def Emscripten():
         os.remove(sanity)
 
 
-def VerifyEmscriptenCrossBuild():
+def VerifyMacArtifactsBuildArch(is_cross=False):
     # Ensure that all binaries have the correct architecture. There is
     # currently one exception which is allowed to be x86_64:
-    # TODO: This is probably outdated, if we end up running mostly on ARM64
-    # bots. We should either make it work for arm and x86 on mac and Linux,
-    # or just delete it.
     closure_binary = 'google-closure-compiler-osx/compiler'
     print('Verifying architecture of MacOS binaries')
     for root, dirs, files in os.walk(GetInstallDir()):
         for f in files:
             path = os.path.join(root, f)
+            if path.endswith(closure_binary):
+                continue
             with open(path, 'rb') as fd:
                 header = fd.read(8)
                 if len(header) < 8:
@@ -1035,12 +1034,11 @@ def VerifyEmscriptenCrossBuild():
                 cpu_type = struct.unpack_from('I', header, 4)[0]
                 is_x86_64 = cpu_type == 0x1000007
                 is_arm64 = cpu_type == 0x100000c
-                if is_arm64:
-                    continue
-                if not (path.endswith(closure_binary) and is_x86_64):
-                    print(f'{path} is a non-arm64 binary:')
+                expect_x86 = (IsArm64() and is_cross) or (not IsArm64 and not is_cross)
+                if (expect_x86 and is_arm64) or (not expect_x86 and is_x86_64):
+                    print(f'{path} is the wrong architecture:')
                     proc.check_call(['file', path])
-                    raise Exception('Native binary in the cross build')
+                    raise Exception('Bad architecture in package')
 
 
 def ArchiveBinaries(is_cross=False):
@@ -1051,10 +1049,10 @@ def ArchiveBinaries(is_cross=False):
     # only had ARM binaries on mac, where the architecture is named 'arm64'),
     # the x86 version has no filename suffix, and the ARM version has '-arm64'
     filename = 'wasm-binaries'
-    if is_cross or (IsArm64() and not is_cross):
+    if (not IsArm64() and is_cross) or (IsArm64() and not is_cross):
         filename += '-arm64'
-        if IsMac():
-            VerifyEmscriptenCrossBuild()
+    if IsMac():
+        VerifyMacArtifactsBuildArch(is_cross=is_cross)
     archive = Archive(GetInstallDir(), print_content=buildbot.IsBot())
 
     # Also make a local copy for running tests.
