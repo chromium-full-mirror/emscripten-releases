@@ -60,7 +60,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 53
+CLOBBER_BUILD_TAG = 54
 
 options = None
 
@@ -113,6 +113,14 @@ def GetHostPlatform():
     return 'linux'
 
 
+def GetCrossArch():
+    if platform.machine() == 'x86_64':
+        return 'aarch64' if IsLinux() else 'arm64'
+    elif IsArm64():
+        return 'x86_64'
+    raise Exception('Unknown native build architecture')
+
+
 def Executable(name, extension='.exe'):
     return name + extension if IsWindows() else name
 
@@ -147,7 +155,7 @@ def NodeBin():
     return Executable(os.path.join(NodeBinDir(), 'node'))
 
 
-def CMakePlatformName():
+def PrebuiltCMakePlatformName():
     return {
         'linux': 'linux',
         'linux2': 'linux',
@@ -156,7 +164,7 @@ def CMakePlatformName():
     }[sys.platform]
 
 
-def CMakeArch():
+def PrebuiltCMakeArch():
     if IsMac():
         return 'universal'
     elif IsLinux() and IsArm64():
@@ -167,7 +175,7 @@ def CMakeArch():
 
 PREBUILT_CMAKE_VERSION = '3.21.3'
 PREBUILT_CMAKE_BASE_NAME = 'cmake-%s-%s-%s' % (
-    PREBUILT_CMAKE_VERSION, CMakePlatformName(), CMakeArch())
+    PREBUILT_CMAKE_VERSION, PrebuiltCMakePlatformName(), PrebuiltCMakeArch())
 
 
 def PrebuiltCMakeDir(*args):
@@ -579,10 +587,10 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
     # compiler internal headers.
     cflags = '-no-canonical-prefixes'
     cxxflags = '-no-canonical-prefixes'
+    arch = GetCrossArch() if is_cross else platform.machine()
 
     if host_toolchains.ShouldUseSysroot():
         if IsLinux():
-            arch = 'aarch64' if is_cross else platform.machine()
             command.append('-DCMAKE_SYSROOT=%s' % GetPrebuilt(LinuxSysroot(arch)))
             if is_cross:
                 command.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
@@ -603,8 +611,7 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
                 os.symlink(xcode_sdk_path, symlink_path)
             command.append(f'-DCMAKE_OSX_SYSROOT={symlink_path}')
             command.append(f'-DCMAKE_SYSROOT={symlink_path}')
-            # Use an explicit target triple for reclient to correctly handle cross-compiles
-            arch = 'x86_64' if not is_cross else 'arm64'
+            # Use an explicit triple for correct cross-compiles with reclient
             cflags += f' --target={arch}-apple-darwin'
             cxxflags += f' --target={arch}-apple-darwin'
 
@@ -620,8 +627,8 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
         command.append(f'-DCMAKE_C_FLAGS={cflags}')
         command.append(f'-DCMAKE_CXX_FLAGS={cxxflags}')
 
-    if is_cross and IsMac():
-        command.append('-DCMAKE_OSX_ARCHITECTURES=arm64')
+    if IsMac():
+        command.append(f'-DCMAKE_OSX_ARCHITECTURES={arch}')
 
     command.extend(MaybeOverrideCMakeCompiler())
 
@@ -712,7 +719,7 @@ def LLVM(build_dir, is_cross=False):
         # Our mac bot's toolchain's ld64 is too old for trunk libLTO.
         '-DLLVM_TOOL_LTO_BUILD=OFF',
         '-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON',
-        '-DLLVM_TARGETS_TO_BUILD=host;WebAssembly',
+        '-DLLVM_TARGETS_TO_BUILD=X86;WebAssembly',
         '-DLLVM_ENABLE_PROJECTS=lld;clang',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
@@ -1010,6 +1017,9 @@ def Emscripten():
 def VerifyEmscriptenCrossBuild():
     # Ensure that all binaries have the correct architecture. There is
     # currently one exception which is allowed to be x86_64:
+    # TODO: This is probably outdated, if we end up running mostly on ARM64
+    # bots. We should either make it work for arm and x86 on mac and Linux,
+    # or just delete it.
     closure_binary = 'google-closure-compiler-osx/compiler'
     print('Verifying architecture of MacOS binaries')
     for root, dirs, files in os.walk(GetInstallDir()):
@@ -1036,11 +1046,15 @@ def VerifyEmscriptenCrossBuild():
 def ArchiveBinaries(is_cross=False):
     buildbot.Step('Archive binaries')
     # Archive everything in the install directory.
+    # Currently we archive x86-64 and arm64/aarch64 binaries on Mac and Linux.
+    # For historical reasons (first we had only x86-64 binaries, and then we
+    # only had ARM binaries on mac, where the architecture is named 'arm64'),
+    # the x86 version has no filename suffix, and the ARM version has '-arm64'
     filename = 'wasm-binaries'
-    if is_cross:
-        assert platform.machine() == 'x86_64'
+    if is_cross or (IsArm64() and not is_cross):
         filename += '-arm64'
-        VerifyEmscriptenCrossBuild()
+        if IsMac():
+            VerifyEmscriptenCrossBuild()
     archive = Archive(GetInstallDir(), print_content=buildbot.IsBot())
 
     # Also make a local copy for running tests.

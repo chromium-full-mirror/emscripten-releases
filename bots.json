@@ -30,19 +30,19 @@
         "command": ["src/trigger_emsdk_release.py"]
       },
       {
-        "name": "Build libcxx (aarch64)",
+        "name": "Build libcxx (cross)",
         "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
       },
       {
-        "name": "Build Binaryen (aarch64)",
+        "name": "Build Binaryen (cross)",
         "command": ["src/build.py", "--build-include=binaryen-cross", "--use-lto=auto"]
       },
       {
-        "name": "Build LLVM (aarch64)",
+        "name": "Build LLVM (cross)",
         "command": ["src/build.py", "--build-include=llvm-cross", "--use-lto=auto"]
       },
       {
-        "name": "Archive Binaries (aarch64)",
+        "name": "Archive Binaries (cross)",
         "command": ["src/build.py", "--build-include=archive-cross", "--use-lto=auto"]
       },
       {
@@ -100,19 +100,19 @@
         "command": ["src/build.py", "--build-include=archive"]
       },
       {
-        "name": "Build libcxx (arm64)",
+        "name": "Build libcxx (cross)",
         "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
       },
       {
-        "name": "Build Binaryen (arm64)",
+        "name": "Build Binaryen (cross)",
         "command": ["src/build.py", "--build-include=binaryen-cross", "--use-lto=auto"]
       },
       {
-        "name": "Build LLVM (arm64)",
+        "name": "Build LLVM (cross)",
         "command": ["src/build.py", "--build-include=llvm-cross", "--use-lto=auto"]
       },
       {
-        "name": "Archive Binaries (arm64)",
+        "name": "Archive Binaries (cross)",
         "command": ["src/build.py", "--build-include=archive-cross"]
       },
       {
