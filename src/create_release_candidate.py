@@ -62,7 +62,7 @@ def main(argv):
     if len(argv) > 2:
         source_rev = argv[2]
     else:
-        source_rev = run(['git', 'rev-parse', 'HEAD']).strip()
+        source_rev = run(['git', 'rev-parse', 'HEAD'], True).strip()
     create_cl(source_rev, tag)
 
 
