@@ -1034,7 +1034,7 @@ def VerifyMacArtifactsBuildArch(is_cross=False):
                 cpu_type = struct.unpack_from('I', header, 4)[0]
                 is_x86_64 = cpu_type == 0x1000007
                 is_arm64 = cpu_type == 0x100000c
-                expect_x86 = (IsArm64() and is_cross) or (not IsArm64 and not is_cross)
+                expect_x86 = (IsArm64() and is_cross) or (not IsArm64() and not is_cross)
                 if (expect_x86 and is_arm64) or (not expect_x86 and is_x86_64):
                     print(f'{path} is the wrong architecture:')
                     proc.check_call(['file', path])
