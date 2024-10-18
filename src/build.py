@@ -1022,8 +1022,6 @@ def VerifyMacArtifactsBuildArch(is_cross=False):
     for root, dirs, files in os.walk(GetInstallDir()):
         for f in files:
             path = os.path.join(root, f)
-            if path.endswith(closure_binary):
-                continue
             with open(path, 'rb') as fd:
                 header = fd.read(8)
                 if len(header) < 8:
@@ -1038,7 +1036,10 @@ def VerifyMacArtifactsBuildArch(is_cross=False):
                 if (expect_x86 and is_arm64) or (not expect_x86 and is_x86_64):
                     print(f'{path} is the wrong architecture:')
                     proc.check_call(['file', path])
-                    raise Exception('Bad architecture in package')
+                    if path.endswith(closure_binary):
+                        print('path is closure, ignoring')
+                    else:
+                        raise Exception('Bad architecture in package')
 
 
 def ArchiveBinaries(is_cross=False):
