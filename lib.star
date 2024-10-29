@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
+def emscripten_builder(bucket, name, os, service_account, pool, cpu = None, **kwargs):
     caches = None
     reclient_props = {
         "instance": "rbe-chromium-trusted" if bucket == "ci" else "rbe-chromium-untrusted",
@@ -18,12 +18,15 @@ def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
         ]
 
     props = {"$build/reclient": reclient_props}
+    dimensions = {"os": os, "pool": pool}
+    if cpu:
+        dimensions = {"cpu": cpu}
 
     luci.builder(
         name = name,
         bucket = bucket,
         caches = caches,
-        dimensions = {"os": os, "pool": pool},
+        dimensions = dimensions,
         executable = luci.recipe(
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
             cipd_version = "refs/heads/main",
@@ -36,7 +39,7 @@ def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
         **kwargs
     )
 
-def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
+def ci_builder(name, os, max_concurrent_invocations = 4, cpu = None):
     emscripten_builder(
         "ci",
         name,
@@ -48,9 +51,10 @@ def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
             kind = scheduler.GREEDY_BATCHING_KIND,
             max_concurrent_invocations = max_concurrent_invocations,
         ),
+        cpu = cpu,
     )
 
-def try_builder(name, os):
+def try_builder(name, os, cpu = None):
     emscripten_builder(
         "try",
         name,
