@@ -138,7 +138,7 @@ luci.bucket(name = "try", acls = [
 
 ci_builder("linux", "Ubuntu-22")
 ci_builder("linux-test-suites", "Ubuntu", max_concurrent_invocations = 2)
-ci_builder("mac", "Mac-14", cpu = "x86")
+ci_builder("mac", "Mac-14")
 ci_builder("win", "Windows-10")
 
 try_builder("linux", "Ubuntu")
