@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
+def emscripten_builder(bucket, name, os, service_account, pool, cpu = None, **kwargs):
     caches = None
     reclient_props = {
         "instance": "rbe-chromium-trusted" if bucket == "ci" else "rbe-chromium-untrusted",
@@ -18,12 +18,15 @@ def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
         ]
 
     props = {"$build/reclient": reclient_props}
+    dimensions = {"os": os, "pool": pool}
+    if cpu:
+        dimensions["cpu"] = cpu
 
     luci.builder(
         name = name,
         bucket = bucket,
         caches = caches,
-        dimensions = {"os": os, "pool": pool},
+        dimensions = dimensions,
         executable = luci.recipe(
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
             cipd_version = "refs/heads/main",
@@ -36,13 +39,14 @@ def emscripten_builder(bucket, name, os, service_account, pool, **kwargs):
         **kwargs
     )
 
-def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
+def ci_builder(name, os, max_concurrent_invocations = 4, cpu = None):
     emscripten_builder(
         "ci",
         name,
         os,
-        "emscripten-releases-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
-        "luci.v8.ci",
+        service_account = "emscripten-releases-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
+        pool = "luci.v8.ci",
+        cpu = cpu,
         triggered_by = ["emscripten-releases-trigger"],
         triggering_policy = scheduler.policy(
             kind = scheduler.GREEDY_BATCHING_KIND,
@@ -50,13 +54,14 @@ def ci_builder(name, os, max_concurrent_invocations = 4, pool = None):
         ),
     )
 
-def try_builder(name, os):
+def try_builder(name, os, cpu = None):
     emscripten_builder(
         "try",
         name,
         os,
-        "emscripten-releases-try-bldr@chops-service-accounts.iam.gserviceaccount.com",
-        "luci.emscripten-releases.try",
+        service_account = "emscripten-releases-try-bldr@chops-service-accounts.iam.gserviceaccount.com",
+        pool = "luci.emscripten-releases.try",
+        cpu = cpu,
         priority = 30,
     )
 
