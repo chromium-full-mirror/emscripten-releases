@@ -87,30 +87,6 @@ luci.binding(
     groups = "mdb/v8-infra",
 )
 
-# Allow cria/project-v8-led-users to use LED and "Debug" button on
-# try and ci builders
-def led_users(*, pool_realm, builder_realms, groups):
-    luci.realm(
-        name = pool_realm,
-        bindings = [luci.binding(
-            realm = pool_realm,
-            roles = "role/swarming.poolUser",
-            groups = groups,
-        )],
-    )
-    for br in builder_realms:
-        luci.binding(
-            realm = br,
-            roles = "role/swarming.taskTriggerer",
-            groups = groups,
-        )
-
-led_users(
-    pool_realm = "pools/try",
-    builder_realms = ["try"],
-    groups = "project-wasm-tools-admins",
-)
-
 luci.logdog(
     gs_bucket = "chromium-luci-logdog",
 )
@@ -149,7 +125,7 @@ try_builder("win", "Windows-10")
 luci.builder(
     name = "emscripten_releases_presubmit",
     bucket = "try",
-    dimensions = {"os": "Ubuntu", "pool": "luci.emscripten-releases.try"},
+    dimensions = {"os": "Ubuntu", "pool": "luci.v8.try"},
     executable = luci.recipe(
         cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
         cipd_version = "refs/heads/main",

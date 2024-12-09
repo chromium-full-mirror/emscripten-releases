@@ -60,7 +60,7 @@ def try_builder(name, os, cpu = None):
         name,
         os,
         service_account = "emscripten-releases-try-bldr@chops-service-accounts.iam.gserviceaccount.com",
-        pool = "luci.emscripten-releases.try",
+        pool = "luci.v8.try",
         cpu = cpu,
         priority = 30,
     )
