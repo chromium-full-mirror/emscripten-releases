@@ -44,8 +44,11 @@ def Git(*args, **kwargs):
 
 def RevisionDate(rev, cwd):
     if os.path.isdir(cwd):
-        return Git('log', '-n1', '--pretty=format:%cd', rev, cwd=cwd)
-    return '(none)'
+        try:
+            return Git('log', '-n1', '--pretty=format:%cd', rev, cwd=cwd)
+        except subprocess.CalledProcessError:
+            pass
+    return '(not found)'
 
 
 def IsAncestor(rev1, rev2, cwd):
@@ -96,7 +99,15 @@ def ParseDeps(deps_str):
 
 def GetDeps(emr_rev):
     """Return the relevant DEPS info for an emscripten-releases revision"""
-    deps_str = Git('show', emr_rev + ':DEPS', cwd=EMR_DIR)
+    # Figure out whether DEPS or DEPS.tagged-release is the correct deps
+    changed = Git(
+        'show', '--oneline', '--name-only', emr_rev, cwd=EMR_DIR).splitlines()
+
+    if 'DEPS.tagged-release' in changed:
+        depsfile = 'DEPS.tagged-release'
+    else:
+        depsfile = 'DEPS'
+    deps_str = Git('show', f'{emr_rev}:{depsfile}', cwd=EMR_DIR)
     return ParseDeps(deps_str)
 
 
@@ -249,6 +260,11 @@ def test():
     date, deps = PrintEmrToolInfo('30825b84')
     assert date == 'Wed Mar 31 15:19:52 2021'
     assert deps['emscripten'] == '0aef720ece71c9950bd388f226c21a2f9be75d04'
+
+    # For a revision which modifies DEPS.tagged-release, ensure that file is
+    # used instead of DEPS
+    date, deps = PrintEmrToolInfo('3ebc04a3')
+    assert deps['emscripten'] == '97c7c2adab1791b9487d1f376934a3bdc28f8a67'
 
     emr_rev, (date, deps) = PrintTagFullInfo('2.0.15')
     assert emr_rev == '89202930a98fe7f9ed59b574469a9471b0bda7dd'
