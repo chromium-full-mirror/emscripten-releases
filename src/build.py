@@ -1070,6 +1070,8 @@ class Build(object):
         if self.incremental_build_dir and ShouldUseLTO():
             RemoveIfBot(self.incremental_build_dir)
         try:
+            if host_toolchains.UsingReclient() and not buildbot.IsBot():
+                host_toolchains.StartReproxy(GetHostPlatform())
             self.runnable(*self.args, **self.kwargs)
         except Exception:
             # If the build fails (even non-LTO), a possible cause is a build

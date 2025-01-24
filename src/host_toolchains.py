@@ -130,6 +130,13 @@ def RewrapperCfg(platform):
                         f'rewrapper_{platform}.cfg')
 
 
+def ReproxyCfg():
+    return os.path.join(work_dirs.GetV8(),
+                        'buildtools',
+                        'reclient_cfgs',
+                        'reproxy.cfg')
+
+
 def ParseConfigLine(line):
     line = line.strip()
     if not len(line) or line.startswith('#'):
@@ -138,6 +145,15 @@ def ParseConfigLine(line):
     parts = line.split('=', 1)
     parts[0].lstrip('-')
     return (parts[0], True if len(parts) == 1 else parts[1])
+
+
+def GetConfigFlag(config_file, flag):
+    with open(config_file) as f:
+        for line in f.readlines():
+            parsed = ParseConfigLine(line)
+            if parsed and parsed[0] == flag:
+                return parsed[1]
+    return None
 
 
 def SetReclientEnv(host_platform):
@@ -151,18 +167,30 @@ def SetReclientEnv(host_platform):
     if not os.path.exists(rewrapper_cfg):
         return
 
-    rbe_platform = ''
-    with open(rewrapper_cfg) as f:
-        for line in f.readlines():
-            flag = ParseConfigLine(line)
-            if flag and flag[0] == 'platform':
-                rbe_platform = flag[1]
-                break
+    rbe_platform = GetConfigFlag(rewrapper_cfg, 'platform')
     if not rbe_platform or 'InputRootAbsolutePath' in rbe_platform:
         return
 
     os.environ[
         'RBE_platform'] = f'{rbe_platform},InputRootAbsolutePath={exec_root}'
+
+
+def StartReproxy(host_platform):
+    # TODO: check that the config has been downloaded correctly (e.g. with the .gclient file) and
+    # that the user is logged into GCE auth
+
+    # is it bad to just do SetReclientEnv(host_platform) here and add server_address to that set of vars?
+    server_address = GetConfigFlag(RewrapperCfg(host_platform), 'server_address')
+    os.environ['RBE_server_address'] = server_address
+    bootstrap_cmd = [
+        os.path.join(ReclientDir(), 'bootstrap') ,
+        '-re_proxy=' + os.path.join(ReclientDir(), 'reproxy'),
+        '-cfg=' + ReproxyCfg(),
+        '-server_address=' + server_address # this flag doesn't seem to work?
+    ]
+    for k,v in os.environ.items():
+        print(f'{k} = {v}')
+    proc.check_call(bootstrap_cmd)
 
 
 def GomaDir():
