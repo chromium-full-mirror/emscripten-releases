@@ -85,6 +85,10 @@ def GetTestDir(*args):
     return os.path.join(work_dirs.GetTest(), *args)
 
 
+def GetTempDir(*args):
+    return os.path.join(work_dirs.GetBuild(), 'temp', *args)
+
+
 def GetLLVMSrcDir(*args):
     return GetSrcDir('llvm-project', *args)
 
@@ -616,9 +620,9 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
             cxxflags += f' --target={arch}-apple-darwin'
 
     if UseLocalLibCXX() and not filter_out_stdlib:
-        inc = GetInstallDir('include', 'c++', 'v1')
+        inc = LibCXXTempInstall('include', 'c++', 'v1')
         cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
-        lib = GetInstallDir('lib')
+        lib = LibCXXTempInstall('lib')
         command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
         command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
         command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
@@ -643,7 +647,7 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
     return [WindowsFSEscape(arg) for arg in command]
 
 
-def CopyLLVMTools(build_dir, prefix=''):
+def CleanLLVMInstall():
     # The following aren't useful for now, and take up space.
     # DLLs are in bin/ on Windows but in lib/ on posix.
     for unneeded_tool in ('clang-check', 'clang-cl', 'clang-cpp',
@@ -657,11 +661,13 @@ def CopyLLVMTools(build_dir, prefix=''):
                           'lld-link', 'libclang.dll', 'llvm-cov', 'llvm-ml',
                           'llvm-lib', 'llvm-pdbutil', 'llvm-profdata',
                           'llvm-rc'):
-        Remove(GetInstallDir(prefix, 'bin', Executable(unneeded_tool)))
+        Remove(GetInstallDir('bin', Executable(unneeded_tool)))
 
     for lib in ['libclang.%s' for suffix in ('so.*', 'dylib')]:
-        Remove(GetInstallDir(prefix, 'lib', lib))
+        Remove(GetInstallDir('lib', lib))
 
+
+def CopyLLVMTools(build_dir):
     # The following are useful, LLVM_INSTALL_TOOLCHAIN_ONLY did away with them.
     extra_bins = map(Executable, [
         'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm', 'llvm-objdump', 'llvm-readobj',
@@ -671,7 +677,7 @@ def CopyLLVMTools(build_dir, prefix=''):
             glob.glob(os.path.join(build_dir, 'bin', b)) for b in extra_bins
     ]:
         for e in p:
-            CopyBinaryToArchive(os.path.join(build_dir, 'bin', e), prefix)
+            CopyBinaryToArchive(os.path.join(build_dir, 'bin', e))
 
 
 def BuildEnv(build_dir, bin_subdir=False,
@@ -781,6 +787,7 @@ def LLVM(build_dir, is_cross=False):
     proc.check_call(['ninja', ninja_targets[1]] + jobs,
                     cwd=build_dir, env=cc_env)
 
+    CleanLLVMInstall()
     CopyLLVMTools(build_dir)
     install_bin = GetInstallDir('bin')
     for target in ('clang', 'clang++'):
@@ -878,6 +885,10 @@ def UseLocalLibCXX():
     return not IsWindows() and host_toolchains.ShouldUseSysroot()
 
 
+def LibCXXTempInstall(*args):
+    return GetTempDir('libcxx-install', *args)
+
+
 def UseStaticLibCXX():
     return UseLocalLibCXX() and (ShouldUseLTO() or options.link_static)
 
@@ -903,7 +914,6 @@ def LibCXX(build_dir, is_cross=False):
          '-DLIBCXX_ABI_VERSION=2',
          '-DLIBCXX_HAS_ATOMIC_LIB=OFF',
          f'-DLIBCXX_ENABLE_SHARED={cmake_on[not should_use_static]}',
-         '-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF',
          '-DLIBCXX_INCLUDE_TESTS=OFF',
          '-DLIBCXXABI_ENABLE_SHARED=OFF',
          '-DLIBCXXABI_INCLUDE_TESTS=OFF',
@@ -912,6 +922,7 @@ def LibCXX(build_dir, is_cross=False):
          f'-DLIBCXX_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
+         f'-DCMAKE_INSTALL_PREFIX={LibCXXTempInstall()}'
          ], build_dir,
          is_cross=is_cross,
          # Filter out the stdlib flags because we are bootstrapping stdlib
@@ -922,6 +933,12 @@ def LibCXX(build_dir, is_cross=False):
     proc.check_call(['ninja', '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir)
     proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
+    # Copy (and overwrite) the runtime libraries to the install dir
+    Mkdir(GetInstallDir('lib'))
+    for filename in os.listdir(LibCXXTempInstall('lib')):
+        src = os.path.join(LibCXXTempInstall('lib'), filename)
+        print(f'Copying {src} to {GetInstallDir("lib")}')
+        shutil.copy2(src, GetInstallDir('lib'))
 
 
 def Binaryen(build_dir, is_cross=False):
