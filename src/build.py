@@ -895,6 +895,7 @@ def UseStaticLibCXX():
 
 def LibCXX(build_dir, is_cross=False):
     buildbot.Step('libcxx')
+    Remove(LibCXXTempInstall())
     Mkdir(build_dir)
 
     # We include either the shared library or the static library. The shared
