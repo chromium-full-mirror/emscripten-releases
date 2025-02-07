@@ -26,6 +26,7 @@ corresponding non-LTO build in their commit message.
 '''
 
 import build
+import buildbot
 import cloud
 
 from google.api_core import exceptions
@@ -101,6 +102,9 @@ def main(argv):
     deps_file = os.path.join(root_dir, build.RELEASE_DEPS_FILE)
     if not build.RevisionModifiesFile(deps_file):
         print(f'HEAD revision does not modify {deps_file}')
+        return 0
+    if not buildbot.IsUploadingBot():
+        print(f'Not an uploading bot.')
         return 0
 
     lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'],

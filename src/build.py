@@ -507,15 +507,9 @@ def Clobber():
         return
 
     buildbot.Step('Clobbering work dir')
-    if buildbot.IsEmscriptenReleasesBot() or not buildbot.IsBot():
-        # Never clear source dirs locally.
-        # On emscripten-releases, depot_tools and the recipe clear the rest.
-        dirs = [work_dirs.GetBuild()]
-    else:
-        dirs = work_dirs.GetAll()
-    for work_dir in dirs:
-        RemoveIfBot(work_dir)
-        Mkdir(work_dir)
+    work_dir = GetBuildDir()
+    RemoveIfBot(work_dir)
+    Mkdir(work_dir)
     with open(clobber_file, 'w') as f:
         f.write('%s\n' % CLOBBER_BUILD_TAG)
 

@@ -37,12 +37,9 @@ BUILDBOT_BUILDERNAME = os.environ.get('BUILDBOT_BUILDERNAME', None)
 BUILDBOT_MASTERNAME = os.environ.get('BUILDBOT_MASTERNAME', None)
 BUILDBOT_BUCKET = os.environ.get('BUILDBOT_BUCKET', None)
 
-# Possible masters include None (running locally), the waterfall integration
-# bot, or the emscripten-releases bot.
-WATERFALL_BOT = 'client.wasm.llvm'
 EMSCRIPTEN_RELEASES_BOT = 'emscripten-releases'
 
-assert BUILDBOT_MASTERNAME in [None, WATERFALL_BOT, EMSCRIPTEN_RELEASES_BOT], \
+assert BUILDBOT_MASTERNAME in [None, EMSCRIPTEN_RELEASES_BOT], \
     'unknown mastername: %s' % str(BUILDBOT_MASTERNAME)
 
 # Possible buckets include "ci" for normal builds, "try" for try builds, and
@@ -59,28 +56,20 @@ def IsBot():
     return BUILDBOT_BUILDNUMBER is not None
 
 
-def IsEmscriptenReleasesBot():
-    """Return true if running on the emscripten-releases builders,
-     False otherwise."""
-    return BUILDBOT_MASTERNAME == EMSCRIPTEN_RELEASES_BOT
-
-
 def BuildNumber():
-    if IsEmscriptenReleasesBot():
+    if IsBot():
         return BUILDBOT_REVISION
-    return BUILDBOT_BUILDNUMBER
+    return None
 
 
 def IsUploadingBot():
     """Return True if this is a bot that should upload builds."""
     if not IsBot():
         return False
-    if not IsEmscriptenReleasesBot():
-        # We are on the waterfall bot. None of these upload.
-        return False
-    else:
-        # We are on emscripten-releases. CI bots upload, but not try.
-        return BUILDBOT_BUCKET == CI_BUCKET
+    assert BUILDBOT_BUCKET in (CI_BUCKET, TRY_BUCKET),\
+        'Unrecognized BUILDBOT_BUCKET'
+    # We are on emscripten-releases. CI bots upload, but not try.
+    return BUILDBOT_BUCKET == CI_BUCKET
 
 
 def ShouldClobber():
