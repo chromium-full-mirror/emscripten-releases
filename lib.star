@@ -18,7 +18,7 @@ def emscripten_builder(bucket, name, os, service_account, pool, cpu = None, **kw
         ]
 
     props = {"$build/reclient": reclient_props}
-    dimensions = {"os": os, "pool": pool}
+    dimensions = {"os": os, "pool": pool, "host_class": "default"}
     if cpu:
         dimensions["cpu"] = cpu
 

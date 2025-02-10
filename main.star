@@ -125,7 +125,7 @@ try_builder("win", "Windows-10")
 luci.builder(
     name = "emscripten_releases_presubmit",
     bucket = "try",
-    dimensions = {"os": "Ubuntu", "pool": "luci.v8.try"},
+    dimensions = {"os": "Ubuntu", "pool": "luci.v8.try", "host_class": "default"},
     executable = luci.recipe(
         cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
         cipd_version = "refs/heads/main",
