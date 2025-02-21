@@ -963,7 +963,7 @@ def InstallEmscripten():
     proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
                     cwd=src_dir)
     print('Running npm install ...')
-    proc.check_call(['npm', 'ci', '--production', '--no-optional'], cwd=em_install_dir)
+    proc.check_call(['npm', 'ci', '--production', '--omit=optional'], cwd=em_install_dir)
     # Manually install the appropriate native Closure Compiler package
     # if available.
     #
@@ -987,7 +987,7 @@ def InstallEmscripten():
     if native:
         # Keep this in sync with package.json
         native += '@20230502.0.0'
-        proc.check_call(['npm', 'install', '--production', '--no-optional', native],
+        proc.check_call(['npm', 'install', '--production', '--omit=optional', native],
                         cwd=em_install_dir)
 
 
@@ -1207,7 +1207,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     # is a bug on win32 that is currently causing 'test/third_party' to
     # be installed by install.py.
     print('Running npm install ...')
-    proc.check_call(['npm', 'ci', '--no-optional'], cwd=em_install_dir)
+    proc.check_call(['npm', 'ci'], cwd=em_install_dir)
 
     cmd = [
         Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat')
