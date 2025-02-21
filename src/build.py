@@ -834,45 +834,6 @@ def TestLLVMRegression():
         buildbot.FailUnless(lambda: IsWindows())
 
 
-def Jsvu():
-    buildbot.Step('jsvu')
-    jsvu_dir = os.path.join(work_dirs.GetBuild(), 'jsvu')
-    Mkdir(jsvu_dir)
-
-    if IsWindows():
-        # jsvu OS identifiers:
-        # https://github.com/GoogleChromeLabs/jsvu#supported-engines
-        os_id = 'windows64'
-        js_engines = 'chakra'
-    elif IsMac():
-        os_id = 'mac64'
-        js_engines = 'javascriptcore,v8'
-    else:
-        os_id = 'linux64'
-        js_engines = 'javascriptcore'
-
-    try:
-        # https://github.com/GoogleChromeLabs/jsvu#installation
-        # ...except we install it locally instead of globally.
-        proc.check_call(['npm', 'install', 'jsvu'], cwd=jsvu_dir)
-
-        jsvu_bin = Executable(
-            os.path.join(jsvu_dir, 'node_modules', 'jsvu', 'cli.js'))
-        # https://github.com/GoogleChromeLabs/jsvu#integration-with-non-interactive-environments
-        proc.check_call(
-            [jsvu_bin,
-             '--os=%s' % os_id,
-             '--engines=%s' % js_engines])
-
-        # $HOME/.jsvu/chakra is now available on Windows.
-        # $HOME/.jsvu/javascriptcore is now available on Mac.
-
-        # TODO: Install the JSC binary in the output package, and add the
-        # version info to the repo info JSON file (currently in GetRepoInfo)
-    except proc.CalledProcessError:
-        buildbot.Warn()
-
-
 def UseLocalLibCXX():
     # Use our own libc++ to get around the Linux sysroot's very old
     # libstdc++. Also use it on mac.
@@ -1155,7 +1116,6 @@ def AllBuilds():
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'llvm-cross-out'), is_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
-        Build('jsvu', Jsvu),
         Build('binaryen', Binaryen,
               incremental_build_dir=os.path.join(
                   work_dirs.GetBuild(), 'binaryen-out')),
