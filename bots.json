@@ -126,6 +126,10 @@
     ],
     "test_steps": [
       {
+        "name": "Emscripten testsuite (core2)",
+        "command": ["src/build.py", "--test-include=emtest", "--test-param=core2"]
+      },
+      {
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
@@ -164,10 +168,6 @@
       {
         "name": "Emscripten testsuite (core0)",
         "command": ["src/build.py", "--test-include=emtest", "--test-param=core0"]
-      },
-      {
-        "name": "Emscripten testsuite (core2)",
-        "command": ["src/build.py", "--test-include=emtest", "--test-param=core2"]
       },
       {
         "name": "Emscripten testsuite (other)",

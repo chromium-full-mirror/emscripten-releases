@@ -1193,11 +1193,9 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     test_env['EMTEST_SKIP_FLAKY'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     test_env['EMTEST_BENCHMARKERS'] = 'size'
-    if buildbot.IsBot():
-        if IsWindows():
-            test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
-        if not IsLinux():
-            test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
+    if not IsLinux():
+        test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
+        test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
     try:
         proc.check_call(cmd, cwd=outdir, env=test_env)
     except proc.CalledProcessError:
