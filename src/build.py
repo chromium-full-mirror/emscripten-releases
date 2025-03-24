@@ -924,32 +924,7 @@ def InstallEmscripten():
     proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
                     cwd=src_dir)
     print('Running npm install ...')
-    proc.check_call(['npm', 'ci', '--production', '--omit=optional'], cwd=em_install_dir)
-    # Manually install the appropriate native Closure Compiler package
-    # if available.
-    #
-    # This is currently needed because npm ci will install the packages
-    # for Closure for all platforms, adding 180MB to the download size
-    # There are two problems here:
-    #   1. npm ci does not consider the platform of optional dependencies
-    #      https://github.com/npm/cli/issues/558
-    #   2. A bug with the native compiler has bloated the packages from
-    #      30MB to almost 300MB
-    #      https://github.com/google/closure-compiler-npm/issues/186
-    # If either of these bugs are fixed we could consider removing this
-    # hack.
-    native = None
-    if IsMac():
-        native = 'google-closure-compiler-osx'
-    elif IsWindows():
-        native = 'google-closure-compiler-windows'
-    elif IsLinux() and platform.machine() == 'x86_64':
-        native = 'google-closure-compiler-linux'
-    if native:
-        # Keep this in sync with package.json
-        native += '@20230502.0.0'
-        proc.check_call(['npm', 'install', '--production', '--omit=optional', native],
-                        cwd=em_install_dir)
+    proc.check_call(['npm', 'ci', '--production'], cwd=em_install_dir)
 
 
 def Emscripten():
