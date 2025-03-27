@@ -1,5 +1,5 @@
 import os
-ROOT_DIR = os.path.dirname(os.getenv('EM_CONFIG')).replace('\\', '/')
+ROOT_DIR = os.path.dirname(__file__)
+BINARYEN_ROOT = ROOT_DIR
 LLVM_ROOT = os.path.join(ROOT_DIR, 'bin')
-BINARYEN_ROOT = os.path.join(ROOT_DIR)
 NODE_JS = '{{PREBUILT_NODE}}'
