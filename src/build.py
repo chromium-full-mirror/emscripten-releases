@@ -909,6 +909,8 @@ def Binaryen(build_dir, is_cross=False):
     if ShouldUseLTO():
         cmake_command.append('-DBUILD_STATIC_LIB=ON')
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
+    if IsLinux():
+        cmake_command.append('-DBUILD_MIMALLOC=ON')
 
     proc.check_call(cmake_command, cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', '-v'] + host_toolchains.NinjaJobs(),
