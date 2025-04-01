@@ -18,6 +18,7 @@ import json
 import os
 import sys
 
+import buildbot
 import proc
 import work_dirs
 
@@ -188,8 +189,9 @@ def StartReproxy(host_platform):
         '-cfg=' + ReproxyCfg(),
         '-server_address=' + server_address # this flag doesn't seem to work?
     ]
-    for k,v in os.environ.items():
-        print(f'{k} = {v}')
+    if buildbot.IsBot():
+        for k ,v in os.environ.items():
+            print(f'{k} = {v}')
     proc.check_call(bootstrap_cmd)
 
 
