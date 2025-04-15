@@ -52,7 +52,8 @@ def create_cl(source_rev, tag):
     message = f'Version {tag} RC\n\nDEPS from revision {source_rev}\n'
     message += 'This CL was created by src/create_release_candidate.py'
     run(['git', 'commit', '-m', message])
-    run(['git', 'cl', 'upload'])
+    reviewers = 'dschuff@chromium.org,sbc@chromium.org,azakai@google.com'
+    run(['git', 'cl', 'upload', '--send-mail', '-r', reviewers])
 
 
 def main(argv):
