@@ -1270,6 +1270,15 @@ def TestLLVMTestSuite():
         buildbot.Fail()
 
 
+def TestBinaryenJS():
+    AddToPath(GetInstallDir('emscripten'))
+    outdir = GetBuildDir('binaryen-out')
+    test_env = os.environ.copy()
+    test_env['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
+    proc.check_call([GetSrcDir('binaryen', 'scripts', 'emcc-tests.sh')],
+                    cwd=outdir, env=test_env)
+
+
 ALL_TESTS = [
     Test('llvm-regression', TestLLVMRegression),
     # These tests do have interesting differences on OSes (especially the
@@ -1277,6 +1286,7 @@ ALL_TESTS = [
     Test('emtest', TestEmtest),
     Test('llvmtest', TestLLVMTestSuite),
     Test('sizebenchmarks', TestSizeBenchmarks),
+    Test('binaryenjs', TestBinaryenJS),
 ]
 
 
