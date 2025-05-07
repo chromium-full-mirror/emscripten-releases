@@ -117,8 +117,8 @@ ci_builder("linux-test-suites", "Ubuntu", max_concurrent_invocations = 2, cpu = 
 ci_builder("mac", "Mac-15", cpu = "x86")
 ci_builder("win", "Windows-10")
 
-try_builder("linux", "Ubuntu")
-try_builder("linux-test-suites", "Ubuntu")
+try_builder("linux", "Ubuntu", cpu = "x86")
+try_builder("linux-test-suites", "Ubuntu", cpu = "x86")
 try_builder("mac", "Mac-15", cpu = "x86")
 try_builder("win", "Windows-10")
 
