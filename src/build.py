@@ -652,9 +652,8 @@ def CleanLLVMInstall():
                           'clang-rename', 'clang-repl',
                           'diagtool', 'git-clang-format', 'hmaptool', 'ld.lld',
                           'ld64.lld', 'ld64.lld.darwinnew', 'ld64.lld.darwinold',
-                          'lld-link', 'libclang.dll', 'llvm-cov', 'llvm-ml',
-                          'llvm-lib', 'llvm-pdbutil', 'llvm-profdata',
-                          'llvm-rc'):
+                          'lld-link', 'libclang.dll', 'llvm-ml',
+                          'llvm-lib', 'llvm-pdbutil', 'llvm-rc'):
         Remove(GetInstallDir('bin', Executable(unneeded_tool)))
 
     for lib in ['libclang.%s' for suffix in ('so.*', 'dylib')]:
@@ -736,9 +735,9 @@ def LLVM(build_dir, is_cross=False):
     ninja_targets = ('all', 'install')
 
     if ShouldUseLTO():
-        targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cxxfilt',
-                   'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm',
-                   'llvm-objcopy', 'llvm-objdump', 'llvm-ranlib',
+        targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cov',
+                   'llvm-cxxfilt', 'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm',
+                   'llvm-objcopy', 'llvm-objdump', 'llvm-profdata', 'llvm-ranlib',
                    'llvm-readobj', 'llvm-size', 'llvm-strings',
                    'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers',
                    'clang-scan-deps']
