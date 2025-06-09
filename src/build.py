@@ -1269,7 +1269,8 @@ def TestLLVMTestSuite():
 
 def TestBinaryenJS():
     AddToPath(GetInstallDir('emscripten'))
-    outdir = GetBuildDir('binaryen-out')
+    outdir = GetBuildDir('binaryenjs-test-out')
+    Mkdir(outdir)
     test_env = os.environ.copy()
     test_env['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     proc.check_call([GetSrcDir('binaryen', 'scripts', 'emcc-tests.sh')],
