@@ -266,10 +266,14 @@ def Tar(directory, print_content=False):
     # Where possible use `--use-compress-program` rather than just `J` so that
     # we can pass extra arguments to the xz compressor.  In this case `-T0`
     # tell is to use all the available cores during compression.
-    if IsMac():
-      proc.check_call(['tar', 'cJf', tar, basename], cwd=up_directory)
+    if buildbot.IsUploadingBot():
+        if IsMac():
+            proc.check_call(['tar', 'cJf', tar, basename], cwd=up_directory)
+        else:
+            proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar, basename], cwd=up_directory)
     else:
-      proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar, basename], cwd=up_directory)
+        # If we are not going to upload, use a faster compression method (i.e. none)
+        proc.check_call(['tar', 'cf', tar, basename], cwd=up_directory)
     proc.check_call(['ls', '-lh', tar], cwd=up_directory)
     return tar
 
@@ -279,7 +283,9 @@ def Zip(directory, print_content=False):
     dirname, basename = os.path.split(directory)
     archive = os.path.join(dirname, basename + '.zip')
     print('Creating zip archive', archive)
-    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
+    compression = (zipfile.ZIP_DEFLATED if buildbot.IsUploadingBot()
+                   else zipfile.ZIP_STORED)
+    with zipfile.ZipFile(archive, 'w', compression) as z:
         for root, dirs, files in os.walk(directory):
             for name in files:
                 fs_path = os.path.join(root, name)
