@@ -757,7 +757,7 @@ def LLVM(build_dir, is_cross=False):
         # "stage 1" build, but since our bots always build the full
         # toolchain as native before they build the cross toolchain,
         # we can just use tablegen from its build dir.
-        native_build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
+        native_build_dir = GetBuildDir('llvm-out')
         cmake_flags.append('-DLLVM_NATIVE_TOOL_DIR=' +
                            os.path.join(native_build_dir, 'bin'))
 
@@ -805,7 +805,7 @@ def LLVM(build_dir, is_cross=False):
 
 def LLVMTestDepends():
     buildbot.Step('LLVM Test Dependencies')
-    build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
+    build_dir = GetBuildDir('llvm-out')
     proc.check_call(['ninja', '-v', 'test-depends'] +
                     host_toolchains.NinjaJobs(),
                     cwd=build_dir,
@@ -813,7 +813,7 @@ def LLVMTestDepends():
 
 
 def TestLLVMRegression():
-    build_dir = os.path.join(work_dirs.GetBuild(), 'llvm-out')
+    build_dir = GetBuildDir('llvm-out')
     cc_env = BuildEnv(build_dir, bin_subdir=True)
     if not os.path.isdir(build_dir):
         print('LLVM Build dir %s does not exist' % build_dir)
@@ -1082,24 +1082,22 @@ def AllBuilds():
     return [
         # Host tools
         Build('libcxx', LibCXX,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(),'libcxx-out')),
+              incremental_build_dir=GetBuildDir('libcxx-out')),
         Build('libcxx-cross', LibCXX,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(),'libcxx-cross-out'), is_cross=True),
+              incremental_build_dir=GetBuildDir('libcxx-cross-out'),
+              is_cross=True),
         Build('llvm', LLVM,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'llvm-out'), clobber_lto=IsWindows()),
+              incremental_build_dir=GetBuildDir('llvm-out'),
+              clobber_lto=IsWindows()),
         Build('llvm-cross', LLVM,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'llvm-cross-out'), is_cross=True),
+              incremental_build_dir=GetBuildDir('llvm-cross-out'),
+              is_cross=True),
         Build('llvm-test-depends', LLVMTestDepends),
         Build('binaryen', Binaryen,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'binaryen-out')),
+              incremental_build_dir=GetBuildDir('binaryen-out')),
         Build('binaryen-cross', Binaryen,
-              incremental_build_dir=os.path.join(
-                  work_dirs.GetBuild(), 'binaryen-cross-out'), is_cross=True),
+              incremental_build_dir=GetBuildDir('binaryen-cross-out'),
+              is_cross=True),
         Build('emscripten', Emscripten),
         # Archive
         Build('archive', ArchiveBinaries),
@@ -1181,12 +1179,12 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
 def TestEmtest():
     tests = options.test_params if options.test_params else ['wasm2', 'other']
     ExecuteEmscriptenTestSuite('emwasm', tests,
-                               os.path.join(work_dirs.GetTest(), 'emtest-out'))
+                               GetTestDir('emtest-out'))
 
 def TestSizeBenchmarks():
     test_dir = GetInstallDir('emscripten')
     ExecuteEmscriptenTestSuite('emwasm', options.test_params,
-                               os.path.join(work_dirs.GetTest(), 'emtest-out'))
+                               GetTestDir('emtest-out'))
     stats_filename = os.path.join(test_dir, 'out', 'test', 'stats.json')
     with open(stats_filename) as results_fd:
         json_results = json.loads(results_fd.read())
