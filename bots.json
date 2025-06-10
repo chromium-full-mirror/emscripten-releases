@@ -65,7 +65,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_codesize_*,skip:other.test_minimal_runtime_code_size*"]
+                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*"]
       },
       {
         "name": "Emscripten testsuite (wasm64l)",
@@ -133,7 +133,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_codesize_*,skip:other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config"]
       },
       {
         "name": "BinaryenJS tests",
@@ -177,7 +177,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.test_codesize_*,skip:other.test_minimal_runtime_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config"]
       }
     ]
   },
