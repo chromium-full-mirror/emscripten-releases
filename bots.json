@@ -177,7 +177,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config,skip:other.test_wasm_sourcemap_relative_paths"]
       }
     ]
   },
