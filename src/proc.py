@@ -21,41 +21,24 @@
 # its attributes.
 import subprocess
 import os
+import shutil
 import sys
 # Imports all of subprocess into the current namespace, effectively
 # re-exporting everything.
 from subprocess import *  # noqa
 
 
-def Which(filename, cwd=None, is_executable=True):
-    if os.path.isabs(filename):
-        return filename
-
-    to_search = os.environ.get('PATH', '').split(os.pathsep)
-    if cwd:
-        to_search.insert(0, cwd)
-    exe_suffixes = ['']
-    if sys.platform == 'win32' and is_executable:
-        exe_suffixes = ['.exe', '.bat', '.cmd'] + exe_suffixes
-    for path in to_search:
-        abs_path = os.path.abspath(os.path.join(path, filename))
-        for suffix in exe_suffixes:
-            full_path = abs_path + suffix
-            if (os.path.isfile(full_path) and
-                    (not is_executable or os.access(full_path, os.X_OK))):
-                return full_path
-    raise Exception('File "%s" not found. (cwd=`%s`, PATH=`%s`' %
-                    (filename, cwd, os.environ['PATH']))
-
-
-def MungeExe(cmd, cwd):
+def MungeExe(cmd):
+    if isinstance(cmd, str):
+        return cmd
     exe = cmd[0]
     if exe.endswith('.py'):
-        script = Which(exe, cwd, is_executable=False)
-        return [sys.executable, script] + cmd[1:]
-    if exe in ('git', 'npm', 'gclient'):
-        return [Which(exe, cwd)] + cmd[1:]
-    return cmd
+        return [sys.executable] + cmd
+    if os.path.isabs(exe):
+        return cmd
+    full_path = shutil.which(exe)
+    assert full_path, f'failed to find {exe} in path'
+    return [full_path] + cmd[1:]
 
 
 def MungeKwargs(kwargs):
@@ -78,7 +61,7 @@ def LogCall(funcname, cmd, cwd):
 def check_call(cmd, **kwargs):
     cwd = kwargs.get('cwd', os.getcwd())
     should_log, kwargs = MungeKwargs(kwargs)
-    cmd = MungeExe(cmd, cwd)
+    cmd = MungeExe(cmd)
     if should_log:
         LogCall('subprocess.check_call', cmd, cwd)
     sys.stdout.flush()
@@ -91,7 +74,7 @@ def check_call(cmd, **kwargs):
 def check_output(cmd, **kwargs):
     cwd = kwargs.get('cwd', os.getcwd())
     should_log, kwargs = MungeKwargs(kwargs)
-    cmd = MungeExe(cmd, cwd)
+    cmd = MungeExe(cmd)
     if should_log:
         LogCall('subprocess.check_output', cmd, cwd)
     sys.stdout.flush()
