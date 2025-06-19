@@ -34,7 +34,7 @@ def Upload(local, remote):
     if not buildbot.IsUploadingBot():
         return
     remote = GetCloudStoragePath() + remote
-    proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
+    proc.check_call(['gsutil', 'cp', local, 'gs://' + remote])
     return CLOUD_STORAGE_BASE_URL + remote
 
 
@@ -43,7 +43,7 @@ def ListBuilds(revision):
     for builder in ('linux', 'mac', 'win'):
         try:
             os_builds = proc.check_output(
-                ['gsutil.py', 'ls',
+                ['gsutil', 'ls',
                  f'gs://{GetCloudStoragePath()}{builder}/{revision}'
                  ]).decode().strip().split('\n')
         except proc.CalledProcessError:
@@ -59,10 +59,10 @@ def UploadSkiaPerf(local, remote):
         print('Not an uploading bot, not uploading skia perf results.')
         return
     remote = SKIA_PERF_STORAGE_PATH + remote
-    proc.check_call(['gsutil.py', 'cp', local, 'gs://' + remote])
+    proc.check_call(['gsutil', 'cp', local, 'gs://' + remote])
     return CLOUD_STORAGE_BASE_URL + remote
 
 
 def Download(remote, local):
     remote = GetCloudStoragePath() + remote
-    proc.check_call(['gsutil.py', 'cp', 'gs://' + remote, local])
+    proc.check_call(['gsutil', 'cp', 'gs://' + remote, local])
