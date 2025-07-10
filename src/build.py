@@ -922,14 +922,11 @@ def Binaryen(build_dir, is_cross=False):
 
 
 def InstallEmscripten():
-    src_dir = GetSrcDir('emscripten')
     em_install_dir = GetInstallDir('emscripten')
     Remove(em_install_dir)
     print('Installing emscripten into %s' % em_install_dir)
     proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
-                    cwd=src_dir)
-    print('Running npm install ...')
-    proc.check_call(['npm', 'ci', '--production'], cwd=em_install_dir)
+                    cwd=GetSrcDir('emscripten'))
 
 
 def Emscripten():
