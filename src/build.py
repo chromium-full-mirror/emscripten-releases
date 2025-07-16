@@ -923,10 +923,12 @@ def Binaryen(build_dir, is_cross=False):
 
 def InstallEmscripten():
     em_install_dir = GetInstallDir('emscripten')
+    em_src_dir = GetSrcDir('emscripten')
     Remove(em_install_dir)
     print('Installing emscripten into %s' % em_install_dir)
+    proc.check_call([os.path.join(em_src_dir, 'bootstrap.py')])
     proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
-                    cwd=GetSrcDir('emscripten'))
+                    cwd=em_src_dir)
 
 
 def Emscripten():
