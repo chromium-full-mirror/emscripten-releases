@@ -64,7 +64,7 @@ hooks = [
     'name': 'binaryen_submodule_init',
     'pattern': '.',
     'action': ['git', '-C', 'emscripten-releases/binaryen',
-               'submodule', 'update', '--init'],
+               'submodule', 'update', '--force', '--init'],
   },
 ]
 
