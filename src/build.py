@@ -968,6 +968,12 @@ def Emscripten():
     if os.path.exists(sanity):
         os.remove(sanity)
 
+    # The EMCC_USE_NINJA build will leave intermediate files around. Make sure
+    # we don't ship them.
+    build_dir = GetInstallDir('emscripten', 'cache', 'build')
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+
 
 def VerifyMacArtifactsBuildArch(is_cross=False):
     # Ensure that all binaries have the correct architecture. There is
