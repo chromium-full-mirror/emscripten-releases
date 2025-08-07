@@ -953,9 +953,6 @@ def Emscripten():
     env = os.environ.copy()
     env['EM_CONFIG'] = config
     env['EMSDK_PYTHON'] = EMSDK_PYTHON
-    # Experiment to see whether batching multiple files in a single clang
-    # invocation is causing intermittent issues
-    env['EMCC_USE_NINJA'] = '1'
     # Use emscripten's embuilder to prebuild the system libraries.
     # This depends on binaryen already being built and installed into the
     # archive/install dir.
@@ -969,7 +966,7 @@ def Emscripten():
         os.remove(sanity)
 
     # The EMCC_USE_NINJA build will leave intermediate files around. Make sure
-    # we don't ship them.
+    # we don't ship them. (This is safe even if we don't use the ninja build).
     build_dir = GetInstallDir('emscripten', 'cache', 'build')
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
