@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import argparse
 import os
 import subprocess
 import sys
@@ -22,6 +23,17 @@ import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(script_dir)
 
+top_comment = '''\
+#
+# IMPORTANT: This file is a copy the DEPS file that exists in order to trigger
+# the release builds to produce an official LTO build to be part of a release.
+# Each time this file changes the builders will produce an LTO SDK build.
+#
+# IMPORTANT: This file is (mostly) updated by running the
+# src/create_release_candidate.py script which will overwrite with a copy of the
+# DEPS file from a particular point in time. See src/create_release_candidate.py
+# for more on this.
+'''
 
 def run(cmd, capture_output=False):
     try:
@@ -34,19 +46,31 @@ def run(cmd, capture_output=False):
         raise e
 
 
-def create_cl(source_rev, tag):
+def modify_deps_file(content):
+    # Insert `top_comment` after the initial copyright comment
+    pos = content.find('\n\n')
+    assert pos != -1
+    pos += 1
+    return content[:pos] + top_comment + content[pos:]
+
+
+def create_cl(source_rev, tag, dry_run):
     if run(['git', 'status', '--porcelain', '--untracked-files=no']):
         print('tree is not clean')
         return 1
 
+    # Copy DEPS from source_rev to DEPS.tagged_release
+    deps = run(['git', 'show', f'{source_rev}:DEPS'], capture_output=True)
+    deps = modify_deps_file(deps)
+    with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
+      f.write(deps)
+
+    if dry_run:
+        return
+
     # Create a new git branch
     branch_name = f'version_{tag}_rc'
     run(['git', 'checkout', '-b', branch_name])
-
-    # Copy DEPS from source_rev to DEPS.tagged_release
-    deps = run(['git', 'show', f'{source_rev}:DEPS'], capture_output=True)
-    with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
-        f.write(deps)
 
     run(['git', 'add', '-u', 'DEPS.tagged-release'])
     message = f'Version {tag} RC\n\nDEPS from revision {source_rev}\n'
@@ -57,15 +81,17 @@ def create_cl(source_rev, tag):
 
 
 def main(argv):
-    if len(argv) < 2:
-        print('First argument must be the emscripten version (e.g. 3.1.66)')
-    tag = argv[1]
-    if len(argv) > 2:
-        source_rev = argv[2]
-    else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--revision', help='git revision to use for release')
+    parser.add_argument('-n', '--dry-run', action='store_true', help='update DEPS.tagged_release but do not commit changes or upload them')
+    parser.add_argument('version', help='emscripten version (e.g. 3.1.66)')
+    args = parser.parse_args(argv)
+    tag = args.version
+    source_rev = args.revision
+    if not source_rev:
         source_rev = run(['git', 'rev-parse', 'HEAD'], True).strip()
-    create_cl(source_rev, tag)
+    create_cl(source_rev, tag, args.dry_run)
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main(sys.argv[1:]))
