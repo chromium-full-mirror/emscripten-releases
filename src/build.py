@@ -711,6 +711,17 @@ def LLVM(build_dir, is_cross=False):
     build_dylib = 'ON'
     if IsWindows() or ShouldUseLTO() or options.link_static:
         build_dylib = 'OFF'
+
+    # We configure LLVM to support the host architecture as well as
+    # WebAssembly.  However, when we are cross compiling the host
+    # architecture is different the build architecture.
+    host_arch = 'Native'
+    if is_cross:
+        if platform.machine() == 'x86_64':
+            host_arch = 'AArch64'
+        else:
+            host_arch = 'X86'
+
     cmake_flags = [
         '-DLLVM_ENABLE_LIBXML2=OFF',
         '-DLLVM_ENABLE_ZSTD=OFF',
@@ -722,7 +733,7 @@ def LLVM(build_dir, is_cross=False):
         # Our mac bot's toolchain's ld64 is too old for trunk libLTO.
         '-DLLVM_TOOL_LTO_BUILD=OFF',
         '-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON',
-        '-DLLVM_TARGETS_TO_BUILD=X86;WebAssembly',
+        '-DLLVM_TARGETS_TO_BUILD=%s;WebAssembly' % host_arch,
         '-DLLVM_ENABLE_PROJECTS=lld;clang',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
