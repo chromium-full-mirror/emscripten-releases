@@ -18,7 +18,7 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten",
+        "name": "Build Emscripten libraries",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {
@@ -92,7 +92,7 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten",
+        "name": "Build Emscripten libraries",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {
@@ -156,7 +156,7 @@
         "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten",
+        "name": "Build Emscripten libraries",
         "command": ["src/build.py", "--build-include=emscripten"]
       },
       {
@@ -204,7 +204,7 @@
         "command": ["src/build.py", "--build-include=binaryen", "--use-lto=auto"]
       },
       {
-        "name": "Build Emscripten (upstream)",
+        "name": "Build Emscripten libraries",
         "command": ["src/build.py", "--build-include=emscripten"]
       }
     ],
