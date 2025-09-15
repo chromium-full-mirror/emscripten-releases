@@ -49,7 +49,7 @@ def Mkdir(path):
 
 def Remove(path):
     """Remove file or directory if it exists, do nothing otherwise."""
-    if not os.path.exists(path):
+    if not os.path.lexists(path):
         return
     print('Removing %s' % path)
     if not os.path.isdir(path):
