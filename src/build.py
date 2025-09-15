@@ -656,7 +656,7 @@ def CleanLLVMInstall():
                           'clang-rename', 'clang-repl',
                           'diagtool', 'git-clang-format', 'hmaptool', 'ld.lld',
                           'ld64.lld', 'ld64.lld.darwinnew', 'ld64.lld.darwinold',
-                          'lld-link', 'libclang.dll', 'llvm-ml',
+                          'lld-link', 'libclang.dll', 'llvm-ml', 'llvm-ml64',
                           'llvm-lib', 'llvm-pdbutil', 'llvm-rc'):
         Remove(GetInstallDir('bin', Executable(unneeded_tool)))
 
