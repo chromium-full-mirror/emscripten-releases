@@ -138,3 +138,8 @@ wheel: <
   name: "infra/python/wheels/grpcio/${vpython_platform}"
   version: "version:1.39.0"
 >
+
+wheel: <
+  name: "infra/python/wheels/psutil/${vpython_platform}"
+  version: "version:5.9.8"
+>
