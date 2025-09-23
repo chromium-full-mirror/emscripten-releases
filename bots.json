@@ -63,9 +63,7 @@
       },
       {
         "name": "Emscripten testsuite (other)",
-        "command": ["src/build.py",
-                    "--test-include=emtest",
-                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*"]
+        "command": ["src/build.py", "--test-include=emtest", "--test-param=other"]
       },
       {
         "name": "Emscripten testsuite (wasm64l)",
@@ -132,8 +130,7 @@
       {
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
-                    "--test-include=emtest",
-                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config"]
+                    "--test-include=emtest", "--test-param=other,skip:other.test_cmake_find_pkg_config"]
       },
       {
         "name": "BinaryenJS tests",
@@ -177,7 +174,7 @@
         "name": "Emscripten testsuite (other)",
         "command": ["src/build.py",
                     "--test-include=emtest",
-                    "--test-param=other,skip:other.*_codesize*,skip:other.*_code_size*,skip:other.test_cmake_find_pkg_config,skip:other.test_wasm_sourcemap_relative_paths"]
+                    "--test-param=other,skip:other.test_cmake_find_pkg_config,skip:other.test_wasm_sourcemap_relative_paths"]
       }
     ]
   },
@@ -221,6 +218,10 @@
       {
         "name": "LLVM testsuite",
         "command": ["src/build.py", "--test-include=llvmtest"]
+      },
+      {
+        "name": "Emscripten testsuite (codesize)",
+        "command": ["src/build.py", "--test-include=emtest", "--test-param=codesize"]
       },
       {
         "name": "Emscripten testsuite (>2GB)",
