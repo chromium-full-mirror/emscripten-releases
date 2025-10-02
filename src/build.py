@@ -1176,7 +1176,10 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     # Our bots don't currently have a recent enough version of node installed
     # to run tests for recent wasm features such as wasm64, wasm EH, or simd.
     test_env['EMTEST_SKIP_WASM64'] = '1'
+    # Remove this legacy variable once emscripten rolls.
     test_env['EMTEST_SKIP_EH'] = '1'
+    test_env['EMTEST_SKIP_WASM_EH'] = '1'
+    test_env['EMTEST_SKIP_WASM_LEGACY_EH'] = '1'
     test_env['EMTEST_SKIP_JSPI'] = '1'
     test_env['EMTEST_SKIP_NODE_CANARY'] = '1'
     test_env['EMTEST_SKIP_RUST'] = '1'
