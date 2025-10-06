@@ -60,7 +60,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 56
+CLOBBER_BUILD_TAG = 57
 
 options = None
 
@@ -942,7 +942,7 @@ def InstallEmscripten():
                     cwd=em_src_dir)
 
 
-def Emscripten():
+def Emscripten(build_dir):
     InstallEmscripten()
 
     def WriteEmscriptenConfig(infile, outfile):
@@ -1118,7 +1118,10 @@ def AllBuilds():
         Build('binaryen-cross', Binaryen,
               incremental_build_dir=GetBuildDir('binaryen-cross-out'),
               is_cross=True),
-        Build('emscripten', Emscripten),
+        # If the emscripten libs build fails, clobber the LLVM directory.
+        # See https://github.com/llvm/llvm-project/issues/156744
+        Build('emscripten', Emscripten,
+              incremental_build_dir=GetBuildDir('llvm-out')),
         # Archive
         Build('archive', ArchiveBinaries),
         Build('archive-cross', ArchiveBinaries, is_cross=True),
