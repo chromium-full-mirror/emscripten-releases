@@ -571,8 +571,8 @@ def CMakeCommandBase():
                     '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
                     '-DCMAKE_BUILD_TYPE=Release'])
     if IsMac():
-        # Target MacOS Mojave (10.14). Keep this in sync with emsdk.py
-        command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=10.14')
+        # Target MacOS Mojave (11). Keep this in sync with emsdk.py
+        command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=11')
     elif IsWindows():
         # CMake's usual logic fails to find LUCI's git on Windows
         git_exe = proc.Which('git')
