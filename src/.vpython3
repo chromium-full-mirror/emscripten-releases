@@ -22,7 +22,7 @@
 # Read more about `vpython` and how to modify this file here:
 #   https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython.md
 
-python_version: "3.8"
+python_version: "3.11"
 
 wheel: <
   name: "infra/python/wheels/requests-py2_py3"
@@ -60,7 +60,7 @@ wheel: <
 >
 wheel: <
   name: "infra/python/wheels/grpc-google-iam-v1-py3"
-  version: "version:0.12.3"
+  version: "version:0.12.6"
 >
 wheel: <
   name: "infra/python/wheels/six-py2_py3"
@@ -72,11 +72,11 @@ wheel: <
 >
 wheel: <
   name: "infra/python/wheels/protobuf-py3"
-  version: "version:3.19.3"
+  version: "version:4.21.9"
 >
 wheel: <
   name: "infra/python/wheels/googleapis-common-protos-py2_py3"
-  version: "version:1.52.0"
+  version: "version:1.61.0"
 >
 wheel: <
   name: "infra/python/wheels/packaging-py2_py3"
@@ -131,12 +131,12 @@ wheel: <
   version: "version:0.4.3"
 >
 wheel: <
-  name: "infra/python/wheels/pyyaml/${vpython_platform}"
-  version: "version:5.4.1"
+  name: "infra/python/wheels/pyyaml-py3"
+  version: "version:6.0.1"
 >
 wheel: <
   name: "infra/python/wheels/grpcio/${vpython_platform}"
-  version: "version:1.39.0"
+  version: "version:1.54.2"
 >
 
 wheel: <
