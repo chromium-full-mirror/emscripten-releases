@@ -52,7 +52,6 @@ EMSDK_PYTHON = sys.executable
 EMSCRIPTEN_CONFIG = 'emscripten_config'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
-WASM_STORAGE_BASE = 'https://wasm.storage.googleapis.com/'
 CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
 
 EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-releases-builds/deps/'
@@ -392,6 +391,7 @@ def SyncArchive(out_dir, name, url, create_out_dir=False):
                 print('%s directory already exists' % name)
                 return
         print('%s directory exists but is not up-to-date' % name)
+        Remove(out_dir)
     print('Downloading %s from %s' % (name, url))
 
     if create_out_dir:
@@ -427,7 +427,7 @@ def SyncArchive(out_dir, name, url, create_out_dir=False):
 
 def SyncPrebuiltCMake(name, src_dir):
     extension = '.zip' if IsWindows() else '.tar.gz'
-    url = WASM_STORAGE_BASE + PREBUILT_CMAKE_BASE_NAME + extension
+    url = EMSDK_STORAGE_BASE + PREBUILT_CMAKE_BASE_NAME + extension
     SyncArchive(PrebuiltCMakeDir(), 'cmake', url)
 
 
@@ -454,7 +454,7 @@ def SyncLinuxSysroots(name, src_dir):
     for arch in ('x86_64', 'arm64'):
         SyncArchive(GetPrebuilt(LinuxSysroot(arch)),
                     name,
-                    WASM_STORAGE_BASE + LinuxSysroot(arch) + '.tar.xz',
+                    EMSDK_STORAGE_BASE + LinuxSysroot(arch) + '.tar.xz',
                     create_out_dir=True)
 
 
