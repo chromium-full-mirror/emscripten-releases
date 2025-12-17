@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#   Copyright 2015 WebAssembly Community Group participants
+#   Copyright 2024 WebAssembly Community Group participants
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-'''
-Trigger the EMSDK release workflow on github when HEAD is an LTO release
+
+"""Trigger the EMSDK release workflow on github when HEAD is an LTO release
 
 After an LTO build has finished, check whether all associated builds
 have been uploaded. If so, post an API call to GitHub to trigger the
@@ -23,7 +23,7 @@ create-release.yml workflow on EMSDK.
 
 LTO builds are builds with touch DEPS.tagged-release and have the
 corresponding non-LTO build in their commit message.
-'''
+"""
 
 import build
 import buildbot
@@ -46,6 +46,7 @@ EMSDK_REPO_OWNER = 'emscripten-core'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(script_dir)
+
 
 def get_github_token():
     client = secretmanager.SecretManagerServiceClient()
@@ -72,9 +73,8 @@ def get_github_token():
 
 
 def trigger_emsdk_workflow(lto, nonlto):
-    owner = EMSDK_REPO_OWNER
     token = get_github_token()
-    url = f'https://api.github.com/repos/{owner}/emsdk/actions/workflows/create-release.yml/dispatches'
+    url = f'https://api.github.com/repos/{EMSDK_REPO_OWNER}/emsdk/actions/workflows/create-release.yml/dispatches'
 
     payload = {
         'ref': 'main',
@@ -104,7 +104,7 @@ def main(argv):
         print(f'HEAD revision does not modify {deps_file}')
         return 0
     if not buildbot.IsUploadingBot():
-        print(f'Not an uploading bot.')
+        print('Not an uploading bot.')
         return 0
 
     lto_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
