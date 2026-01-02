@@ -20,7 +20,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': 'ee00f8a8b4fb5973c34f1aa6aad959fc65f9f552',
+  'emscripten_revision': '420db67b7ffc4702c76128e7998e828dd2f4a64d',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
