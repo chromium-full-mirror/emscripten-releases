@@ -1,6 +1,15 @@
 # Copyright 2019 the V8 project authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+#
+# IMPORTANT: This file is a copy the DEPS file that exists in order to trigger
+# the release builds to produce an official LTO build to be part of a release.
+# Each time this file changes the builders will produce an LTO SDK build.
+#
+# IMPORTANT: This file is (mostly) updated by running the
+# src/create_release_candidate.py script which will overwrite with a copy of the
+# DEPS file from a particular point in time. See src/create_release_candidate.py
+# for more on this.
 
 
 vars = {
@@ -16,19 +25,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '986e7cb9fd494987e19cfe3358933ad12a21b61e',
+  'binaryen_revision': 'f4138bbbeb9ab350ae0ca93f7a63f59c444576c6',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '0f3d2e62bccf8e14497ff19e05a1202c51eb0c65',
+  'emscripten_revision': '7a5d93b50f6a3a35e85a0d2fc9e667b8498e6aed',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'c7706d9472fe880ba1d3418919ad4185710c9559',
+  'llvm_project_revision': '5243501cca02d7e54294d4bb5de0a85b06c40b7d',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'f2aa9b72a07b5424708ce0562c49f003853a0fb6',
+  'v8_revision': '58ab28f3e051fbe4ac14f4aed84538e6af32ebbd',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
