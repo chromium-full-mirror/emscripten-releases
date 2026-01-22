@@ -1185,6 +1185,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     test_env['EMTEST_SKIP_WASM_LEGACY_EH'] = '1'
     test_env['EMTEST_SKIP_JSPI'] = '1'
     test_env['EMTEST_SKIP_NODE_CANARY'] = '1'
+    test_env['EMTEST_SKIP_NODE_25'] = '1'
     test_env['EMTEST_SKIP_RUST'] = '1'
     test_env['EMTEST_SKIP_NEW_CMAKE'] = '1'
     # Don't run known flaky tests on the emscripten-releases waterfall.  This
