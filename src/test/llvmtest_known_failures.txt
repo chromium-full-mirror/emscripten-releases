@@ -1,17 +1,5 @@
 # Known failures for the LLVM test suite (SingleSource only, so far)
 
-# These all require exceptions. Adding -s DISABLE_EXCEPTION_CATCHING=0
-# (e.g. in SingleSource/Regression/C++/EH/CMakeLists.txt) makes them work.
-SingleSource/Regression/C++/EH/Regression-C++-class_hierarchy.js.test
-SingleSource/Regression/C++/EH/Regression-C++-ctor_dtor_count-2.js.test
-SingleSource/Regression/C++/EH/Regression-C++-ctor_dtor_count.js.test
-SingleSource/Regression/C++/EH/Regression-C++-function_try_block.js.test
-SingleSource/Regression/C++/EH/Regression-C++-inlined_cleanup.js.test
-SingleSource/Regression/C++/EH/Regression-C++-recursive-throw.js.test
-SingleSource/Regression/C++/EH/Regression-C++-simple_rethrow.js.test
-SingleSource/Regression/C++/EH/Regression-C++-simple_throw.js.test
-SingleSource/Regression/C++/EH/Regression-C++-throw_rethrow_test.js.test
-
 # All of these are currently untriaged.
 SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.js.test
 SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.js.test
@@ -39,7 +27,6 @@ SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.js.test
 SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.js.test
 SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.js.test
 SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.js.test
-SingleSource/Benchmarks/Shootout-C++/EH/Shootout-C++-except.js.test
 SingleSource/Benchmarks/Shootout-C++/Shootout-C++-ackermann.js.test
 SingleSource/Regression/C++/EH/Regression-C++-exception_spec_test.js.test
 SingleSource/Regression/C++/Regression-C++-BuiltinTypeInfo.js.test

@@ -1254,7 +1254,9 @@ def TestLLVMTestSuite():
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
         '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
         '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=128KB',
-        '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py')
+        '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
+        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions',
+        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128',
     ]
 
     proc.check_call(command, cwd=outdir)
