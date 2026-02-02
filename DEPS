@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'a34d5653d52a82b8cfe90149ee8739d890a86b2d',
+  'llvm_project_revision': 'a86202e82f040a62a346e173a9d3d1826146b9b2',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
