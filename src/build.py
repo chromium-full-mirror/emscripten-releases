@@ -21,6 +21,7 @@ import json
 import multiprocessing
 import platform
 import os
+import re
 import shutil
 import struct
 import sys
@@ -981,6 +982,40 @@ def Emscripten(build_dir):
     build_dir = GetInstallDir('emscripten', 'cache', 'build')
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
+
+    if ShouldUseLTO():
+        # Get the version number from the first line of the git commit at HEAD,
+        # which should be of the form "Version x.y.z RC"
+        # (see create_release_candidate.py).
+        git_msg = proc.check_output(
+            ['git', 'show', '-s', '--format=%s', 'HEAD'],
+            cwd=ROOT_DIR).strip().decode('utf-8')
+        m = re.match(r'Version (\d+\.\d+\.\d+) RC', git_msg)
+        if not m:
+            raise Exception(f'HEAD commit message "{git_msg}" is not of the '
+                            'form "Version x.y.z RC"')
+        version = m.group(1)
+
+        # Check the content of the emscripten/emscripten-version.txt file. It
+        # is of the form "x.y.z-git" and should match the HEAD commit.
+        version_file = GetInstallDir('emscripten', 'emscripten-version.txt')
+        with open(version_file) as f:
+            version_text = f.read().strip()
+
+        expected_version = version + '-git'
+        # If it does not, throw an exception. Keep this check last so that the
+        # emscripten install step can still be run locally in a dirty git
+        # checkout (this step will throw but emscripten will still be installed
+        # and usable).
+        if version_text != expected_version:
+            raise Exception(f'Version mismatch: HEAD commit says {version} '
+                            f'(expecting {expected_version} in file), but '
+                            f'file has {version_text}')
+
+        # Update emscripten/emscripten-version.txt to drop the "-git" suffix.
+        print('Updating %s to %s' % (version_file, version))
+        with open(version_file, 'w') as f:
+            f.write('%s\n' % version)
 
 
 def VerifyMacArtifactsBuildArch(is_cross=False):
