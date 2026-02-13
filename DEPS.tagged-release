@@ -10,6 +10,8 @@
 # src/create_release_candidate.py script which will overwrite with a copy of the
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
+#
+# VERSION: 5.0.1
 
 
 vars = {

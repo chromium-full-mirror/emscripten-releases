@@ -17,6 +17,7 @@
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 
@@ -33,6 +34,8 @@ top_comment = '''\
 # src/create_release_candidate.py script which will overwrite with a copy of the
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
+#
+# VERSION: %s
 '''
 
 def run(cmd, capture_output=False):
@@ -46,12 +49,12 @@ def run(cmd, capture_output=False):
         raise e
 
 
-def modify_deps_file(content):
+def modify_deps_file(content, version):
     # Insert `top_comment` after the initial copyright comment
     pos = content.find('\n\n')
     assert pos != -1
     pos += 1
-    return content[:pos] + top_comment + content[pos:]
+    return content[:pos] + (top_comment % version) + content[pos:]
 
 
 def create_cl(source_rev, tag, dry_run):
@@ -61,7 +64,7 @@ def create_cl(source_rev, tag, dry_run):
 
     # Copy DEPS from source_rev to DEPS.tagged_release
     deps = run(['git', 'show', f'{source_rev}:DEPS'], capture_output=True)
-    deps = modify_deps_file(deps)
+    deps = modify_deps_file(deps, tag)
     with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
       f.write(deps)
 
@@ -80,12 +83,28 @@ def create_cl(source_rev, tag, dry_run):
     run(['git', 'cl', 'upload', '--send-mail', '-r', reviewers])
 
 
+def parse_version():
+    deps = open(os.path.join(root_dir, 'DEPS.tagged-release')).read()
+    match = re.search("^# VERSION: (.*)$", deps, re.MULTILINE)
+    if not match:
+        return None
+    return match.group(1)
+
+
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--revision', help='git revision to use for release')
     parser.add_argument('-n', '--dry-run', action='store_true', help='update DEPS.tagged_release but do not commit changes or upload them')
-    parser.add_argument('version', help='emscripten version (e.g. 3.1.66)')
+    parser.add_argument('version', help='emscripten version (e.g. 3.1.66)', nargs='?')
     args = parser.parse_args(argv)
+    if not args.version:
+        version = parse_version()
+        if not version:
+            print('no version specified and failed to parse existing version from DEPS.tagged_release')
+            return 1
+        version = [int(v) for v in version.split('.')]
+        version[-1] += 1
+        args.version = '.'.join(str(v) for v in version)
     tag = args.version
     source_rev = args.revision
     if not source_rev:
