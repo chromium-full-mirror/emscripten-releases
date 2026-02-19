@@ -1,6 +1,6 @@
 # Known failures for the LLVM test suite (SingleSource only, so far)
 
-# All of these are currently untriaged.
+# PolyBench issues seem to be related to overly strict FP comparisons
 SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.js.test
 SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.js.test
 SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.js.test
@@ -27,11 +27,17 @@ SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.js.test
 SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.js.test
 SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.js.test
 SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.js.test
+
+# This test has huge recursion and overflows the trusted stack
 SingleSource/Benchmarks/Shootout-C++/Shootout-C++-ackermann.js.test
+# LLVM doesn't support C++03 exception specs on Wasm.
 SingleSource/Regression/C++/EH/Regression-C++-exception_spec_test.js.test
+# These fail because we end up with an extra newline in the output on NODERAWFS
 SingleSource/Regression/C++/Regression-C++-BuiltinTypeInfo.js.test
 SingleSource/Regression/C/Regression-C-2003-05-23-TransparentUnion.js.test
 SingleSource/UnitTests/testcase-CGExprConstant.js.test
 SingleSource/UnitTests/testcase-Expr-1.js.test
 SingleSource/UnitTests/testcase-ExprConstant-1.js.test
 SingleSource/UnitTests/testcase-Value-1.js.test
+# This test uses the wrong signature for main()
+SingleSource/UnitTests/TestLoop.js.test

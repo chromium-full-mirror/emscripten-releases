@@ -1288,10 +1288,11 @@ def TestLLVMTestSuite():
         '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
         '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
-        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=128KB',
+        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -O3',
+        '-DCMAKE_STRIP=' + GetInstallDir('emscripten', 'emstrip.py'),
         '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
-        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions',
-        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128',
+        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -mtail-call',
+        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call',
     ]
 
     proc.check_call(command, cwd=outdir)
