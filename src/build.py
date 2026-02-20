@@ -60,7 +60,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 61
+CLOBBER_BUILD_TAG = 62
 
 options = None
 
@@ -175,7 +175,7 @@ def PrebuiltCMakeArch():
         return 'x86_64'
 
 
-PREBUILT_CMAKE_VERSION = '3.21.3'
+PREBUILT_CMAKE_VERSION = '3.31.11'
 PREBUILT_CMAKE_BASE_NAME = 'cmake-%s-%s-%s' % (
     PREBUILT_CMAKE_VERSION, PrebuiltCMakePlatformName(), PrebuiltCMakeArch())
 
