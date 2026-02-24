@@ -739,6 +739,8 @@ def LLVM(build_dir, is_cross=False):
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
         '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
+        # LLVM's PCH support is new and currently seems to break reclient.
+        '-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON',
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
