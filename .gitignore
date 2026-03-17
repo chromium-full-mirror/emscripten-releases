@@ -8,13 +8,16 @@ llvm-test-suite
 jre-*
 node-*
 cmake-*
-sysroot_debian_stretch_amd64
+sysroot_debian_stretch_amd64_v2
+sysroot_debian_bullseye_arm64
 
 # Build directory for buildbots
 build
 
 *~
 *.pyc
+
+node_modules
 
 # Third party repos.
 third_party/ninja/ninja
