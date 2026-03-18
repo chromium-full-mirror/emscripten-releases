@@ -1,24 +1,24 @@
 # Managed by DEPS checkouts
-binaryen
-emscripten
-llvm-project
-llvm-test-suite
+/binaryen/
+/emscripten/
+/llvm-project/
+/llvm-test-suite/
 
 # Managed by DEPS hooks
-jre-*
-node-*
-cmake-*
-sysroot_debian_stretch_amd64_v2
-sysroot_debian_bullseye_arm64
+/jre-*
+/node-*/
+/cmake-*/
+/sysroot_debian_stretch_amd64_v2/
+/sysroot_debian_bullseye_arm64/
 
 # Build directory for buildbots
-build
+/build/
 
 *~
 *.pyc
 
-node_modules
+/node_modules/
 
 # Third party repos.
-third_party/ninja/ninja
-third_party/ninja/ninja.exe
+/third_party/ninja/ninja
+/third_party/ninja/ninja.exe
