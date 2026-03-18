@@ -1284,17 +1284,18 @@ def TestLLVMTestSuite():
         GetSrcDir('llvm-test-suite'), '-DCMAKE_C_COMPILER=' +
         GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
         GetInstallDir('emscripten', 'em++'), '-DTEST_SUITE_RUN_UNDER=' +
-        NodeBin(), '-DTEST_SUITE_USER_MODE_EMULATION=ON',
+        NodeBin() + ' --experimental-wasm-exnref',
+        '-DTEST_SUITE_USER_MODE_EMULATION=ON',
         '-DTEST_SUITE_SUBDIRS=SingleSource;MicroBenchmarks',
         # The tests for the in-progress matrix extension don't currently work.
         '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
         '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
         '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
-        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -O3',
+        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -O3',
         '-DCMAKE_STRIP=' + GetInstallDir('emscripten', 'emstrip.py'),
         '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
-        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -mtail-call',
-        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call',
+        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -mtail-call',
+        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm',
     ]
 
     proc.check_call(command, cwd=outdir)
