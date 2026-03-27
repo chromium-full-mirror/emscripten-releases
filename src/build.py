@@ -50,7 +50,7 @@ NINJA_DIR = os.path.join(ROOT_DIR, 'third_party', 'ninja')
 # a different one (for the python binary in emsdk).
 EMSDK_PYTHON = sys.executable
 
-EMSCRIPTEN_CONFIG = 'emscripten_config'
+EMSCRIPTEN_CONFIG_TEMPLATE = 'emscripten_config'
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
 CLANG_GIT_REPO = 'https://github.com/llvm/llvm-project'
@@ -959,13 +959,12 @@ def Emscripten(build_dir):
 
     # Set up the emscripten config and compile the libraries
     buildbot.Step('emscripten')
-    config = GetInstallDir(EMSCRIPTEN_CONFIG)
+    config = os.path.join(os.path.dirname(GetInstallDir()), '.emscripten')
     print('Config file: ', config)
-    src_config = os.path.join(SCRIPT_DIR, os.path.basename(config))
+    src_config = os.path.join(SCRIPT_DIR, EMSCRIPTEN_CONFIG_TEMPLATE)
     WriteEmscriptenConfig(src_config, config)
 
     env = os.environ.copy()
-    env['EM_CONFIG'] = config
     env['EMSDK_PYTHON'] = EMSDK_PYTHON
     # Use emscripten's embuilder to prebuild the system libraries.
     # This depends on binaryen already being built and installed into the
@@ -1209,7 +1208,6 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
         Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat')
     ] + tests
     test_env = os.environ.copy()
-    test_env['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     test_env['EMTEST_SKIP_V8'] = '1'
     test_env['EMTEST_SKIP_SCONS'] = '1'
     test_env['EMTEST_SKIP_CCACHE'] = '1'
@@ -1279,7 +1277,6 @@ def TestLLVMTestSuite():
                     cwd=outdir)
     # This has to be in the environment and not TEST_SUITE_EXTRA_C_FLAGS
     # because CMake doesn't append the flags to the try-compiles.
-    os.environ['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     command = [GetInstallDir('emscripten', 'emcmake')] + CMakeCommandBase() + [
         GetSrcDir('llvm-test-suite'), '-DCMAKE_C_COMPILER=' +
         GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
@@ -1340,7 +1337,6 @@ def TestBinaryenJS():
     outdir = GetBuildDir('binaryenjs-test-out')
     Mkdir(outdir)
     test_env = os.environ.copy()
-    test_env['EM_CONFIG'] = GetInstallDir(EMSCRIPTEN_CONFIG)
     proc.check_call([GetSrcDir('binaryen', 'scripts', 'emcc-tests.sh')],
                     cwd=outdir, env=test_env)
 

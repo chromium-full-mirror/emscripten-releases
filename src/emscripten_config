@@ -1,5 +1,5 @@
 import os
-ROOT_DIR = os.path.dirname(__file__)
+ROOT_DIR = '{{WASM_INSTALL}}'
 BINARYEN_ROOT = ROOT_DIR
 LLVM_ROOT = os.path.join(ROOT_DIR, 'bin')
 NODE_JS = '{{PREBUILT_NODE}}'
