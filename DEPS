@@ -32,7 +32,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
-  'llvm-test-suite_revision': 'a71e64de9e47b70f5b841341f9df2f4f18d46785',
+  'llvm-test-suite_revision': '6c6a59906becace341d439cb7e45a56a4b96640a',
 }
 
 deps = {
