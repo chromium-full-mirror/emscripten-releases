@@ -109,14 +109,6 @@ def IsMac():
     return sys.platform == 'darwin'
 
 
-def GetHostPlatform():
-    if IsWindows():
-        return 'windows'
-    if IsMac():
-        return 'mac'
-    return 'linux'
-
-
 def GetCrossArch():
     if platform.machine() == 'x86_64':
         return 'aarch64' if IsLinux() else 'arm64'
@@ -638,7 +630,7 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
     if host_toolchains.ShouldForceHostClang():
         # Goma and Reclient don't have the "default" SDK compilers in its cache, so only
         # use them when using our prebuilt Clang.
-        command.extend(host_toolchains.CMakeLauncherFlags(GetHostPlatform()))
+        command.extend(host_toolchains.CMakeLauncherFlags(host_toolchains.GetHostPlatform()))
     command.extend(args)
     # On Windows, CMake chokes on paths containing backslashes that come from
     # the command line. Probably they just need to be escaped, but using '/'
@@ -681,7 +673,7 @@ def CopyLLVMTools(build_dir):
 def BuildEnv(build_dir, bin_subdir=False,
              runtime='Release'):
     if host_toolchains.UsingReclient():
-        host_toolchains.SetReclientEnv(GetHostPlatform())
+        host_toolchains.SetReclientEnv(host_toolchains.GetHostPlatform())
     if IsMac():
         # We need a ranlib that understands bitcode, but llvm-ranlib is not
         # included in Chrome's packaging. But ranlib is just ar by another name
@@ -1103,7 +1095,7 @@ class Build(object):
             RemoveIfBot(self.incremental_build_dir)
         try:
             if host_toolchains.UsingReclient() and not buildbot.IsBot():
-                host_toolchains.StartReproxy(GetHostPlatform())
+                host_toolchains.StartReproxy(host_toolchains.GetHostPlatform())
             self.runnable(*self.args, **self.kwargs)
         except Exception:
             # If the build fails (even non-LTO), a possible cause is a build

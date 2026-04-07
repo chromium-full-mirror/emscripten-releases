@@ -26,6 +26,14 @@ force_host_clang = True
 use_sysroot = True
 
 
+def GetHostPlatform():
+    if sys.platform == 'win32':
+        return 'windows'
+    elif sys.platform == 'darwin':
+        return 'mac'
+    return 'linux'
+
+
 def SetupToolchain():
     return [
         sys.executable,
@@ -157,6 +165,14 @@ def GetConfigFlag(config_file, flag):
     return None
 
 
+def GetReproxyServerAddress(host_platform):
+    server_address = os.environ.get('RBE_server_address')
+    if not server_address:
+        server_address = GetConfigFlag(RewrapperCfg(host_platform),
+                                       'server_address')
+    return server_address
+
+
 def SetReclientEnv(host_platform):
     exec_root = work_dirs.GetExecRoot()
     os.environ['RBE_exec_root'] = exec_root
@@ -175,14 +191,31 @@ def SetReclientEnv(host_platform):
     os.environ[
         'RBE_platform'] = f'{rbe_platform},InputRootAbsolutePath={exec_root}'
 
+    os.environ['RBE_server_address'] = GetReproxyServerAddress(host_platform)
+
+
+def IsReproxyRunning(server_address):
+    if server_address.startswith('unix://'):
+        sock_path = server_address[7:]
+        return os.path.exists(sock_path)
+    elif server_address.startswith('pipe://'):
+        raise Exception('TODO: Support starting reproxy on windows')
+    else:
+        raise Exception(f'Unknown server address type: {server_address}')
+
 
 def StartReproxy(host_platform):
     # TODO: check that the config has been downloaded correctly (e.g. with the .gclient file) and
     # that the user is logged into GCE auth
 
     # is it bad to just do SetReclientEnv(host_platform) here and add server_address to that set of vars?
-    server_address = GetConfigFlag(RewrapperCfg(host_platform), 'server_address')
+    server_address = GetReproxyServerAddress(host_platform)
     os.environ['RBE_server_address'] = server_address
+
+    if IsReproxyRunning(server_address):
+        print(f'Reproxy at {server_address} is already running.')
+        return
+
     bootstrap_cmd = [
         os.path.join(ReclientDir(), 'bootstrap') ,
         '-re_proxy=' + os.path.join(ReclientDir(), 'reproxy'),
@@ -195,6 +228,18 @@ def StartReproxy(host_platform):
     proc.check_call(bootstrap_cmd)
 
 
+def StopReproxy(host_platform):
+    reproxy = os.path.join(ReclientDir(), 'reproxy')
+    server_address = GetReproxyServerAddress(host_platform)
+    return proc.check_call([
+        os.path.join(ReclientDir(), 'bootstrap'),
+        f'-re_proxy={reproxy}',
+        f'-cfg={ReproxyCfg()}',
+        f'-server_address={server_address}',
+        '-shutdown'
+    ])
+
+
 def GomaDir():
     return os.environ['GOMA_DIR']
 
@@ -202,9 +247,18 @@ def GomaDir():
 def CMakeLauncherFlags(host_platform):
     flags = []
     if UsingReclient():
-        compiler_launcher = ';'.join([
-            os.path.join(ReclientDir(), 'rewrapper'),
-            f'-cfg={RewrapperCfg(host_platform)}'])
+        if 'WRAP_RECLIENT' in os.environ:
+            # For local and agent use, use a local wrapper for reclient, which
+            # internally handles starting reproxy. This allows 'ninja' to just
+            # work, without needing to run in build.py
+            compiler_launcher = ';'.join([
+                sys.executable,
+                os.path.join(os.path.dirname(__file__), 'reclient_wrapper.py')])
+        else:
+            # Use unwrapped reclient for bots, to avoid python overhead..
+            compiler_launcher = ';'.join([
+                os.path.join(ReclientDir(), 'rewrapper'),
+                f'-cfg={RewrapperCfg(host_platform)}'])
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:
