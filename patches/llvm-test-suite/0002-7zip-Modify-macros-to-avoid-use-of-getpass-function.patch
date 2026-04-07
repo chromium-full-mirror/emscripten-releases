@@ -1,0 +1,26 @@
+From 3e6988ec731ca9093525623d31ffe732ec61234e Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 27 Jan 2026 05:32:25 +0000
+Subject: [PATCH 02/30] 7zip: Modify macros to avoid use of getpass function
+
+---
+ MultiSource/Benchmarks/7zip/CPP/myWindows/config.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/MultiSource/Benchmarks/7zip/CPP/myWindows/config.h b/MultiSource/Benchmarks/7zip/CPP/myWindows/config.h
+index 58fa1f5fd..a5f2005a7 100644
+--- a/MultiSource/Benchmarks/7zip/CPP/myWindows/config.h
++++ b/MultiSource/Benchmarks/7zip/CPP/myWindows/config.h
+@@ -26,6 +26,9 @@
+ 
+   #if !defined(ENV_BEOS)
+     #define ENV_HAVE_GETPASS
++    #ifdef __EMSCRIPTEN__
++      #undef ENV_HAVE_GETPASS
++    #endif
+ 
+     #if !defined(sun) && !defined(_AIX)
+       #define ENV_HAVE_TIMEGM
+-- 
+2.53.0.1213.gd9a14994de-goog
+

@@ -1,0 +1,292 @@
+From 447c97a005e954495eb7d214e24a8439925a3922 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 20:58:04 +0000
+Subject: [PATCH 26/30] miniAMR: remove C common symbols
+
+---
+ .../DOE-ProxyApps-C/miniAMR/CMakeLists.txt    |   2 +-
+ .../DOE-ProxyApps-C/miniAMR/block.h           | 114 +++++++++---------
+ .../Benchmarks/DOE-ProxyApps-C/miniAMR/main.c |   1 +
+ .../DOE-ProxyApps-C/miniAMR/timer.h           |  88 +++++++-------
+ 4 files changed, 107 insertions(+), 98 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/CMakeLists.txt b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/CMakeLists.txt
+index 86e1fcc24..355d47d28 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/CMakeLists.txt
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-list(APPEND CPPFLAGS -fcommon -I.)
++list(APPEND CPPFLAGS -fno-common -I.)
+ list(APPEND LDFLAGS -lm)
+ set(RUN_OPTIONS --nx 8 --ny 8 --nz 8 --num_tsteps 100)
+ llvm_multisource(miniAMR)
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/block.h b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/block.h
+index b0356c7dc..168cce57d 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/block.h
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/block.h
+@@ -24,6 +24,10 @@
+ //
+ // ************************************************************************
+ 
++#ifndef MINIAMR_EXTERN
++#define MINIAMR_EXTERN extern
++#endif
++
+ typedef struct {
+    int number;
+    int level;
+@@ -40,7 +44,7 @@ typedef struct {
+    int cen[3];
+    double ****array;
+ } block;
+-block *blocks;
++MINIAMR_EXTERN block *blocks;
+ 
+ typedef struct {
+    int number;
+@@ -54,68 +58,68 @@ typedef struct {
+    int child_node[8];
+    int cen[3];
+ } parent;
+-parent *parents;
++MINIAMR_EXTERN parent *parents;
+ 
+ typedef struct {
+    int number;     // number of block
+    int n;          // position in block array
+ } sorted_block;
+-sorted_block *sorted_list;
+-int *sorted_index;
++MINIAMR_EXTERN sorted_block *sorted_list;
++MINIAMR_EXTERN int *sorted_index;
+ 
+-int my_pe;
+-int num_pes;
++MINIAMR_EXTERN int my_pe;
++MINIAMR_EXTERN int num_pes;
+ 
+-int max_num_blocks;
+-int target_active;
+-int target_max;
+-int target_min;
+-int num_refine;
+-int uniform_refine;
+-int x_block_size, y_block_size, z_block_size;
+-int num_vars;
+-int comm_vars;
+-int init_block_x, init_block_y, init_block_z;
+-int reorder;
+-int npx, npy, npz;
+-int inbalance;
+-int refine_freq;
+-int report_diffusion;
+-int checksum_freq;
+-int stages_per_ts;
+-int error_tol;
+-int num_tsteps;
+-int stencil;
+-int report_perf;
+-int plot_freq;
+-int lb_opt;
+-int block_change;
+-int code;
+-int permute;
+-int nonblocking;
+-int refine_ghost;
++MINIAMR_EXTERN int max_num_blocks;
++MINIAMR_EXTERN int target_active;
++MINIAMR_EXTERN int target_max;
++MINIAMR_EXTERN int target_min;
++MINIAMR_EXTERN int num_refine;
++MINIAMR_EXTERN int uniform_refine;
++MINIAMR_EXTERN int x_block_size, y_block_size, z_block_size;
++MINIAMR_EXTERN int num_vars;
++MINIAMR_EXTERN int comm_vars;
++MINIAMR_EXTERN int init_block_x, init_block_y, init_block_z;
++MINIAMR_EXTERN int reorder;
++MINIAMR_EXTERN int npx, npy, npz;
++MINIAMR_EXTERN int inbalance;
++MINIAMR_EXTERN int refine_freq;
++MINIAMR_EXTERN int report_diffusion;
++MINIAMR_EXTERN int checksum_freq;
++MINIAMR_EXTERN int stages_per_ts;
++MINIAMR_EXTERN int error_tol;
++MINIAMR_EXTERN int num_tsteps;
++MINIAMR_EXTERN int stencil;
++MINIAMR_EXTERN int report_perf;
++MINIAMR_EXTERN int plot_freq;
++MINIAMR_EXTERN int lb_opt;
++MINIAMR_EXTERN int block_change;
++MINIAMR_EXTERN int code;
++MINIAMR_EXTERN int permute;
++MINIAMR_EXTERN int nonblocking;
++MINIAMR_EXTERN int refine_ghost;
+ 
+-int max_num_parents;
+-int num_parents;
+-int max_active_parent;
+-int cur_max_level;
+-int *num_blocks;
+-int *block_start;
+-int num_active;
+-int max_active_block;
+-int global_active;
+-int x_block_half, y_block_half, z_block_half;
+-double tol;
+-double *grid_sum;
+-int *p8, *p2;
+-int mesh_size[3];
+-int max_mesh_size;
+-int *from, *to;
+-int msg_len[3][4];
+-int local_max_b;
+-int global_max_b;
++MINIAMR_EXTERN int max_num_parents;
++MINIAMR_EXTERN int num_parents;
++MINIAMR_EXTERN int max_active_parent;
++MINIAMR_EXTERN int cur_max_level;
++MINIAMR_EXTERN int *num_blocks;
++MINIAMR_EXTERN int *block_start;
++MINIAMR_EXTERN int num_active;
++MINIAMR_EXTERN int max_active_block;
++MINIAMR_EXTERN int global_active;
++MINIAMR_EXTERN int x_block_half, y_block_half, z_block_half;
++MINIAMR_EXTERN double tol;
++MINIAMR_EXTERN double *grid_sum;
++MINIAMR_EXTERN int *p8, *p2;
++MINIAMR_EXTERN int mesh_size[3];
++MINIAMR_EXTERN int max_mesh_size;
++MINIAMR_EXTERN int *from, *to;
++MINIAMR_EXTERN int msg_len[3][4];
++MINIAMR_EXTERN int local_max_b;
++MINIAMR_EXTERN int global_max_b;
+ 
+-int num_objects;
++MINIAMR_EXTERN int num_objects;
+ typedef struct {
+    int type;
+    int bounce;
+@@ -127,4 +131,4 @@ typedef struct {
+    double orig_size[3];
+    double inc[3];
+ } object;
+-object *objects;
++MINIAMR_EXTERN object *objects;
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/main.c b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/main.c
+index 03db19356..43174ead0 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/main.c
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/main.c
+@@ -28,6 +28,7 @@
+ #include <stdio.h>
+ #include <string.h>
+ 
++#define MINIAMR_EXTERN
+ #include "block.h"
+ #include "timer.h"
+ #include "proto.h"
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/timer.h b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/timer.h
+index c0f8bf558..ef376dc02 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/timer.h
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C/miniAMR/timer.h
+@@ -24,52 +24,56 @@
+ //
+ // ************************************************************************
+ 
+-double average[128];
+-double stddev[128];
+-double minimum[128];
+-double maximum[128];
++#ifndef MINIAMR_EXTERN
++#define MINIAMR_EXTERN extern
++#endif
+ 
+-double timer_all;
++MINIAMR_EXTERN double average[128];
++MINIAMR_EXTERN double stddev[128];
++MINIAMR_EXTERN double minimum[128];
++MINIAMR_EXTERN double maximum[128];
+ 
+-double timer_comm_all;
+-double timer_comm_dir[3];
+-double timer_comm_same[3];
+-double timer_comm_diff[3];
+-double timer_comm_bc[3];
++MINIAMR_EXTERN double timer_all;
+ 
+-double timer_calc_all;
++MINIAMR_EXTERN double timer_comm_all;
++MINIAMR_EXTERN double timer_comm_dir[3];
++MINIAMR_EXTERN double timer_comm_same[3];
++MINIAMR_EXTERN double timer_comm_diff[3];
++MINIAMR_EXTERN double timer_comm_bc[3];
+ 
+-double timer_cs_all;
+-double timer_cs_calc;
++MINIAMR_EXTERN double timer_calc_all;
+ 
+-double timer_refine_all;
+-double timer_refine_co;
+-double timer_refine_mr;
+-double timer_refine_sb;
+-double timer_refine_cc;
+-double timer_cb_all;
+-double timer_target_all;
+-double timer_target_rb;
+-double timer_target_dc;
+-double timer_target_cb;
+-double timer_target_ab;
+-double timer_target_da;
+-double timer_target_sb;
++MINIAMR_EXTERN double timer_cs_all;
++MINIAMR_EXTERN double timer_cs_calc;
+ 
+-double timer_plot;
++MINIAMR_EXTERN double timer_refine_all;
++MINIAMR_EXTERN double timer_refine_co;
++MINIAMR_EXTERN double timer_refine_mr;
++MINIAMR_EXTERN double timer_refine_sb;
++MINIAMR_EXTERN double timer_refine_cc;
++MINIAMR_EXTERN double timer_cb_all;
++MINIAMR_EXTERN double timer_target_all;
++MINIAMR_EXTERN double timer_target_rb;
++MINIAMR_EXTERN double timer_target_dc;
++MINIAMR_EXTERN double timer_target_cb;
++MINIAMR_EXTERN double timer_target_ab;
++MINIAMR_EXTERN double timer_target_da;
++MINIAMR_EXTERN double timer_target_sb;
+ 
+-long total_blocks;
+-int nb_min;
+-int nb_max;
+-int nrs;
+-int nps;
+-int num_refined;
+-int num_reformed;
+-int counter_bc[3];
+-int counter_same[3];
+-int counter_diff[3];
+-int counter_malloc;
+-double size_malloc;
+-int counter_malloc_init;
+-double size_malloc_init;
+-int total_red;
++MINIAMR_EXTERN double timer_plot;
++
++MINIAMR_EXTERN long total_blocks;
++MINIAMR_EXTERN int nb_min;
++MINIAMR_EXTERN int nb_max;
++MINIAMR_EXTERN int nrs;
++MINIAMR_EXTERN int nps;
++MINIAMR_EXTERN int num_refined;
++MINIAMR_EXTERN int num_reformed;
++MINIAMR_EXTERN int counter_bc[3];
++MINIAMR_EXTERN int counter_same[3];
++MINIAMR_EXTERN int counter_diff[3];
++MINIAMR_EXTERN int counter_malloc;
++MINIAMR_EXTERN double size_malloc;
++MINIAMR_EXTERN int counter_malloc_init;
++MINIAMR_EXTERN double size_malloc_init;
++MINIAMR_EXTERN int total_red;
+-- 
+2.53.0.1213.gd9a14994de-goog
+

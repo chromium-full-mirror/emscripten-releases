@@ -93,6 +93,38 @@ def GetLLVMSrcDir(*args):
     return GetSrcDir('llvm-project', *args)
 
 
+def ApplyPatches(patch_dir, target_dir):
+    if not os.path.isdir(patch_dir):
+        return
+    patches = sorted(glob.glob(os.path.join(patch_dir, '*.patch')))
+    if not patches:
+        return
+    buildbot.Step('Apply patches from %s' % os.path.basename(patch_dir))
+    for patch in patches:
+        print('Applying patch: %s' % os.path.basename(patch))
+        # If the patch is already applied, 'git apply' will fail.
+        # We check first if the patch can be applied.
+        # If it cannot be applied, it might already be applied.
+        try:
+            proc.check_call(['git', 'apply', '--check', patch], cwd=target_dir)
+            proc.check_call(['git', 'apply', patch], cwd=target_dir)
+        except proc.CalledProcessError:
+            # If check failed, see if it is already applied.
+            try:
+                proc.check_call(['git', 'apply', '--reverse', '--check', patch],
+                                cwd=target_dir)
+                print('Patch %s already applied' % os.path.basename(patch))
+            except proc.CalledProcessError:
+                print('Patch %s failed to apply' % os.path.basename(patch))
+                raise
+
+
+def UnapplyPatches(target_dir):
+    buildbot.Step('Cleanup patches from %s' % os.path.basename(target_dir))
+    proc.check_call(['git', 'reset', '--hard', 'HEAD'], cwd=target_dir)
+    proc.check_call(['git', 'clean', '-fd'], cwd=target_dir)
+
+
 def IsWindows():
     return sys.platform == 'win32'
 
@@ -1257,71 +1289,80 @@ def TestSizeBenchmarks():
 def TestLLVMTestSuite():
     buildbot.Step('Execute LLVM TestSuite')
 
-    outdir = GetBuildDir('llvmtest-out')
-    # The compiler changes on every run, so incremental builds don't make
-    # sense.
-    Remove(outdir)
-    Mkdir(outdir)
-    # The C++ tests explicitly link libstdc++ for some reason, but we use
-    # libc++ and it's unnecessary to link it anyway. So create an empty
-    # libstdc++.a
-    proc.check_call([GetInstallDir('bin', 'llvm-ar'), 'rc', 'libstdc++.a'],
-                    cwd=outdir)
-    # This has to be in the environment and not TEST_SUITE_EXTRA_C_FLAGS
-    # because CMake doesn't append the flags to the try-compiles.
-    command = [GetInstallDir('emscripten', 'emcmake')] + CMakeCommandBase() + [
-        GetSrcDir('llvm-test-suite'), '-DCMAKE_C_COMPILER=' +
-        GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
-        GetInstallDir('emscripten', 'em++'), '-DTEST_SUITE_RUN_UNDER=' +
-        NodeBin() + ' --experimental-wasm-exnref',
-        '-DTEST_SUITE_USER_MODE_EMULATION=ON',
-        '-DTEST_SUITE_SUBDIRS=SingleSource;MicroBenchmarks',
-        # The tests for the in-progress matrix extension don't currently work.
-        '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
-        '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
-        '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
-        '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -O3',
-        '-DCMAKE_STRIP=' + GetInstallDir('emscripten', 'emstrip.py'),
-        '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
-        '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -mtail-call',
-        '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm',
-    ]
+    if options.apply_test_patches:
+        ApplyPatches(os.path.join(ROOT_DIR, 'patches', 'llvm-test-suite'),
+                     GetSrcDir('llvm-test-suite'))
 
-    proc.check_call(command, cwd=outdir)
-    proc.check_call(['ninja', '-v'], cwd=outdir)
-    results_file = 'results.json'
-    lit = GetBuildDir('llvm-out', 'bin', 'llvm-lit')
-    proc.call([lit, '-v', '-o', results_file, '.'], cwd=outdir)
-
-    with open(os.path.join(outdir, results_file)) as results_fd:
-        json_results = json.loads(results_fd.read())
-
-    def get_names(code):
-        # Strip the unneccessary spaces from the test name
-        return [
-            r['name'].replace('test-suite :: ', '')
-            for r in json_results['tests'] if r['code'] == code
+    try:
+        outdir = GetBuildDir('llvmtest-out')
+        # The compiler changes on every run, so incremental builds don't make
+        # sense.
+        Remove(outdir)
+        Mkdir(outdir)
+        # The C++ tests explicitly link libstdc++ for some reason, but we use
+        # libc++ and it's unnecessary to link it anyway. So create an empty
+        # libstdc++.a
+        proc.check_call([GetInstallDir('bin', 'llvm-ar'), 'rc', 'libstdc++.a'],
+                        cwd=outdir)
+        # This has to be in the environment and not TEST_SUITE_EXTRA_C_FLAGS
+        # because CMake doesn't append the flags to the try-compiles.
+        command = [GetInstallDir('emscripten', 'emcmake')] + CMakeCommandBase() + [
+            GetSrcDir('llvm-test-suite'), '-DCMAKE_C_COMPILER=' +
+            GetInstallDir('emscripten', 'emcc'), '-DCMAKE_CXX_COMPILER=' +
+            GetInstallDir('emscripten', 'em++'), '-DTEST_SUITE_RUN_UNDER=' +
+            NodeBin() + ' --experimental-wasm-exnref',
+            '-DTEST_SUITE_USER_MODE_EMULATION=ON',
+            '-DTEST_SUITE_SUBDIRS=SingleSource;MicroBenchmarks;MultiSource',
+            # The tests for the in-progress matrix extension don't currently work.
+            '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
+            '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
+            '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
+            '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -O3',
+            '-DCMAKE_STRIP=' + GetInstallDir('emscripten', 'emstrip.py'),
+            '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
+            '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -mtail-call',
+            '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm',
         ]
 
-    failures = get_names('FAIL')
-    successes = get_names('PASS')
+        proc.check_call(command, cwd=outdir)
+        tests = options.test_params if options.test_params else []
+        proc.check_call(['ninja', '-v'] + tests, cwd=outdir)
+        results_file = 'results.json'
+        lit = GetBuildDir('llvm-out', 'bin', 'llvm-lit')
+        proc.call([lit, '-v', '-o', results_file, '.'], cwd=outdir)
 
-    expected_failures = testing.parse_exclude_files(
-        RUN_LLVM_TESTSUITE_FAILURES, [])
-    unexpected_failures = [f for f in failures if f not in expected_failures]
-    unexpected_successes = [f for f in successes if f in expected_failures]
+        with open(os.path.join(outdir, results_file)) as results_fd:
+            json_results = json.loads(results_fd.read())
 
-    if len(unexpected_failures) > 0:
-        print('Emscripten unexpected failures:')
-        for test in unexpected_failures:
-            print(test)
-    if len(unexpected_successes) > 0:
-        print('Emscripten unexpected successes:')
-        for test in unexpected_successes:
-            print(test)
+        def get_names(code):
+            # Strip the unnecessary spaces from the test name
+            return [
+                r['name'].replace('test-suite :: ', '')
+                for r in json_results['tests'] if r['code'] == code
+            ]
 
-    if len(unexpected_failures) + len(unexpected_successes) > 0:
-        buildbot.Fail()
+        failures = get_names('FAIL')
+        successes = get_names('PASS')
+
+        expected_failures = testing.parse_exclude_files(
+            RUN_LLVM_TESTSUITE_FAILURES, [])
+        unexpected_failures = [f for f in failures if f not in expected_failures]
+        unexpected_successes = [f for f in successes if f in expected_failures]
+
+        if len(unexpected_failures) > 0:
+            print('Emscripten unexpected failures:')
+            for test in unexpected_failures:
+                print(test)
+        if len(unexpected_successes) > 0:
+            print('Emscripten unexpected successes:')
+            for test in unexpected_successes:
+                print(test)
+
+        if len(unexpected_failures) + len(unexpected_successes) > 0:
+            buildbot.Fail()
+    finally:
+        if options.cleanup_test_patches:
+            UnapplyPatches(GetSrcDir('llvm-test-suite'))
 
 
 def TestBinaryenJS():
@@ -1415,6 +1456,12 @@ def ParseArgs():
     parser.add_argument(
         '--clobber', dest='clobber', default=False, action='store_true',
         help="Delete working directories, forcing a clean build")
+    parser.add_argument(
+        '--no-test-patches', dest='apply_test_patches', default=True, action='store_false',
+        help="Skip applying patches to tests before running")
+    parser.add_argument(
+        '--no-test-cleanup', dest='cleanup_test_patches', default=True, action='store_false',
+        help="Skip cleaning up patched changes in tests after running")
     parser.add_argument(
         '--use-lto', dest='use_lto', default=False, action='store',
         choices=['true', 'false', 'auto'],

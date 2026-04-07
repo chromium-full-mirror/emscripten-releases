@@ -1,0 +1,61 @@
+From f879ca7ef90052d7b2740f56de8549288a14e958 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 30 Jan 2026 17:13:09 +0000
+Subject: [PATCH 05/30] sqlite3: Fix test failure in Emscripten/Node.js
+ environment
+
+The sqlite3 test was failing due to an output mismatch where interactive
+prompts (sqlite>) and informational messages (-- Loading resources from...)
+appeared in the actual output but were missing from the reference output.
+
+Root Cause:
+The sqlite3 shell uses a two-pass argument parser. Interactive mode is
+determined by isatty(0) before any parsing. Pass 1 handles -init,
+immediately followed by initialization which prints the "Loading resources"
+message if the shell thinks it is interactive. Pass 2 originally handled
+the -batch flag, which was too late to suppress the initialization message.
+
+In the Emscripten/Node.js environment, isatty(0) incorrectly returns true,
+tricking the shell into interactive mode. Native environments correctly
+detect stdin as a pipe/file and default to non-interactive mode.
+
+Changes:
+- MultiSource/Applications/sqlite3/shell.c: Move handling of the -batch
+  flag to the first parsing pass. This ensures stdin_is_interactive is
+  set to 0 before initialization occurs, correctly suppressing the
+  informational messages.
+- MultiSource/Applications/sqlite3/CMakeLists.txt: Add -batch to
+  RUN_OPTIONS to explicitly request non-interactive behavior during
+  test execution.
+---
+ MultiSource/Applications/sqlite3/CMakeLists.txt | 2 +-
+ MultiSource/Applications/sqlite3/shell.c        | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/MultiSource/Applications/sqlite3/CMakeLists.txt b/MultiSource/Applications/sqlite3/CMakeLists.txt
+index 73122df83..f56e3cd5a 100644
+--- a/MultiSource/Applications/sqlite3/CMakeLists.txt
++++ b/MultiSource/Applications/sqlite3/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ list(APPEND CPPFLAGS -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_THREADSAFE=0 -I.)
+-set(RUN_OPTIONS -init sqlite3rc :memory: < commands)
++set(RUN_OPTIONS -batch -init sqlite3rc :memory: < commands)
+ set(FP_TOLERANCE 1.0e-9)
+ set(GeneratedTestInputs ${CMAKE_CURRENT_BINARY_DIR}/test15.sql)
+ 
+diff --git a/MultiSource/Applications/sqlite3/shell.c b/MultiSource/Applications/sqlite3/shell.c
+index 6fe9324a6..272d98117 100644
+--- a/MultiSource/Applications/sqlite3/shell.c
++++ b/MultiSource/Applications/sqlite3/shell.c
+@@ -1941,6 +1941,8 @@ int main(int argc, char **argv){
+     }else if( strcmp(argv[i],"-init")==0 ){
+       i++;
+       zInitFile = argv[i];
++    }else if( strcmp(argv[i],"-batch")==0 ){
++      stdin_is_interactive = 0;
+     }
+   }
+   if( i<argc ){
+-- 
+2.53.0.1213.gd9a14994de-goog
+

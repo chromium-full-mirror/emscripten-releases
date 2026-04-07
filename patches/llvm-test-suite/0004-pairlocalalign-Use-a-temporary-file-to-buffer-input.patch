@@ -1,0 +1,57 @@
+From 2a7b20b9b2778bf2f67211e5ccdbca1845841f70 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 30 Jan 2026 00:55:49 +0000
+Subject: [PATCH 04/30] pairlocalalign: Use a temporary file to buffer input
+
+  The main function in pairlocalalign.c followed this sequence when no input file was specified:
+   1. It assigned infp = stdin.
+   2. It called getnumlen(infp), which reads the entire stream to count how many sequences are present.
+   3. It called rewind(infp), intending to reset the stream to the beginning.
+   4. It called readData(infp, ...), expecting to read the sequence data from the start.
+
+  Because rewind() has no effect on a standard input stream, the second read (readData) immediately hit EOF.
+  Consequently, the program thought it had successfully read 100 sequences, but every sequence string was actually empty.
+
+  * Expected Behavior: The program should perform $N \times (N-1) / 2$ pairwise alignments.
+    For the provided 100-sequence test file, this produces thousands of lines of alignment scores and progress updates
+    (e.g.,     0 / 100,     1 / 100) followed by a summary of the alignment results.
+  * Emscripten Failure: Because the sequences were empty, the alignment loops were either skipped or performed trivial work.
+    The output consisted only of the initialization headers and the final version/exit messages, missing all the actual scientific data.
+
+  Instead of reading directly from stdin, the program now:
+   1. Buffers the entire contents of stdin into a temporary file (tmpfile()).
+   2. Uses that temporary file (which does support rewind()) for all subsequent processing.
+
+  This ensures the sequence data is available for both the counting and reading phases, allowing the test
+  to produce the complete output that matches the reference MD5 hash (46e32283ed5b62ce87637ef6b6bfa115).
+---
+ MultiSource/Benchmarks/mafft/pairlocalalign.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/MultiSource/Benchmarks/mafft/pairlocalalign.c b/MultiSource/Benchmarks/mafft/pairlocalalign.c
+index 7c5c5afd4..04954033a 100644
+--- a/MultiSource/Benchmarks/mafft/pairlocalalign.c
++++ b/MultiSource/Benchmarks/mafft/pairlocalalign.c
+@@ -1164,7 +1164,18 @@ int main( int argc, char *argv[] )
+ 		}
+ 	}
+ 	else
+-		infp = stdin;
++	{
++		infp = tmpfile();
++		if( !infp )
++		{
++			fprintf( stderr, "Cannot open temporary file\n" );
++			exit( 1 );
++		}
++		int c;
++		while( ( c = getc( stdin ) ) != EOF )
++			putc( c, infp );
++		rewind( infp );
++	}
+ 
+ 	getnumlen( infp );
+ 	rewind( infp );
+-- 
+2.53.0.1213.gd9a14994de-goog
+

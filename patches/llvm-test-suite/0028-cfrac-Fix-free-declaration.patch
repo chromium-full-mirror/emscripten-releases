@@ -1,0 +1,25 @@
+From 57416f311b725f487b123a929b30204ea750b0ef Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Sat, 14 Feb 2026 04:04:55 +0000
+Subject: [PATCH 28/30] cfrac: Fix free() declaration
+
+---
+ MultiSource/Benchmarks/MallocBench/cfrac/pdefs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/MultiSource/Benchmarks/MallocBench/cfrac/pdefs.h b/MultiSource/Benchmarks/MallocBench/cfrac/pdefs.h
+index 136b9b48e..e83dc98fa 100644
+--- a/MultiSource/Benchmarks/MallocBench/cfrac/pdefs.h
++++ b/MultiSource/Benchmarks/MallocBench/cfrac/pdefs.h
+@@ -31,7 +31,7 @@ extern void *malloc();
+ #ifdef IGNOREFREE
+ #define deallocate(p)	{};
+ #else
+-extern int  free();
++extern void  free();
+ #define deallocate(p)	free(p)
+ #endif
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

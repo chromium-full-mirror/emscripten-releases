@@ -1,0 +1,25 @@
+From 63dcc2184c1fbeffbb29875402b409eb3694cac4 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Wed, 11 Feb 2026 00:48:47 +0000
+Subject: [PATCH 13/30] Burg: Fix function pointer typedef
+
+---
+ MultiSource/Applications/Burg/b.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/MultiSource/Applications/Burg/b.h b/MultiSource/Applications/Burg/b.h
+index 106bd0d16..ea22e2e8a 100644
+--- a/MultiSource/Applications/Burg/b.h
++++ b/MultiSource/Applications/Burg/b.h
+@@ -234,7 +234,7 @@ extern Item_Set encode ARGS((Mapping, Item_Set, int *));
+ extern void build ARGS((void));
+ extern Item_Set *transLval ARGS((Table, int, int));
+ 
+-typedef void *	(*ListFn) ARGS((void *));
++typedef void	(*ListFn) ARGS((void *));
+ extern void foreachList ARGS((ListFn, List));
+ extern void reveachList ARGS((ListFn, List));
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

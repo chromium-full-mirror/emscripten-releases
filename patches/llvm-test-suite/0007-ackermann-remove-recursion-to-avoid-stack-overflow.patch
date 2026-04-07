@@ -1,0 +1,44 @@
+From d52782ea38c242c4b89a4b47b25ab1f74dd21a90 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 3 Feb 2026 20:20:36 +0000
+Subject: [PATCH 07/30] ackermann: remove recursion to avoid stack overflow
+
+We were overflowing the trusted stack: "Fix" by removing recursion.
+---
+ .../Benchmarks/Shootout-C++/ackermann.cpp     | 20 ++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/SingleSource/Benchmarks/Shootout-C++/ackermann.cpp b/SingleSource/Benchmarks/Shootout-C++/ackermann.cpp
+index a46945c55..3c4430ef7 100644
+--- a/SingleSource/Benchmarks/Shootout-C++/ackermann.cpp
++++ b/SingleSource/Benchmarks/Shootout-C++/ackermann.cpp
+@@ -7,7 +7,25 @@
+ 
+ using namespace std;
+ 
+-int Ack(int M, int N) { return(M ? (Ack(M-1,N ? Ack(M,(N-1)) : 1)) : N+1); }
++int Ack(int M, int N) {
++    int stack[100000];
++    int top = 0;
++    stack[top++] = M;
++    while (top > 0) {
++        M = stack[--top];
++        if (M == 0) {
++            N = N + 1;
++        } else if (N == 0) {
++            stack[top++] = M - 1;
++            N = 1;
++        } else {
++            stack[top++] = M - 1;
++            stack[top++] = M;
++            N = N - 1;
++        }
++    }
++    return N;
++}
+ 
+ int main(int argc, char *argv[]) {
+ #ifdef SMALL_PROBLEM_SIZE
+-- 
+2.53.0.1213.gd9a14994de-goog
+

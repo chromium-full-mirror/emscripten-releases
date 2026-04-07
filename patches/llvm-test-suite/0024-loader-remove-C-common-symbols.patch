@@ -1,0 +1,63 @@
+From 0609566b70206b5a7996ccc7a6c65052dc844410 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 20:36:46 +0000
+Subject: [PATCH 24/30] loader: remove C common symbols
+
+This includes ensuring that every global isn't defined more than once,
+and that each instance has a definition. An alternative to some of these
+changes could be to remove the -fcommon flags everywhere, which IIUC would
+remove the need for the declaration to have an explicit initializer and
+could make the patch smaller.
+---
+ MultiSource/Benchmarks/Prolangs-C/loader/load.c    | 2 +-
+ MultiSource/Benchmarks/Prolangs-C/loader/load.h    | 4 ++--
+ MultiSource/Benchmarks/Prolangs-C/loader/stringI.c | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/Prolangs-C/loader/load.c b/MultiSource/Benchmarks/Prolangs-C/loader/load.c
+index 39181f74f..72ee6419d 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/loader/load.c
++++ b/MultiSource/Benchmarks/Prolangs-C/loader/load.c
+@@ -26,7 +26,7 @@ int START_ADDRESS = -1;
+ 
+ /* MAIN_ROUTINE                      Name of (program) module declared with */
+ /*                                      a START (main routine).             */
+-char MAIN_ROUTINE[LABEL_SIZE_1+1];
++char MAIN_ROUTINE[LABEL_SIZE_1+1] = "";
+ 
+ /* -------------------------------- main ---------------------------------- */
+ int main(int argc,char **argv)
+diff --git a/MultiSource/Benchmarks/Prolangs-C/loader/load.h b/MultiSource/Benchmarks/Prolangs-C/loader/load.h
+index 11535f592..2c5db2d2a 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/loader/load.h
++++ b/MultiSource/Benchmarks/Prolangs-C/loader/load.h
+@@ -5,8 +5,8 @@
+ 
+ /* --------------------------------- Globals ------------------------------ */
+ /* START_ADDRESS                     Start Address for program execution.   */
+-int START_ADDRESS;
++extern int START_ADDRESS;
+ 
+ /* MAIN_ROUTINE                      Name of (program) module declared with */
+ /*                                      a START (main routine).             */
+-char MAIN_ROUTINE[LABEL_SIZE_1+1];
++extern char MAIN_ROUTINE[LABEL_SIZE_1+1];
+diff --git a/MultiSource/Benchmarks/Prolangs-C/loader/stringI.c b/MultiSource/Benchmarks/Prolangs-C/loader/stringI.c
+index f0c18f751..8babf5739 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/loader/stringI.c
++++ b/MultiSource/Benchmarks/Prolangs-C/loader/stringI.c
+@@ -15,9 +15,9 @@
+ #define LEX_LEN_INCR            128
+ 
+ char CH = ' ';                 /* Current input Character                    */
+-char LEXEME[LEX_LEN_INCR+1];   /* Input String                               */
++char LEXEME[LEX_LEN_INCR+1] = "";   /* Input String                               */
+ 
+-char *FRONT,*BACK;             /* FRONT and BACK characters of Input String  */
++char *FRONT = NULL,*BACK = NULL;             /* FRONT and BACK characters of Input String  */
+ unsigned LEX_LEN = LEX_LEN_INCR;/* Size of the Input String Buffer           */
+ 
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

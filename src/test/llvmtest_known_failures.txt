@@ -1,43 +1,19 @@
 # Known failures for the LLVM test suite (SingleSource only, so far)
 
-# PolyBench issues seem to be related to overly strict FP comparisons
-SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.js.test
-SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/3mm/3mm.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/atax/atax.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/bicg/bicg.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/doitgen/doitgen.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/kernels/mvt/mvt.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/gemm/gemm.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/gesummv/gesummv.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/symm/symm.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/syr2k/syr2k.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/syrk/syrk.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/blas/trmm/trmm.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/solvers/cholesky/cholesky.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/solvers/lu/lu.js.test
-SingleSource/Benchmarks/Polybench/linear-algebra/solvers/trisolv/trisolv.js.test
-SingleSource/Benchmarks/Polybench/medley/deriche/deriche.js.test
-SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.js.test
-SingleSource/Benchmarks/Polybench/medley/nussinov/nussinov.js.test
-SingleSource/Benchmarks/Polybench/stencils/adi/adi.js.test
-SingleSource/Benchmarks/Polybench/stencils/heat-3d/heat-3d.js.test
-SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.js.test
-SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.js.test
-SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.js.test
-SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.js.test
-
-# This test has huge recursion and overflows the trusted stack
-SingleSource/Benchmarks/Shootout-C++/Shootout-C++-ackermann.js.test
-# LLVM doesn't support C++03 exception specs on Wasm.
+# Emscripten doesn't support C++ Exception specifications.
 SingleSource/Regression/C++/EH/Regression-C++-exception_spec_test.js.test
-# These fail because we end up with an extra newline in the output on NODERAWFS
-SingleSource/Regression/C++/Regression-C++-BuiltinTypeInfo.js.test
-SingleSource/Regression/C/Regression-C-2003-05-23-TransparentUnion.js.test
-SingleSource/UnitTests/testcase-CGExprConstant.js.test
-SingleSource/UnitTests/testcase-Expr-1.js.test
-SingleSource/UnitTests/testcase-ExprConstant-1.js.test
-SingleSource/UnitTests/testcase-Value-1.js.test
-# This test uses the wrong signature for main()
-SingleSource/UnitTests/TestLoop.js.test
+
+# minisat fails because the stub library prints to stderr for an unimplemented syscall.
+MultiSource/Applications/minisat/minisat.js.test
+
+# Untriaged
+MultiSource/Benchmarks/DOE-ProxyApps-C++/HPCCG/HPCCG.js.test
+MultiSource/Benchmarks/Fhourstones/fhourstones.js.test
+MultiSource/Benchmarks/MallocBench/espresso/espresso.js.test
+MultiSource/Benchmarks/PAQ8p/paq8p.js.test
+MultiSource/Benchmarks/Prolangs-C++/city/city.js.test
+MultiSource/Benchmarks/Prolangs-C/unix-smail/unix-smail.js.test
+MultiSource/Benchmarks/Prolangs-C/unix-tbl/unix-tbl.js.test
+MultiSource/Benchmarks/Ptrdist/ft/ft.js.test
+MultiSource/Benchmarks/VersaBench/beamformer/beamformer.js.test
+MultiSource/Benchmarks/sim/sim.js.test

@@ -1,0 +1,780 @@
+From e41884e1b1d9d120bf3851f2a68dcb316dbfc5b7 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 27 Jan 2026 05:32:15 +0000
+Subject: [PATCH 01/30] lencod: remove C common symbols and fix signature
+ mismatches
+
+---
+ .../Applications/JM/lencod/CMakeLists.txt     |   2 +-
+ .../Applications/JM/lencod/configfile.h       |   2 +-
+ MultiSource/Applications/JM/lencod/global.h   | 162 ++++++++---------
+ MultiSource/Applications/JM/lencod/lencod.c   | 165 ++++++++++++++++++
+ .../Applications/JM/lencod/mb_access.h        |   4 +-
+ MultiSource/Applications/JM/lencod/me_umhex.h |  44 ++---
+ .../Applications/JM/lencod/me_umhexsmp.h      |  26 +--
+ MultiSource/Applications/JM/lencod/nalu.h     |   2 +-
+ MultiSource/Applications/JM/lencod/q_matrix.c |   4 +-
+ .../Applications/JM/lencod/q_offsets.c        |   4 +-
+ MultiSource/Applications/JM/lencod/ratectl.h  |  10 +-
+ .../Applications/JM/lencod/rc_quadratic.h     |   6 +-
+ MultiSource/Applications/JM/lencod/refbuf.h   |   4 +-
+ MultiSource/Applications/JM/lencod/sei.h      |   8 +-
+ MultiSource/Applications/JM/lencod/slice.c    |   2 +-
+ 15 files changed, 305 insertions(+), 140 deletions(-)
+
+diff --git a/MultiSource/Applications/JM/lencod/CMakeLists.txt b/MultiSource/Applications/JM/lencod/CMakeLists.txt
+index 2e9b90d9f..2a4a8806c 100644
+--- a/MultiSource/Applications/JM/lencod/CMakeLists.txt
++++ b/MultiSource/Applications/JM/lencod/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-list(APPEND CPPFLAGS -fcommon -D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64)
++list(APPEND CPPFLAGS -D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64)
+ list(APPEND LDFLAGS -lm)
+ set(FP_TOLERANCE 0.025)
+ if(SMALL_PROBLEM_SIZE)
+diff --git a/MultiSource/Applications/JM/lencod/configfile.h b/MultiSource/Applications/JM/lencod/configfile.h
+index 4787e870d..a1f8ed214 100644
+--- a/MultiSource/Applications/JM/lencod/configfile.h
++++ b/MultiSource/Applications/JM/lencod/configfile.h
+@@ -31,7 +31,7 @@ typedef struct {
+ 
+ 
+ 
+-InputParameters configinput;
++extern InputParameters configinput;
+ 
+ 
+ #ifdef INCLUDED_BY_CONFIGFILE_C
+diff --git a/MultiSource/Applications/JM/lencod/global.h b/MultiSource/Applications/JM/lencod/global.h
+index 449afb8c0..0e8052c48 100644
+--- a/MultiSource/Applications/JM/lencod/global.h
++++ b/MultiSource/Applications/JM/lencod/global.h
+@@ -55,7 +55,7 @@ enum {
+   YUV420 = 1,
+   YUV422 = 2,
+   YUV444 = 3
+-} color_formats;
++};
+ 
+ enum {
+   LIST_0 = 0,
+@@ -484,80 +484,80 @@ typedef struct
+   float distortion_v;
+ } Picture;
+ 
+-Picture *top_pic;
+-Picture *bottom_pic;
+-Picture *frame_pic;
+-Picture *frame_pic_1;
+-Picture *frame_pic_2;
+-Picture *frame_pic_3;
+-Picture *frame_pic_si;
++extern Picture *top_pic;
++extern Picture *bottom_pic;
++extern Picture *frame_pic;
++extern Picture *frame_pic_1;
++extern Picture *frame_pic_2;
++extern Picture *frame_pic_3;
++extern Picture *frame_pic_si;
+ 
+ #ifdef _LEAKYBUCKET_
+-long *Bit_Buffer;
++extern long *Bit_Buffer;
+ #endif
+ 
+ // global picture format dependend buffers, mem allocation in image.c
+-imgpel **imgY_org;           //!< Reference luma image
+-imgpel ***imgUV_org;         //!< Reference chroma image
+-int    **imgY_sub_tmp;       //!< Y picture temporary component (Quarter pel)
++extern imgpel **imgY_org;           //!< Reference luma image
++extern imgpel ***imgUV_org;         //!< Reference chroma image
++extern int    **imgY_sub_tmp;       //!< Y picture temporary component (Quarter pel)
+ 
+-int **PicPos;
+-unsigned int log2_max_frame_num_minus4;
+-unsigned int log2_max_pic_order_cnt_lsb_minus4;
++extern int **PicPos;
++extern unsigned int log2_max_frame_num_minus4;
++extern unsigned int log2_max_pic_order_cnt_lsb_minus4;
+ 
+-time_t  me_tot_time,me_time;
+-pic_parameter_set_rbsp_t *active_pps;
+-seq_parameter_set_rbsp_t *active_sps;
++extern time_t  me_tot_time,me_time;
++extern pic_parameter_set_rbsp_t *active_pps;
++extern seq_parameter_set_rbsp_t *active_sps;
+ 
+ 
+-int dsr_new_search_range; //!<Dynamic Search Range.
++extern int dsr_new_search_range; //!<Dynamic Search Range.
+ //////////////////////////////////////////////////////////////////////////
+ // B pictures
+ // motion vector : forward, backward, direct
+-int  mb_adaptive;       //!< For MB level field/frame coding tools
+-int  MBPairIsField;     //!< For MB level field/frame coding tools
++extern int  mb_adaptive;       //!< For MB level field/frame coding tools
++extern int  MBPairIsField;     //!< For MB level field/frame coding tools
+ 
+ 
+ //Weighted prediction
+-int ***wp_weight;  // weight in [list][index][component] order
+-int ***wp_offset;  // offset in [list][index][component] order
+-int ****wbp_weight;  // weight in [list][fwd_index][bwd_idx][component] order
+-int luma_log_weight_denom;
+-int chroma_log_weight_denom;
+-int wp_luma_round;
+-int wp_chroma_round;
++extern int ***wp_weight;  // weight in [list][index][component] order
++extern int ***wp_offset;  // offset in [list][index][component] order
++extern int ****wbp_weight;  // weight in [list][fwd_index][bwd_idx][component] order
++extern int luma_log_weight_denom;
++extern int chroma_log_weight_denom;
++extern int wp_luma_round;
++extern int wp_chroma_round;
+ 
+ // global picture format dependend buffers, mem allocation in image.c (field picture)
+-imgpel   **imgY_org_top;
+-imgpel   **imgY_org_bot;
++extern imgpel   **imgY_org_top;
++extern imgpel   **imgY_org_bot;
+ 
+-imgpel  ***imgUV_org_top;
+-imgpel  ***imgUV_org_bot;
++extern imgpel  ***imgUV_org_top;
++extern imgpel  ***imgUV_org_bot;
+ 
+-imgpel   **imgY_org_frm;
+-imgpel  ***imgUV_org_frm;
++extern imgpel   **imgY_org_frm;
++extern imgpel  ***imgUV_org_frm;
+ 
+-imgpel   **imgY_com;               //!< Encoded luma images
+-imgpel  ***imgUV_com;              //!< Encoded croma images
++extern imgpel   **imgY_com;               //!< Encoded luma images
++extern imgpel  ***imgUV_com;              //!< Encoded croma images
+ 
+-signed char ***direct_ref_idx;     //!< direct mode reference index buffer
+-signed char **direct_pdir;         //!< direct mode reference index buffer
++extern signed char ***direct_ref_idx;     //!< direct mode reference index buffer
++extern signed char **direct_pdir;         //!< direct mode reference index buffer
+ 
+ // Buffers for rd optimization with packet losses, Dim. Kontopodis
+-byte **pixel_map;   //!< Shows the latest reference frame that is reliable for each pixel
+-byte **refresh_map; //!< Stores the new values for pixel_map
+-int intras;         //!< Counts the intra updates in each frame.
++extern byte **pixel_map;   //!< Shows the latest reference frame that is reliable for each pixel
++extern byte **refresh_map; //!< Stores the new values for pixel_map
++extern int intras;         //!< Counts the intra updates in each frame.
+ 
+-int  frame_ctr[5];
+-int  frame_no, nextP_tr_fld, nextP_tr_frm;
++extern int  frame_ctr[5];
++extern int  frame_no, nextP_tr_fld, nextP_tr_frm;
+ 
+-time_t  tot_time;
++extern time_t  tot_time;
+ 
+ #define ET_SIZE 300      //!< size of error text buffer
+-char errortext[ET_SIZE]; //!< buffer for error message for exit with error()
++extern char errortext[ET_SIZE]; //!< buffer for error message for exit with error()
+ 
+ // Residue Color Transform
+-signed char b8_ipredmode8x8[4][4], b8_intra_pred_modes8x8[16];
++extern signed char b8_ipredmode8x8[4][4], b8_intra_pred_modes8x8[16];
+ 
+ //! Info for the "decoders-in-the-encoder" used for rdoptimization with packet losses
+ typedef struct
+@@ -1227,10 +1227,10 @@ typedef struct
+   int    best_mcost[2];
+ } RD_PARAMS;
+ 
+-GOP_DATA *gop_structure;
+-RD_DATA *rdopt;
+-RD_DATA rddata_top_frame_mb, rddata_bot_frame_mb; //!< For MB level field/frame coding tools
+-RD_DATA rddata_top_field_mb, rddata_bot_field_mb; //!< For MB level field/frame coding tools
++extern GOP_DATA *gop_structure;
++extern RD_DATA *rdopt;
++extern RD_DATA rddata_top_frame_mb, rddata_bot_frame_mb; //!< For MB level field/frame coding tools
++extern RD_DATA rddata_top_field_mb, rddata_bot_field_mb; //!< For MB level field/frame coding tools
+ 
+ extern InputParameters *input;
+ extern ImageParameters *img;
+@@ -1239,11 +1239,11 @@ extern StatParameters  *stats;
+ extern SNRParameters *snr;
+ 
+ // files
+-FILE *p_stat;                    //!< status file for the last encoding session
+-FILE *p_log;                     //!< SNR file
+-FILE *p_trace;                   //!< Trace file
+-int  p_in;                       //!< original YUV file handle
+-int  p_dec;                      //!< decoded image file handle
++extern FILE *p_stat;                    //!< status file for the last encoding session
++extern FILE *p_log;                     //!< SNR file
++extern FILE *p_trace;                   //!< Trace file
++extern int  p_in;                       //!< original YUV file handle
++extern int  p_dec;                      //!< decoded image file handle
+ 
+ 
+ /***********************************************************************
+@@ -1274,7 +1274,7 @@ int  distortion8x8(int*);
+ 
+ extern int*   refbits;
+ extern int**** motion_cost;
+-double *mb16x16_cost_frame;
++extern double *mb16x16_cost_frame;
+ 
+ void  Get_Direct_Motion_Vectors (void);
+ void  PartitionMotionSearch     (int, int, int*);
+@@ -1405,7 +1405,7 @@ void AllocNalPayloadBuffer(void);
+ void FreeNalPayloadBuffer(void);
+ void SODBtoRBSP(Bitstream *currStream);
+ int RBSPtoEBSP(byte *streamBuffer, int begin_bytepos, int end_bytepos, int min_num_bytes);
+-int Bytes_After_Header;
++extern int Bytes_After_Header;
+ 
+ // Fast ME enable
+ int BlockMotionSearch (short,int,int,int,int,int, int*);
+@@ -1414,7 +1414,7 @@ void encode_one_macroblock_low (void);
+ void encode_one_macroblock_high (void);
+ void encode_one_macroblock_highfast (void);
+ void encode_one_macroblock_highloss (void);
+-void (*encode_one_macroblock) (void);
++extern void (*encode_one_macroblock) (void);
+ 
+ 
+ void set_chroma_qp(Macroblock *currMB);
+@@ -1433,43 +1433,43 @@ int  dct_luma_sp2(int pos_mb1,int pos_mb2,int *cnt_nonz);
+ int  dct_chroma_sp2(int ,int);
+ 
+ int check_for_SI16(void);
+-int **lrec ;
+-int ***lrec_uv;
+-int si_frame_indicator;
++extern int **lrec ;
++extern int ***lrec_uv;
++extern int si_frame_indicator;
+ 
+-int sp2_frame_indicator;
+-int number_sp2_frames;
++extern int sp2_frame_indicator;
++extern int number_sp2_frames;
+ //#define sp_output_indicator 0 //will be in the config file
+ //#define sp_output_filename "sp_stored.txt" // will be in the config file
+ void output_SP_coefficients(void);
+ void read_SP_coefficients(void);
+ 
+-int giRDOpt_B8OnlyFlag;
++extern int giRDOpt_B8OnlyFlag;
+ 
+ #ifdef BEST_NZ_COEFF
+-int gaaiMBAFF_NZCoeff[4][12];
++extern int gaaiMBAFF_NZCoeff[4][12];
+ #endif
+ 
+ // Redundant picture
+-imgpel **imgY_tmp;
+-imgpel **imgUV_tmp[2];
+-int frameNuminGOP;
+-int redundant_coding;
+-int key_frame;
+-int redundant_ref_idx;
++extern imgpel **imgY_tmp;
++extern imgpel **imgUV_tmp[2];
++extern int frameNuminGOP;
++extern int redundant_coding;
++extern int key_frame;
++extern int redundant_ref_idx;
+ void Init_redundant_frame(void);
+ void Set_redundant_frame(void);
+ void encode_one_redundant_frame(void);
+ 
+-int img_pad_size_uv_x;
+-int img_pad_size_uv_y;
++extern int img_pad_size_uv_x;
++extern int img_pad_size_uv_y;
+ 
+-unsigned char chroma_mask_mv_y;
+-unsigned char chroma_mask_mv_x;
+-int chroma_shift_y, chroma_shift_x;
+-int shift_cr_x, shift_cr_y;
+-int img_padded_size_x;
+-int img_cr_padded_size_x;
++extern unsigned char chroma_mask_mv_y;
++extern unsigned char chroma_mask_mv_x;
++extern int chroma_shift_y, chroma_shift_x;
++extern int shift_cr_x, shift_cr_y;
++extern int img_padded_size_x;
++extern int img_cr_padded_size_x;
+ 
+ // struct with pointers to the sub-images
+ typedef struct {
+@@ -1477,8 +1477,8 @@ typedef struct {
+   imgpel ****crcb[2]; // component 2 (usually U/V, Y/Z, or G/B)
+ } SubImageContainer;
+ 
+-int start_me_refinement_hp; // if set then recheck the center position when doing half-pel motion refinement
+-int start_me_refinement_qp; // if set then recheck the center position when doing quarter-pel motion refinement
++extern int start_me_refinement_hp; // if set then recheck the center position when doing half-pel motion refinement
++extern int start_me_refinement_qp; // if set then recheck the center position when doing quarter-pel motion refinement
+ 
+ #endif
+ 
+diff --git a/MultiSource/Applications/JM/lencod/lencod.c b/MultiSource/Applications/JM/lencod/lencod.c
+index 1beb509c2..bc59b9302 100644
+--- a/MultiSource/Applications/JM/lencod/lencod.c
++++ b/MultiSource/Applications/JM/lencod/lencod.c
+@@ -79,6 +79,171 @@ StatParameters  statistics,  *stats = &statistics;
+ SNRParameters   snrs,        *snr   = &snrs;
+ Decoders decoders, *decs=&decoders;
+ 
++Picture *top_pic;
++Picture *bottom_pic;
++Picture *frame_pic;
++Picture *frame_pic_1;
++Picture *frame_pic_2;
++Picture *frame_pic_3;
++Picture *frame_pic_si;
++
++#ifdef _LEAKYBUCKET_
++long *Bit_Buffer;
++#endif
++
++imgpel **imgY_org;
++imgpel ***imgUV_org;
++int    **imgY_sub_tmp;
++
++int **PicPos;
++unsigned int log2_max_frame_num_minus4;
++unsigned int log2_max_pic_order_cnt_lsb_minus4;
++
++time_t  me_tot_time,me_time;
++pic_parameter_set_rbsp_t *active_pps;
++seq_parameter_set_rbsp_t *active_sps;
++
++int dsr_new_search_range;
++int mb_adaptive;
++int MBPairIsField;
++
++int ***wp_weight;
++int ***wp_offset;
++int ****wbp_weight;
++int luma_log_weight_denom;
++int chroma_log_weight_denom;
++int wp_luma_round;
++int wp_chroma_round;
++
++imgpel   **imgY_org_top;
++imgpel   **imgY_org_bot;
++imgpel  ***imgUV_org_top;
++imgpel  ***imgUV_org_bot;
++imgpel   **imgY_org_frm;
++imgpel  ***imgUV_org_frm;
++imgpel   **imgY_com;
++imgpel  ***imgUV_com;
++
++signed char ***direct_ref_idx;
++signed char **direct_pdir;
++
++byte **pixel_map;
++byte **refresh_map;
++int intras;
++
++int  frame_ctr[5];
++int  frame_no, nextP_tr_fld, nextP_tr_frm;
++
++time_t  tot_time;
++
++char errortext[ET_SIZE];
++
++signed char b8_ipredmode8x8[4][4], b8_intra_pred_modes8x8[16];
++
++int Bytes_After_Header;
++int **lrec ;
++int ***lrec_uv;
++int si_frame_indicator;
++int sp2_frame_indicator;
++int number_sp2_frames;
++int giRDOpt_B8OnlyFlag;
++
++#ifdef BEST_NZ_COEFF
++int gaaiMBAFF_NZCoeff[4][12];
++#endif
++
++imgpel **imgY_tmp;
++imgpel **imgUV_tmp[2];
++int frameNuminGOP;
++int redundant_coding;
++int key_frame;
++int redundant_ref_idx;
++
++int img_pad_size_uv_x;
++int img_pad_size_uv_y;
++
++unsigned char chroma_mask_mv_y;
++unsigned char chroma_mask_mv_x;
++int chroma_shift_y, chroma_shift_x;
++int shift_cr_x, shift_cr_y;
++int img_padded_size_x;
++int img_cr_padded_size_x;
++
++int start_me_refinement_hp;
++int start_me_refinement_qp;
++
++GOP_DATA *gop_structure;
++RD_DATA *rdopt;
++RD_DATA rddata_top_frame_mb, rddata_bot_frame_mb;
++RD_DATA rddata_top_field_mb, rddata_bot_field_mb;
++
++FILE *p_stat;
++FILE *p_log;
++FILE *p_trace;
++int  p_in;
++int  p_dec;
++void (*encode_one_macroblock) (void);
++
++void (*getNeighbour)(unsigned int curr_mb_nr, int xN, int yN, int is_chroma, PixelPos *pix);
++void (*get_mb_block_pos) (int mb_addr, int *x, int*y);
++int (*WriteNALU)(NALU_t *n);
++
++rc_quadratic *quadratic_RC;
++rc_quadratic *quadratic_RC_init, *quadratic_RC_best;
++
++rc_generic   *generic_RC;
++rc_generic   *generic_RC_init,   *generic_RC_best;
++int    diffy[16][16];
++int    qp_mbaff[2][2];
++int    delta_qp_mbaff[2][2];
++
++int height_pad, width_pad;
++int height_pad_cr, width_pad_cr;
++
++Boolean seiHasBufferingPeriod_info;
++bufferingperiod_information_struct seiBufferingPeriod;
++Boolean seiHasPicTiming_info;
++pictiming_information_struct seiPicTiming;
++
++InputParameters configinput;
++int  (*updateQP)(rc_quadratic *prc, int topfield);
++
++byte **McostState;
++byte **SearchState;
++int ****fastme_ref_cost;
++int ***fastme_l0_cost;
++int ***fastme_l1_cost;
++int ***fastme_l0_cost_bipred;
++int ***fastme_l1_cost_bipred;
++int bipred_flag;
++int **fastme_best_cost;
++int pred_SAD;
++int pred_MV_ref[2], pred_MV_uplayer[2];
++int UMHEX_blocktype;
++int predict_point[5][2];
++int SAD_a,SAD_b,SAD_c,SAD_d;
++int Threshold_DSR_MB[8];
++float  Bsize[8];
++float AlphaFourth_1[8];
++float AlphaFourth_2[8];
++byte *flag_intra;
++int  flag_intra_SAD;
++
++unsigned short  SymmetricalCrossSearchThreshold1;
++unsigned short  SymmetricalCrossSearchThreshold2;
++unsigned short  ConvergeThreshold;
++unsigned short  SubPelThreshold1;
++unsigned short  SubPelThreshold3;
++byte  **smpUMHEX_SearchState;
++int  ***smpUMHEX_l0_cost;
++int  ***smpUMHEX_l1_cost;
++byte   *smpUMHEX_flag_intra;
++int     smpUMHEX_flag_intra_SAD;
++int     smpUMHEX_pred_SAD_uplayer;
++short   smpUMHEX_pred_MV_uplayer_X;
++short   smpUMHEX_pred_MV_uplayer_Y;
++
++
+ static void information_init(void);
+ 
+ #ifdef _ADAPT_LAST_GROUP_
+diff --git a/MultiSource/Applications/JM/lencod/mb_access.h b/MultiSource/Applications/JM/lencod/mb_access.h
+index 6e214148f..3d95c97a2 100644
+--- a/MultiSource/Applications/JM/lencod/mb_access.h
++++ b/MultiSource/Applications/JM/lencod/mb_access.h
+@@ -17,14 +17,14 @@
+ 
+ void CheckAvailabilityOfNeighbors(void);
+ 
+-void (*getNeighbour)(unsigned int curr_mb_nr, int xN, int yN, int is_chroma, PixelPos *pix);
++extern void (*getNeighbour)(unsigned int curr_mb_nr, int xN, int yN, int is_chroma, PixelPos *pix);
+ void getAffNeighbour(unsigned int curr_mb_nr, int xN, int yN, int is_chroma, PixelPos *pix);
+ void getNonAffNeighbour(unsigned int curr_mb_nr, int xN, int yN, int is_chroma, PixelPos *pix);
+ void getLuma4x4Neighbour (int curr_mb_nr, int block_x, int block_y, PixelPos *pix);
+ void getChroma4x4Neighbour (int curr_mb_nr, int block_x, int block_y, PixelPos *pix);
+ int  mb_is_available(int mbAddr, int currMbAddr);
+ void get_mb_pos (int mb_addr, int *x, int*y, int is_chroma);
+-void (*get_mb_block_pos) (int mb_addr, int *x, int*y);
++extern void (*get_mb_block_pos) (int mb_addr, int *x, int*y);
+ void get_mb_block_pos_normal (int mb_addr, int *x, int*y);
+ void get_mb_block_pos_mbaff (int mb_addr, int *x, int*y);
+ 
+diff --git a/MultiSource/Applications/JM/lencod/me_umhex.h b/MultiSource/Applications/JM/lencod/me_umhex.h
+index 60ceccc16..130306fd2 100644
+--- a/MultiSource/Applications/JM/lencod/me_umhex.h
++++ b/MultiSource/Applications/JM/lencod/me_umhex.h
+@@ -79,29 +79,29 @@ if(iabs(cand_x - center2_x) <=search_range && iabs(cand_y - center2_y)<= search_
+   }                                                                                   \
+ }
+ 
+-byte **McostState;                          //!< state for integer pel search
+-byte **SearchState;                         //!< state for fractional pel search
+-
+-int ****fastme_ref_cost;                    //!< store SAD information needed for forward ref-frame prediction
+-int ***fastme_l0_cost;                      //!< store SAD information needed for forward median and uplayer prediction
+-int ***fastme_l1_cost;                      //!< store SAD information needed for backward median and uplayer prediction
+-int ***fastme_l0_cost_bipred;               //!< store SAD information for bipred mode
+-int ***fastme_l1_cost_bipred;               //!< store SAD information for bipred mode
+-int bipred_flag;                            //!< flag for bipred
+-int **fastme_best_cost;                     //!< for multi ref early termination threshold
+-int pred_SAD;                               //!<  SAD prediction in use.
+-int pred_MV_ref[2], pred_MV_uplayer[2];     //!< pred motion vector by space or temporal correlation,Median is provided
+-
+-int UMHEX_blocktype;                        //!< blocktype for UMHEX SetMotionVectorPredictor
+-int predict_point[5][2];
+-int SAD_a,SAD_b,SAD_c,SAD_d;
+-int Threshold_DSR_MB[8];                    //!<  Threshold for usage of DSR. DSR refer to JVT-Q088
++extern byte **McostState;                          //!< state for integer pel search
++extern byte **SearchState;                         //!< state for fractional pel search
++
++extern int ****fastme_ref_cost;                    //!< store SAD information needed for forward ref-frame prediction
++extern int ***fastme_l0_cost;                      //!< store SAD information needed for forward median and uplayer prediction
++extern int ***fastme_l1_cost;                      //!< store SAD information needed for backward median and uplayer prediction
++extern int ***fastme_l0_cost_bipred;               //!< store SAD information for bipred mode
++extern int ***fastme_l1_cost_bipred;               //!< store SAD information for bipred mode
++extern int bipred_flag;                            //!< flag for bipred
++extern int **fastme_best_cost;                     //!< for multi ref early termination threshold
++extern int pred_SAD;                               //!<  SAD prediction in use.
++extern int pred_MV_ref[2], pred_MV_uplayer[2];     //!< pred motion vector by space or temporal correlation,Median is provided
++
++extern int UMHEX_blocktype;                        //!< blocktype for UMHEX SetMotionVectorPredictor
++extern int predict_point[5][2];
++extern int SAD_a,SAD_b,SAD_c,SAD_d;
++extern int Threshold_DSR_MB[8];                    //!<  Threshold for usage of DSR. DSR refer to JVT-Q088
+ //for early termination
+-float  Bsize[8];
+-float AlphaFourth_1[8];
+-float AlphaFourth_2[8];
+-byte *flag_intra;
+-int  flag_intra_SAD;
++extern float  Bsize[8];
++extern float AlphaFourth_1[8];
++extern float AlphaFourth_2[8];
++extern byte *flag_intra;
++extern int  flag_intra_SAD;
+ 
+ void UMHEX_DefineThreshold(void);
+ void UMHEX_DefineThresholdMB(void);
+diff --git a/MultiSource/Applications/JM/lencod/me_umhexsmp.h b/MultiSource/Applications/JM/lencod/me_umhexsmp.h
+index 1f07aa041..2f702f6fe 100644
+--- a/MultiSource/Applications/JM/lencod/me_umhexsmp.h
++++ b/MultiSource/Applications/JM/lencod/me_umhexsmp.h
+@@ -28,21 +28,21 @@
+ 
+ #include "mbuffer.h"
+ 
+-unsigned short  SymmetricalCrossSearchThreshold1;
+-unsigned short  SymmetricalCrossSearchThreshold2;
+-unsigned short  ConvergeThreshold;
+-unsigned short  SubPelThreshold1;
+-unsigned short  SubPelThreshold3;
++extern unsigned short  SymmetricalCrossSearchThreshold1;
++extern unsigned short  SymmetricalCrossSearchThreshold2;
++extern unsigned short  ConvergeThreshold;
++extern unsigned short  SubPelThreshold1;
++extern unsigned short  SubPelThreshold3;
+ 
+-byte  **smpUMHEX_SearchState;          //state for fractional pel search
+-int  ***smpUMHEX_l0_cost;       //store SAD information needed for forward median and uplayer prediction
+-int  ***smpUMHEX_l1_cost;       //store SAD information needed for backward median and uplayer prediction
+-byte   *smpUMHEX_flag_intra;
+-int     smpUMHEX_flag_intra_SAD;
++extern byte  **smpUMHEX_SearchState;          //state for fractional pel search
++extern int  ***smpUMHEX_l0_cost;       //store SAD information needed for forward median and uplayer prediction
++extern int  ***smpUMHEX_l1_cost;       //store SAD information needed for backward median and uplayer prediction
++extern byte   *smpUMHEX_flag_intra;
++extern int     smpUMHEX_flag_intra_SAD;
+ 
+-int     smpUMHEX_pred_SAD_uplayer;     // Up layer SAD prediction
+-short   smpUMHEX_pred_MV_uplayer_X;    // Up layer MV predictor X-component
+-short   smpUMHEX_pred_MV_uplayer_Y;    // Up layer MV predictor Y-component
++extern int     smpUMHEX_pred_SAD_uplayer;     // Up layer SAD prediction
++extern short   smpUMHEX_pred_MV_uplayer_X;    // Up layer MV predictor X-component
++extern short   smpUMHEX_pred_MV_uplayer_Y;    // Up layer MV predictor Y-component
+ 
+ void    smpUMHEX_init(void);
+ int     smpUMHEX_get_mem(void);
+diff --git a/MultiSource/Applications/JM/lencod/nalu.h b/MultiSource/Applications/JM/lencod/nalu.h
+index 522a3a6a1..b2ea3b22c 100644
+--- a/MultiSource/Applications/JM/lencod/nalu.h
++++ b/MultiSource/Applications/JM/lencod/nalu.h
+@@ -22,7 +22,7 @@
+ int RBSPtoNALU (unsigned char *rbsp, NALU_t *nalu, int rbsp_size, int nal_unit_type, int nal_reference_idc,
+                 int min_num_bytes, int UseAnnexbLongStartcode);
+ 
+-int (*WriteNALU)(NALU_t *n);     //! Hides the write function in Annex B or RTP
++extern int (*WriteNALU)(NALU_t *n);     //! Hides the write function in Annex B or RTP
+ 
+ 
+ #endif
+diff --git a/MultiSource/Applications/JM/lencod/q_matrix.c b/MultiSource/Applications/JM/lencod/q_matrix.c
+index 9e65ba6ce..cdad5552e 100644
+--- a/MultiSource/Applications/JM/lencod/q_matrix.c
++++ b/MultiSource/Applications/JM/lencod/q_matrix.c
+@@ -14,7 +14,7 @@
+ #include "global.h"
+ #include "memalloc.h"
+ 
+-extern char *GetConfigFileContent (char *Filename, int error_type);
++extern char *GetConfigFileContent (char *Filename);
+ 
+ #define MAX_ITEMS_TO_PARSE  1000
+ 
+@@ -423,7 +423,7 @@ void Init_QMatrix (void)
+   if(input->ScalingMatrixPresentFlag)
+   {
+     printf ("Parsing QMatrix file %s ", input->QmatrixFile);
+-    content = GetConfigFileContent(input->QmatrixFile, 0);
++    content = GetConfigFileContent(input->QmatrixFile);
+     if(content!='\0')
+       ParseMatrix(content, strlen (content));
+     else
+diff --git a/MultiSource/Applications/JM/lencod/q_offsets.c b/MultiSource/Applications/JM/lencod/q_offsets.c
+index 01e80f1d2..3259eac5b 100644
+--- a/MultiSource/Applications/JM/lencod/q_offsets.c
++++ b/MultiSource/Applications/JM/lencod/q_offsets.c
+@@ -14,7 +14,7 @@
+ #include "global.h"
+ #include "memalloc.h"
+ 
+-extern char *GetConfigFileContent (char *Filename, int error_type);
++extern char *GetConfigFileContent (char *Filename);
+ 
+ #define MAX_ITEMS_TO_PARSE  1000
+ 
+@@ -357,7 +357,7 @@ void Init_QOffsetMatrix ()
+   {
+     printf ("Parsing Quantization Offset Matrix file %s ",
+       input->QOffsetMatrixFile);
+-    content = GetConfigFileContent (input->QOffsetMatrixFile, 0);
++    content = GetConfigFileContent (input->QOffsetMatrixFile);
+     if (content != '\0')
+       ParseQOffsetMatrix (content, strlen (content));
+     else
+diff --git a/MultiSource/Applications/JM/lencod/ratectl.h b/MultiSource/Applications/JM/lencod/ratectl.h
+index 883399312..5fa961540 100644
+--- a/MultiSource/Applications/JM/lencod/ratectl.h
++++ b/MultiSource/Applications/JM/lencod/ratectl.h
+@@ -53,9 +53,9 @@ typedef struct {
+ } rc_generic;
+ 
+ // macroblock activity
+-int    diffy[16][16];
+-int    qp_mbaff[2][2], qp_mbaff[2][2];
+-int    delta_qp_mbaff[2][2], delta_qp_mbaff[2][2];
++extern int    diffy[16][16];
++extern int    qp_mbaff[2][2];
++extern int    delta_qp_mbaff[2][2];
+ 
+ // generic functions
+ int    Qstep2QP( double Qstep );
+@@ -71,9 +71,9 @@ void generic_free( rc_generic **prc );
+ void copy_rc_generic( rc_generic *dst, rc_generic *src );
+ 
+ // rate control CURRENT pointers
+-rc_generic   *generic_RC;
++extern rc_generic   *generic_RC;
+ // rate control object pointers for RDPictureDecision buffering...
+-rc_generic   *generic_RC_init,   *generic_RC_best;
++extern rc_generic   *generic_RC_init,   *generic_RC_best;
+ 
+ 
+ #endif
+diff --git a/MultiSource/Applications/JM/lencod/rc_quadratic.h b/MultiSource/Applications/JM/lencod/rc_quadratic.h
+index ae568c264..3d8079509 100644
+--- a/MultiSource/Applications/JM/lencod/rc_quadratic.h
++++ b/MultiSource/Applications/JM/lencod/rc_quadratic.h
+@@ -141,7 +141,7 @@ void updateQPInterlaceBU( rc_quadratic *prc );
+ void updateModelQPFrame( rc_quadratic *prc, int m_Bits );
+ 
+ void updateRCModel (rc_quadratic *prc);
+-int  (*updateQP)(rc_quadratic *prc, int topfield);
++extern int  (*updateQP)(rc_quadratic *prc, int topfield);
+ int  updateQPRC0(rc_quadratic *prc, int topfield);
+ int  updateQPRC1(rc_quadratic *prc, int topfield);
+ int  updateQPRC2(rc_quadratic *prc, int topfield);
+@@ -157,8 +157,8 @@ void updatePparams( rc_quadratic *prc, int complexity );
+ void updateBparams( rc_quadratic *prc, int complexity );
+ 
+ // rate control CURRENT pointers
+-rc_quadratic *quadratic_RC;
++extern rc_quadratic *quadratic_RC;
+ // rate control object pointers for RDPictureDecision buffering...
+-rc_quadratic *quadratic_RC_init, *quadratic_RC_best;
++extern rc_quadratic *quadratic_RC_init, *quadratic_RC_best;
+ 
+ #endif
+diff --git a/MultiSource/Applications/JM/lencod/refbuf.h b/MultiSource/Applications/JM/lencod/refbuf.h
+index 4fbf3758f..b1e147d7c 100644
+--- a/MultiSource/Applications/JM/lencod/refbuf.h
++++ b/MultiSource/Applications/JM/lencod/refbuf.h
+@@ -11,8 +11,8 @@
+ #define _REBUF_H_
+ 
+ // global sub-pel image access variables
+-int height_pad, width_pad;
+-int height_pad_cr, width_pad_cr;
++extern int height_pad, width_pad;
++extern int height_pad_cr, width_pad_cr;
+ 
+ imgpel *UMVLine4X (imgpel ****Pic, int y, int x);
+ imgpel *FastLine4X(imgpel ****Pic, int y, int x);
+diff --git a/MultiSource/Applications/JM/lencod/sei.h b/MultiSource/Applications/JM/lencod/sei.h
+index 1791a962d..6c12e7581 100644
+--- a/MultiSource/Applications/JM/lencod/sei.h
++++ b/MultiSource/Applications/JM/lencod/sei.h
+@@ -278,8 +278,8 @@ typedef struct
+   Bitstream *data;
+   int payloadSize;
+ } bufferingperiod_information_struct;
+-Boolean seiHasBufferingPeriod_info;
+-bufferingperiod_information_struct seiBufferingPeriod;
++extern Boolean seiHasBufferingPeriod_info;
++extern bufferingperiod_information_struct seiBufferingPeriod;
+ 
+ void InitBufferingPeriod();
+ void ClearBufferingPeriod();
+@@ -312,8 +312,8 @@ typedef struct
+   Bitstream *data;
+   int payloadSize;
+ } pictiming_information_struct;
+-Boolean seiHasPicTiming_info;
+-pictiming_information_struct seiPicTiming;
++extern Boolean seiHasPicTiming_info;
++extern pictiming_information_struct seiPicTiming;
+ 
+ void InitPicTiming();
+ void ClearPicTiming();
+diff --git a/MultiSource/Applications/JM/lencod/slice.c b/MultiSource/Applications/JM/lencod/slice.c
+index 85102e94b..62a4819fa 100644
+--- a/MultiSource/Applications/JM/lencod/slice.c
++++ b/MultiSource/Applications/JM/lencod/slice.c
+@@ -98,7 +98,7 @@ int start_slice()
+ 
+     currStream->write_flag = 0;
+     if (i==0)     // First partition
+-      header_len += SliceHeader (0);
++      header_len += SliceHeader ();
+     else          // Second/Third partition
+       header_len += Partition_BC_Header(i);
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

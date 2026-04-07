@@ -1,0 +1,21 @@
+From 8e4e88e3512de9dd5a74f2bc4304f0bb10122815 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 3 Feb 2026 23:53:19 +0000
+Subject: [PATCH 10/30] BuiltinTypeInfo: Add extra newline to reference output
+
+Emscripten's NODERAWFS seems to force this on exit.
+---
+ SingleSource/Regression/C++/BuiltinTypeInfo.reference_output | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/SingleSource/Regression/C++/BuiltinTypeInfo.reference_output b/SingleSource/Regression/C++/BuiltinTypeInfo.reference_output
+index 5e55c3e5e..39f6345a1 100644
+--- a/SingleSource/Regression/C++/BuiltinTypeInfo.reference_output
++++ b/SingleSource/Regression/C++/BuiltinTypeInfo.reference_output
+@@ -1 +1,2 @@
+-0exit 0
++0
++exit 0
+-- 
+2.53.0.1213.gd9a14994de-goog
+

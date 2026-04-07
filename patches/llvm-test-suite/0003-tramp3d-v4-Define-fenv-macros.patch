@@ -1,0 +1,39 @@
+From e5e015564ce75d749f0fddd4a5f0c8824c657854 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Wed, 28 Jan 2026 01:13:08 +0000
+Subject: [PATCH 03/30] tramp3d-v4: Define fenv macros
+
+---
+ MultiSource/Benchmarks/tramp3d-v4/tramp3d-v4.cpp | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/MultiSource/Benchmarks/tramp3d-v4/tramp3d-v4.cpp b/MultiSource/Benchmarks/tramp3d-v4/tramp3d-v4.cpp
+index 8f9afb834..32a55e646 100644
+--- a/MultiSource/Benchmarks/tramp3d-v4/tramp3d-v4.cpp
++++ b/MultiSource/Benchmarks/tramp3d-v4/tramp3d-v4.cpp
+@@ -2,6 +2,22 @@
+ #include <cstddef>
+ #include <time.h>
+ #include <fenv.h>
++/* Emscripten doesn't define these because wasm doesn't support FP exceptions. */
++#ifndef FE_INVALID
++#define FE_INVALID 0
++#endif
++#ifndef FE_DIVBYZERO
++#define FE_DIVBYZERO 0
++#endif
++#ifndef FE_OVERFLOW
++#define FE_OVERFLOW 0
++#endif
++#ifndef FE_UNDERFLOW
++#define FE_UNDERFLOW 0
++#endif
++#ifndef FE_INEXACT
++#define FE_INEXACT 0
++#endif
+ #include <cstdarg>
+ #include <complex>
+ #include <algorithm>
+-- 
+2.53.0.1213.gd9a14994de-goog
+

@@ -1,0 +1,92 @@
+From 627162be026b90fdf5f49ac377e6ad6503c4af90 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 20:47:32 +0000
+Subject: [PATCH 25/30] CLAMR: Fix build for Emscripten
+
+- Guard local fmemopen implementation to use system version on Emscripten.
+- Provide local SLIST macros in genmalloc.c as <sys/queue.h> is missing.
+---
+ .../DOE-ProxyApps-C++/CLAMR/fmemopen.c        |  2 +-
+ .../DOE-ProxyApps-C++/CLAMR/fmemopen.h        |  4 +++
+ .../DOE-ProxyApps-C++/CLAMR/genmalloc.c       | 31 +++++++++++++++++++
+ 3 files changed, 36 insertions(+), 1 deletion(-)
+
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.c b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.c
+index b30c5acc4..788595221 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.c
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.c
+@@ -17,7 +17,7 @@
+ 
+ #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && \
+     !defined(__OpenBSD__) && !(defined(__sun__) && defined(__svr4__)) && \
+-    !defined(_AIX)
++    !defined(_AIX) && !defined(__EMSCRIPTEN__)
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.h b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.h
+index 6296ae1e4..035ba365d 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.h
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/fmemopen.h
+@@ -1,6 +1,8 @@
+ #ifndef FMEMOPEN_H_
+ #define FMEMOPEN_H_
+ 
++#ifndef __EMSCRIPTEN__
++
+ #if defined __cplusplus
+ extern "C" {
+ #endif
+@@ -32,4 +34,6 @@ FILE *fmemopen(void *buf, size_t size, const char *mode);
+ }
+ #endif
+ 
++#endif // __EMSCRIPTEN__
++
+ #endif // #ifndef FMEMOPEN_H_
+diff --git a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/genmalloc.c b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/genmalloc.c
+index b4b4e5080..79dac6236 100644
+--- a/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/genmalloc.c
++++ b/MultiSource/Benchmarks/DOE-ProxyApps-C++/CLAMR/genmalloc.c
+@@ -55,7 +55,38 @@
+  */
+ 
+ #include <sys/types.h>
++#ifndef __EMSCRIPTEN__
+ #include <sys/queue.h>
++#else
++#define SLIST_ENTRY(type) struct { struct type *sle_next; }
++#define SLIST_HEAD(name, type) struct name { struct type *slh_first; }
++#define SLIST_HEAD_INITIALIZER(head) { NULL }
++#define SLIST_FIRST(head) ((head)->slh_first)
++#define SLIST_NEXT(elm, field) ((elm)->field.sle_next)
++#define SLIST_EMPTY(head) ((head)->slh_first == NULL)
++#define SLIST_INIT(head) do { (head)->slh_first = NULL; } while (0)
++#define SLIST_FOREACH(var, head, field) \
++	for((var) = (head)->slh_first; (var); (var) = (var)->field.sle_next)
++#define SLIST_INSERT_HEAD(head, elm, field) do { \
++	(elm)->field.sle_next = (head)->slh_first; \
++	(head)->slh_first = (elm); \
++} while (0)
++#define SLIST_REMOVE_HEAD(head, field) do { \
++	(head)->slh_first = (head)->slh_first->field.sle_next; \
++} while (0)
++#define SLIST_REMOVE(head, elm, type, field) do { \
++	if ((head)->slh_first == (elm)) { \
++		SLIST_REMOVE_HEAD((head), field); \
++	} \
++	else { \
++		struct type *curelm = (head)->slh_first; \
++		while (curelm->field.sle_next != (elm)) \
++			curelm = curelm->field.sle_next; \
++		curelm->field.sle_next = \
++		    curelm->field.sle_next->field.sle_next; \
++	} \
++} while (0)
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include "genmalloc.h"
+-- 
+2.53.0.1213.gd9a14994de-goog
+

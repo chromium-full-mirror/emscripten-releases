@@ -1,0 +1,72 @@
+From 5d25b794679e78681923fc5ce3562b692e709ecb Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 01:17:45 +0000
+Subject: [PATCH 19/30] irsmk: remove common symbols
+
+---
+ .../Benchmarks/ASC_Sequoia/IRSmk/irsmk.h      | 22 +++++++++----------
+ .../Benchmarks/ASC_Sequoia/IRSmk/main.c       | 14 ++++++++++++
+ 2 files changed, 25 insertions(+), 11 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/irsmk.h b/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/irsmk.h
+index f34bae5c1..93bb273e5 100644
+--- a/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/irsmk.h
++++ b/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/irsmk.h
+@@ -18,18 +18,18 @@
+ //         e.g for NZONES_along_i = 25
+ //         2    27   2    27   2    27   841  29
+ //-----------------
+-int kmin;
+-int kmax;
+-int jmin;
+-int jmax;  
+-int imin;
+-int imax;
+-int kp;
+-int jp;
++extern int kmin;
++extern int kmax;
++extern int jmin;
++extern int jmax;
++extern int imin;
++extern int imax;
++extern int kp;
++extern int jp;
+ 
+-int i_lb;
+-int i_ub;
+-int x_size;
++extern int i_lb;
++extern int i_ub;
++extern int x_size;
+ 
+ 
+ //-----------------
+diff --git a/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/main.c b/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/main.c
+index f8c00a7a3..88a1448a0 100644
+--- a/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/main.c
++++ b/MultiSource/Benchmarks/ASC_Sequoia/IRSmk/main.c
+@@ -20,6 +20,20 @@
+ #include "irsmk.h"
+ 
+ 
++int kmin = 0;
++int kmax = 0;
++int jmin = 0;
++int jmax = 0;
++int imin = 0;
++int imax = 0;
++int kp = 0;
++int jp = 0;
++
++int i_lb = 0;
++int i_ub = 0;
++int x_size = 0;
++
++
+ void allocMem(RadiationData_t *);
+ void init(Domain_t *, RadiationData_t *, double *, double *);
+ void readInput(const char *);
+-- 
+2.53.0.1213.gd9a14994de-goog
+

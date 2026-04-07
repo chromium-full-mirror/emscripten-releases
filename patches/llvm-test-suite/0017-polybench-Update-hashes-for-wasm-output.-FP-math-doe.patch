@@ -1,0 +1,220 @@
+From d6228a2d68edfa58f76caac3c412ae6d95d962f0 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Thu, 12 Feb 2026 00:14:16 +0000
+Subject: [PATCH 17/30] polybench: Update hashes for wasm output. FP math
+ doesn't match bit-for-bit
+
+---
+ .../datamining/correlation/correlation.reference_output         | 2 +-
+ .../Polybench/datamining/covariance/covariance.reference_output | 2 +-
+ .../Polybench/linear-algebra/blas/gemm/gemm.reference_output    | 2 +-
+ .../linear-algebra/blas/gesummv/gesummv.reference_output        | 2 +-
+ .../Polybench/linear-algebra/blas/symm/symm.reference_output    | 2 +-
+ .../Polybench/linear-algebra/blas/syr2k/syr2k.reference_output  | 2 +-
+ .../Polybench/linear-algebra/blas/syrk/syrk.reference_output    | 2 +-
+ .../Polybench/linear-algebra/blas/trmm/trmm.reference_output    | 2 +-
+ .../Polybench/linear-algebra/kernels/2mm/2mm.reference_output   | 2 +-
+ .../Polybench/linear-algebra/kernels/3mm/3mm.reference_output   | 2 +-
+ .../Polybench/linear-algebra/kernels/atax/atax.reference_output | 2 +-
+ .../Polybench/linear-algebra/kernels/bicg/bicg.reference_output | 2 +-
+ .../linear-algebra/kernels/doitgen/doitgen.reference_output     | 2 +-
+ .../Polybench/linear-algebra/kernels/mvt/mvt.reference_output   | 2 +-
+ .../linear-algebra/solvers/cholesky/cholesky.reference_output   | 2 +-
+ .../Polybench/linear-algebra/solvers/lu/lu.reference_output     | 2 +-
+ .../linear-algebra/solvers/trisolv/trisolv.reference_output     | 2 +-
+ .../Polybench/medley/deriche/deriche.reference_output           | 2 +-
+ .../medley/floyd-warshall/floyd-warshall.reference_output       | 2 +-
+ .../Polybench/medley/nussinov/nussinov.reference_output         | 2 +-
+ .../Benchmarks/Polybench/stencils/adi/adi.reference_output      | 2 +-
+ .../Polybench/stencils/fdtd-2d/fdtd-2d.reference_output         | 2 +-
+ .../Polybench/stencils/heat-3d/heat-3d.reference_output         | 2 +-
+ .../Polybench/stencils/jacobi-1d/jacobi-1d.reference_output     | 2 +-
+ .../Polybench/stencils/jacobi-2d/jacobi-2d.reference_output     | 2 +-
+ .../Polybench/stencils/seidel-2d/seidel-2d.reference_output     | 2 +-
+ 26 files changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.reference_output b/SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.reference_output
+index ae15b960b..a2c3b5fe5 100644
+--- a/SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.reference_output
++++ b/SingleSource/Benchmarks/Polybench/datamining/correlation/correlation.reference_output
+@@ -1 +1 @@
+-393859cceab734224d73b1d142485f2f
++0292f05fea938a7c56b879195eacdab9
+diff --git a/SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.reference_output b/SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.reference_output
+index 38fe4abda..7f3849d5a 100644
+--- a/SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.reference_output
++++ b/SingleSource/Benchmarks/Polybench/datamining/covariance/covariance.reference_output
+@@ -1 +1 @@
+-9314836fb8ba429f03528e34aae95d28
++d22b58953c5e5b1911e88eb6a405f4bd
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gemm/gemm.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gemm/gemm.reference_output
+index ebfb5e59a..294c14132 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gemm/gemm.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gemm/gemm.reference_output
+@@ -1 +1 @@
+-e0861cd13cd3b5111ba89d1d245a1f32
++e5a5bb0dfe404068310e2ea0a26a49fd
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gesummv/gesummv.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gesummv/gesummv.reference_output
+index 72ce9d12e..319f2ca00 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gesummv/gesummv.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/gesummv/gesummv.reference_output
+@@ -1 +1 @@
+-ac6354f1fcfb4ecfe8475811465b872c
++18cc473cf2af50f3640cb49891b61bf8
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/symm/symm.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/symm/symm.reference_output
+index 7e17130da..a8b343954 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/symm/symm.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/symm/symm.reference_output
+@@ -1 +1 @@
+-e6e0a9fffae437ec85a71acd08390dbb
++c1e1178f9ade4e701fe14c9f40e57ceb
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syr2k/syr2k.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syr2k/syr2k.reference_output
+index 3d4d1ba80..854a390cb 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syr2k/syr2k.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syr2k/syr2k.reference_output
+@@ -1 +1 @@
+-806c1e499f1906d0308acd0f1217dc2e
++4c5f53b3b668e1d6386483d7b3a81124
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syrk/syrk.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syrk/syrk.reference_output
+index d32c23a25..94f4c3987 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syrk/syrk.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/syrk/syrk.reference_output
+@@ -1 +1 @@
+-b2ce8a1c368511ebf8a4b3aa1f250a51
++8ae73e10530e2f9e80d3a860d220b92a
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/trmm/trmm.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/trmm/trmm.reference_output
+index 2e09235f8..a48bc8db2 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/blas/trmm/trmm.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/blas/trmm/trmm.reference_output
+@@ -1 +1 @@
+-f63a3a3f85a0b95cb77f3be24f7bac1f
++966a8574d842a85b2f5f83bea0dc159d
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.reference_output
+index 9338c2b19..83b235079 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/2mm/2mm.reference_output
+@@ -1 +1 @@
+-affb4e65249d277be412185e760c11da
++231902f3388d5999995fd04b02a6a8ea
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/3mm/3mm.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/3mm/3mm.reference_output
+index b28daab30..a0cbb26cf 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/3mm/3mm.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/3mm/3mm.reference_output
+@@ -1 +1 @@
+-457cd249f40c4414fc4858833b8057f0
++ae726c286b07cebed961a3bfb4473810
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/atax/atax.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/atax/atax.reference_output
+index 5fa664eda..c062f9ccc 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/atax/atax.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/atax/atax.reference_output
+@@ -1 +1 @@
+-18eb4143ba10bde03410605bc4efc5e9
++22bcf3ff0c95cd067d8288da65220883
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/bicg/bicg.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/bicg/bicg.reference_output
+index 626081547..ae90f34d4 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/bicg/bicg.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/bicg/bicg.reference_output
+@@ -1 +1 @@
+-1234168a6166fb212b257b4c74746956
++be383a54e8a729f59f4e26f8ac46099e
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/doitgen/doitgen.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/doitgen/doitgen.reference_output
+index 18ed7c688..02870f7af 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/doitgen/doitgen.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/doitgen/doitgen.reference_output
+@@ -1 +1 @@
+-331111dd1ccebc069533754b98e4d247
++0a72265d3f7ab5ef42b73bf830b62d82
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/mvt/mvt.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/mvt/mvt.reference_output
+index 736c410a8..773d297d7 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/mvt/mvt.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/kernels/mvt/mvt.reference_output
+@@ -1 +1 @@
+-c915943eed957955f74299ef34047349
++b87cd39b72a9e010cdc72457fac6c1e3
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/cholesky/cholesky.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/cholesky/cholesky.reference_output
+index c5a50e747..8c89bbf65 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/cholesky/cholesky.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/cholesky/cholesky.reference_output
+@@ -1 +1 @@
+-e8551b3b8fd67e3ab754a40e6412a05d
++add725d7289aa472260f8dc7d5ad95be
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/lu/lu.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/lu/lu.reference_output
+index 0cafa1474..3f3e7a568 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/lu/lu.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/lu/lu.reference_output
+@@ -1 +1 @@
+-af69ca1fe74334e910698c246e3ea5a1
++c390d867297ef498218d03f5d14b093b
+diff --git a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/trisolv/trisolv.reference_output b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/trisolv/trisolv.reference_output
+index 2689cf632..e12ed9a85 100644
+--- a/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/trisolv/trisolv.reference_output
++++ b/SingleSource/Benchmarks/Polybench/linear-algebra/solvers/trisolv/trisolv.reference_output
+@@ -1 +1 @@
+-0c387dd5096de8a1cd2f7ddb9da77c9e
++29a56845d38ecf15a929fd31555827c4
+diff --git a/SingleSource/Benchmarks/Polybench/medley/deriche/deriche.reference_output b/SingleSource/Benchmarks/Polybench/medley/deriche/deriche.reference_output
+index 31cc2e2a7..5ac4d0d5e 100644
+--- a/SingleSource/Benchmarks/Polybench/medley/deriche/deriche.reference_output
++++ b/SingleSource/Benchmarks/Polybench/medley/deriche/deriche.reference_output
+@@ -1 +1 @@
+-b9d66cffb7d2e080b66feaeadc4d1ec9
++995b49a0ff4e8930b6f3cbc5a28864b0
+diff --git a/SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.reference_output b/SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.reference_output
+index 2cdd09c51..84d1655b5 100644
+--- a/SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.reference_output
++++ b/SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.reference_output
+@@ -1 +1 @@
+-50f7f0386b159a1161e1cf5fbd132682
++9b0eb4058ce3e11480338d7b921ca0c8
+diff --git a/SingleSource/Benchmarks/Polybench/medley/nussinov/nussinov.reference_output b/SingleSource/Benchmarks/Polybench/medley/nussinov/nussinov.reference_output
+index e037e5e43..2b22dc418 100644
+--- a/SingleSource/Benchmarks/Polybench/medley/nussinov/nussinov.reference_output
++++ b/SingleSource/Benchmarks/Polybench/medley/nussinov/nussinov.reference_output
+@@ -1 +1 @@
+-82bbfc66f9b29cfeacc3efef95416704
++e0a1834a62c01e706951a4c09307c056
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/adi/adi.reference_output b/SingleSource/Benchmarks/Polybench/stencils/adi/adi.reference_output
+index 98bbbaa81..c3aecd719 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/adi/adi.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/adi/adi.reference_output
+@@ -1 +1 @@
+-18427b30656d39b389ca1fc43ce6813d
++6680da447994b8ff19444d4587db548d
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.reference_output b/SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.reference_output
+index 6094f0aac..1ad19f894 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/fdtd-2d/fdtd-2d.reference_output
+@@ -1 +1 @@
+-7893951bf646ca0470439b02d612a4d7
++fac6e6ca4db2d7db22dd60ed1b59982d
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/heat-3d/heat-3d.reference_output b/SingleSource/Benchmarks/Polybench/stencils/heat-3d/heat-3d.reference_output
+index 31ccc10bf..9670f59a2 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/heat-3d/heat-3d.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/heat-3d/heat-3d.reference_output
+@@ -1 +1 @@
+-4c9b772d29cb3972abe0d3c47e782f20
++774d71a1e97c4d2dc71306a142bce666
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.reference_output b/SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.reference_output
+index 2c4a001cc..529a0764d 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/jacobi-1d/jacobi-1d.reference_output
+@@ -1 +1 @@
+-a6ddce2ce5396c1d984a7032ae8594f7
++791c1a63ecb6cfb13b5ac3eac88cfe15
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.reference_output b/SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.reference_output
+index ee231c327..3a0cee177 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/jacobi-2d/jacobi-2d.reference_output
+@@ -1 +1 @@
+-c0440ca1a39370c3f77fa099574ed95a
++ad43e98d4c7166cce30fbc19309ed2d8
+diff --git a/SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.reference_output b/SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.reference_output
+index a10422ce2..66e24e11f 100644
+--- a/SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.reference_output
++++ b/SingleSource/Benchmarks/Polybench/stencils/seidel-2d/seidel-2d.reference_output
+@@ -1 +1 @@
+-1c3784e0b07769f7ef84d1e39b23a1e4
++97958e5ad0df4e509d5b7b8134fa6ccc
+-- 
+2.53.0.1213.gd9a14994de-goog
+

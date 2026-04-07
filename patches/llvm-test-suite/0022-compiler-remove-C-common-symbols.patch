@@ -1,0 +1,143 @@
+From f2761318c69b4b6f518b3e2fb52a84d7c89fbdda Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 20:21:38 +0000
+Subject: [PATCH 22/30] compiler: remove C common symbols
+
+---
+ .../Benchmarks/Prolangs-C/compiler/global.h   | 52 +++++++++----------
+ .../Benchmarks/Prolangs-C/compiler/main.c     | 32 ++++++++++++
+ .../Benchmarks/Prolangs-C/compiler/symbol.c   |  4 +-
+ 3 files changed, 60 insertions(+), 28 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/Prolangs-C/compiler/global.h b/MultiSource/Benchmarks/Prolangs-C/compiler/global.h
+index edcfe64eb..282cce82c 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/compiler/global.h
++++ b/MultiSource/Benchmarks/Prolangs-C/compiler/global.h
+@@ -86,33 +86,33 @@ extern int strcmp();
+ #define NOTDEC     2062      /* emitter code for funtion not parsed */
+ #define VALB       2063      /* emitter code for VALB */
+ 
+-int     lookahead;           /* token code number */
+-int     tokenval;            /* value of token attribute */
+-float   ftokenval;           /* global for float RNUM attribute */
+-int     FloatFlag;           /* used as boolean, 1 if we doing float calcs. */
+-int     ErrorFlag;           /* 1 if an error has occured, 0 otherwise */
+-int     DecCount;            /* keeps track of memeory locations */
+-int     offset;              /* offset within an activation record, local var*/
+-int     lineno;              /* the current line number */
+-int     LabelCounter;        /* used to create new labels for the mach. code */
+-int     NumberC;             /* keeps track of number of commands emitted */
+-char    lexbuf[BSIZE];       /* stores lexeme to be inserted into symtable */
+-int     LocalIndex;          /* value returned from lookup in loctable */
+-int     GlobalIndex;         /* value returned from lookup to glotable */
+-int     NextLookahead;       /* the next token of the input */
+-int     NextTokenval;        /* the tokenval associated with the next token */
+-float   NextFtokenval;       /* the ftokenval associated with the next token */
+-int     PreviousLookahead;   /* the token that was last matched */
+-int     PreviousTokenval;    /* tokenval associated with the previous token*/
+-float   PreviousFtokenval;   /* ftokenval associated with the previous token*/
+-int     Scope;               /* the label assoc. with the current function
++extern int     lookahead;           /* token code number */
++extern int     tokenval;            /* value of token attribute */
++extern float   ftokenval;           /* global for float RNUM attribute */
++extern int     FloatFlag;           /* used as boolean, 1 if we doing float calcs. */
++extern int     ErrorFlag;           /* 1 if an error has occured, 0 otherwise */
++extern int     DecCount;            /* keeps track of memeory locations */
++extern int     offset;              /* offset within an activation record, local var*/
++extern int     lineno;              /* the current line number */
++extern int     LabelCounter;        /* used to create new labels for the mach. code */
++extern int     NumberC;             /* keeps track of number of commands emitted */
++extern char    lexbuf[BSIZE];       /* stores lexeme to be inserted into symtable */
++extern int     LocalIndex;          /* value returned from lookup in loctable */
++extern int     GlobalIndex;         /* value returned from lookup to glotable */
++extern int     NextLookahead;       /* the next token of the input */
++extern int     NextTokenval;        /* the tokenval associated with the next token */
++extern float   NextFtokenval;       /* the ftokenval associated with the next token */
++extern int     PreviousLookahead;   /* the token that was last matched */
++extern int     PreviousTokenval;    /* tokenval associated with the previous token*/
++extern float   PreviousFtokenval;   /* ftokenval associated with the previous token*/
++extern int     Scope;               /* the label assoc. with the current function
+                                 to be used in the creation of unique labels */
+-int     ReturnLabel;         /* stores the label to jump out of a function
++extern int     ReturnLabel;         /* stores the label to jump out of a function
+                                 if a return is encountered */
+-int     CallReturnAddr;      /* return address of a function call */
+-int     FuncNameIndex;       /* stores the index of the current function
++extern int     CallReturnAddr;      /* return address of a function call */
++extern int     FuncNameIndex;       /* stores the index of the current function
+                                 name*/
+-int     ArrayParsed;         /* flag set to 1 if PushArrayCellAddr() called
++extern int     ArrayParsed;         /* flag set to 1 if PushArrayCellAddr() called
+                                 while lookahead is ARRAY */
+ 
+ struct entry {   /* form of symbol table entry */
+@@ -129,6 +129,6 @@ struct entry {   /* form of symbol table entry */
+    };
+ 
+ 
+-struct entry GlobalTable[SYMMAX];    /* Global  symbol table */
+-struct entry LocalTable[SYMMAX];    /* Local symbol table */
++extern struct entry GlobalTable[SYMMAX];    /* Global  symbol table */
++extern struct entry LocalTable[SYMMAX];    /* Local symbol table */
+ 
+diff --git a/MultiSource/Benchmarks/Prolangs-C/compiler/main.c b/MultiSource/Benchmarks/Prolangs-C/compiler/main.c
+index f241ffc8d..40e36bc49 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/compiler/main.c
++++ b/MultiSource/Benchmarks/Prolangs-C/compiler/main.c
+@@ -2,6 +2,38 @@
+ 
+ #include "global.h"
+ 
++int     lookahead = 0;           /* token code number */
++int     tokenval = 0;            /* value of token attribute */
++float   ftokenval = 0.0;           /* global for float RNUM attribute */
++int     FloatFlag = 0;           /* used as boolean, 1 if we doing float calcs. */
++int     ErrorFlag = 0;           /* 1 if an error has occured, 0 otherwise */
++int     DecCount = 0;            /* keeps track of memeory locations */
++int     offset = 0;              /* offset within an activation record, local var*/
++int     lineno = 0;              /* the current line number */
++int     LabelCounter = 0;        /* used to create new labels for the mach. code */
++int     NumberC = 0;             /* keeps track of number of commands emitted */
++char    lexbuf[BSIZE] = {0};       /* stores lexeme to be inserted into symtable */
++int     LocalIndex = 0;          /* value returned from lookup in loctable */
++int     GlobalIndex = 0;          /* value returned from lookup to glotable */
++int     NextLookahead = 0;       /* the next token of the input */
++int     NextTokenval = 0;        /* the tokenval associated with the next token */
++float   NextFtokenval = 0.0;       /* the ftokenval associated with the next token */
++int     PreviousLookahead = 0;   /* the token that was last matched */
++int     PreviousTokenval = 0;    /* tokenval associated with the previous token*/
++float   PreviousFtokenval = 0.0;   /* ftokenval associated with the previous token*/
++int     Scope = 0;               /* the label assoc. with the current function
++                                to be used in the creation of unique labels */
++int     ReturnLabel = 0;         /* stores the label to jump out of a function
++                                if a return is encountered */
++int     CallReturnAddr = 0;      /* return address of a function call */
++int     FuncNameIndex = 0;       /* stores the index of the current function
++                                name*/
++int     ArrayParsed = 0;         /* flag set to 1 if PushArrayCellAddr() called
++                                while lookahead is ARRAY */
++
++struct entry GlobalTable[SYMMAX] = {0};    /* Global  symbol table */
++struct entry LocalTable[SYMMAX] = {0};    /* Local symbol table */
++
+ extern void init(void);
+ extern void parse(void);
+ 
+diff --git a/MultiSource/Benchmarks/Prolangs-C/compiler/symbol.c b/MultiSource/Benchmarks/Prolangs-C/compiler/symbol.c
+index bcb048456..1af3eea1d 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/compiler/symbol.c
++++ b/MultiSource/Benchmarks/Prolangs-C/compiler/symbol.c
+@@ -5,8 +5,8 @@
+ extern void error(char *m);
+ extern void emit(int t, int tval, float rval);
+ 
+-char Glexemes[STRMAX]; /* char array to hold global lexemes */
+-char Llexemes[STRMAX]; /* char array to hold local lexemes */
++char Glexemes[STRMAX] = {0}; /* char array to hold global lexemes */
++char Llexemes[STRMAX] = {0}; /* char array to hold local lexemes */
+ /* struct entry LocalTable[SYMMAX];  define the size of the local table */
+ /* struct entry GlobalTable[SYMMAX]; define the size of the global table */
+ int Glastchar = - 1;   /* last used position in Glexemes */
+-- 
+2.53.0.1213.gd9a14994de-goog
+

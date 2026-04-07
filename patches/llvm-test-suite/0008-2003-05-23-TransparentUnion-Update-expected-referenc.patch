@@ -1,0 +1,22 @@
+From b54fc9b3aba96defae0ec4cff3086c5d1bd3d145 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 3 Feb 2026 22:05:59 +0000
+Subject: [PATCH 08/30] 2003-05-23-TransparentUnion: Update expected reference
+ output due to newline behavior
+
+stdout on emscripten with node forces a newline.
+---
+ .../Regression/C/2003-05-23-TransparentUnion.reference_output  | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/SingleSource/Regression/C/2003-05-23-TransparentUnion.reference_output b/SingleSource/Regression/C/2003-05-23-TransparentUnion.reference_output
+index 08b793846..493f06e9f 100644
+--- a/SingleSource/Regression/C/2003-05-23-TransparentUnion.reference_output
++++ b/SingleSource/Regression/C/2003-05-23-TransparentUnion.reference_output
+@@ -1 +1,2 @@
+-okexit 0
++ok
++exit 0
+-- 
+2.53.0.1213.gd9a14994de-goog
+

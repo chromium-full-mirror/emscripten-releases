@@ -1,0 +1,248 @@
+From 22bcdd2f5b68bf77fd922a728f2c3b7b9501905a Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Wed, 11 Feb 2026 04:31:31 +0000
+Subject: [PATCH 16/30] ALAC: Fix stdin/stdout support by buffering to
+ temporary files
+
+The alacconvert-encode and alacconvert-decode tools rely on fseek and
+ftell to navigate audio headers and update chunk sizes after processing.
+When these tools are used with redirected stdin or stdout (via the '-'
+argument), these operations fail because standard streams are typically
+not seekable.
+
+This change introduces a buffering mechanism using tmpfile():
+- If stdin is used as input, its contents are copied to a seekable temporary
+  file before processing.
+- If stdout is used as output, the program writes to a temporary file first,
+  then copies the final result to stdout after all seek-based header updates
+  are complete.
+
+This fix enables the tests to pass in environments where redirected standard
+streams do not support seeking, such as the Emscripten/Node.js test runner.
+---
+ MultiSource/Applications/ALAC/decode/main.cpp | 75 +++++++++++++------
+ MultiSource/Applications/ALAC/encode/main.cpp | 75 +++++++++++++------
+ 2 files changed, 104 insertions(+), 46 deletions(-)
+
+diff --git a/MultiSource/Applications/ALAC/decode/main.cpp b/MultiSource/Applications/ALAC/decode/main.cpp
+index 007bce287..71da73d7b 100644
+--- a/MultiSource/Applications/ALAC/decode/main.cpp
++++ b/MultiSource/Applications/ALAC/decode/main.cpp
+@@ -68,6 +68,14 @@ enum
+     kTestFormatFlag_32BitSourceData    = 4
+   };
+ 
++void CopyFile(FILE* src, FILE* dst) {
++    char buf[8192];
++    size_t n;
++    while ((n = fread(buf, 1, sizeof(buf), src)) > 0) {
++        fwrite(buf, 1, n, dst);
++    }
++}
++
+ 
+ int main (int argc, char * argv[])
+ {
+@@ -75,38 +83,51 @@ int main (int argc, char * argv[])
+   char * outputFileName = argv[2];
+   FILE * inputFile = NULL;
+   FILE * outputFile = NULL;
++  FILE * actualInputFile = NULL;
++  FILE * actualOutputFile = NULL;
+ 		
+-	bool malformed = argc < 2;
++	bool malformed = argc < 3;
+ 	
+   // Parse the commandline and open the necessary files
+-  for (int32_t i = 1; i < argc; ++i) 
++  if (argc > 1 && strcmp (argv[1], "-h") == 0)
+     {
+-      if (strcmp (argv[i], "-h") == 0)
++      malformed = true;
++    }
++
++  if (!malformed)
++    {
++      if (strcmp(inputFileName, "-") == 0)
+         {
+-          malformed = true;
++          actualInputFile = stdin;
++          inputFile = tmpfile();
++          CopyFile(actualInputFile, inputFile);
++          rewind(inputFile);
+         }
+       else
+         {
+-          if (strcmp(inputFileName, "-") == 0) inputFile = stdin;
+-          if (strcmp(outputFileName, "-") == 0) outputFile = stdout;
+-          if (inputFile == NULL) inputFile = fopen (inputFileName, "rb"); // the b is necessary for Windows -- ignored by Unix
+-          if(inputFile == NULL)
+-            {
+-              fprintf(stderr," Cannot open file \"%s\"\n", inputFileName);
+-              exit (1);
+-            }
+-      
+-          if (outputFile == NULL) outputFile = fopen (outputFileName, "w+b"); // the b is necessary for Windows -- ignored by Unix
+-          if(outputFile == NULL)
+-            {
+-              fprintf(stderr," Cannot open file \"%s\"\n", outputFileName);
+-              exit (1);
+-            }
++          inputFile = fopen (inputFileName, "rb"); // the b is necessary for Windows -- ignored by Unix
+         }
+-				
+-      if (malformed)
++
++      if (inputFile == NULL)
+         {
+-          break;
++          fprintf(stderr," Cannot open file \"%s\"\n", inputFileName);
++          exit (1);
++        }
++
++      if (strcmp(outputFileName, "-") == 0)
++        {
++          actualOutputFile = stdout;
++          outputFile = tmpfile();
++        }
++      else
++        {
++          outputFile = fopen (outputFileName, "w+b"); // the b is necessary for Windows -- ignored by Unix
++        }
++
++      if (outputFile == NULL)
++        {
++          fprintf(stderr," Cannot open file \"%s\"\n", outputFileName);
++          exit (1);
+         }
+     }
+ 	
+@@ -185,7 +206,15 @@ int main (int argc, char * argv[])
+ 	}
+ 	
+   if (inputFile) fclose(inputFile);
+-  if (outputFile) fclose(outputFile);
++  if (outputFile)
++    {
++      if (actualOutputFile == stdout)
++        {
++          rewind(outputFile);
++          CopyFile(outputFile, actualOutputFile);
++        }
++      fclose(outputFile);
++    }
+     
+ 	return 0;
+ }
+diff --git a/MultiSource/Applications/ALAC/encode/main.cpp b/MultiSource/Applications/ALAC/encode/main.cpp
+index 9dd5f016e..ab00eb34c 100644
+--- a/MultiSource/Applications/ALAC/encode/main.cpp
++++ b/MultiSource/Applications/ALAC/encode/main.cpp
+@@ -68,44 +68,65 @@ enum
+     kTestFormatFlag_32BitSourceData    = 4
+   };
+ 
++void CopyFile(FILE* src, FILE* dst) {
++    char buf[8192];
++    size_t n;
++    while ((n = fread(buf, 1, sizeof(buf), src)) > 0) {
++        fwrite(buf, 1, n, dst);
++    }
++}
++
+ int main (int argc, char * argv[])
+ {
+   char * inputFileName = argv[1];
+   char * outputFileName = argv[2];
+   FILE * inputFile = NULL;
+   FILE * outputFile = NULL;
++  FILE * actualInputFile = NULL;
++  FILE * actualOutputFile = NULL;
+ 		
+-	bool malformed = argc < 2;
++	bool malformed = argc < 3;
+ 	
+   // Parse the commandline and open the necessary files
+-  for (int32_t i = 1; i < argc; ++i) 
++  if (argc > 1 && strcmp (argv[1], "-h") == 0)
+     {
+-      if (strcmp (argv[i], "-h") == 0)
++      malformed = true;
++    }
++
++  if (!malformed)
++    {
++      if (strcmp(inputFileName, "-") == 0)
+         {
+-          malformed = true;
++          actualInputFile = stdin;
++          inputFile = tmpfile();
++          CopyFile(actualInputFile, inputFile);
++          rewind(inputFile);
+         }
+       else
+         {
+-          if (strcmp(inputFileName, "-") == 0) inputFile = stdin;
+-          if (strcmp(outputFileName, "-") == 0) outputFile = stdout;
+-          if (inputFile == NULL) inputFile = fopen (inputFileName, "rb"); // the b is necessary for Windows -- ignored by Unix
+-          if(inputFile == NULL)
+-            {
+-              fprintf(stderr," Cannot open file \"%s\"\n", inputFileName);
+-              exit (1);
+-            }
+-      
+-          if (outputFile == NULL) outputFile = fopen (outputFileName, "w+b"); // the b is necessary for Windows -- ignored by Unix
+-          if(outputFile == NULL)
+-            {
+-              fprintf(stderr," Cannot open file \"%s\"\n", outputFileName);
+-              exit (1);
+-            }
++          inputFile = fopen (inputFileName, "rb");
+         }
+-				
+-      if (malformed)
++
++      if (inputFile == NULL)
+         {
+-          break;
++          fprintf(stderr," Cannot open file \"%s\"\n", inputFileName);
++          exit (1);
++        }
++
++      if (strcmp(outputFileName, "-") == 0)
++        {
++          actualOutputFile = stdout;
++          outputFile = tmpfile();
++        }
++      else
++        {
++          outputFile = fopen (outputFileName, "w+b");
++        }
++
++      if (outputFile == NULL)
++        {
++          fprintf(stderr," Cannot open file \"%s\"\n", outputFileName);
++          exit (1);
+         }
+     }
+ 	
+@@ -184,7 +205,15 @@ int main (int argc, char * argv[])
+ 	}
+ 	
+   if (inputFile) fclose(inputFile);
+-  if (outputFile) fclose(outputFile);
++  if (outputFile)
++    {
++      if (actualOutputFile == stdout)
++        {
++          rewind(outputFile);
++          CopyFile(outputFile, actualOutputFile);
++        }
++      fclose(outputFile);
++    }
+     
+ 	return 0;
+ }
+-- 
+2.53.0.1213.gd9a14994de-goog
+

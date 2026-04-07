@@ -1,0 +1,25 @@
+From 20e666ac32435f111876ee7e79cf536ebb532588 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 22:00:56 +0000
+Subject: [PATCH 27/30] office-ispell: Add define to enable USE_TERMIOS instead
+ of sgtty.h
+
+---
+ MultiSource/Benchmarks/MiBench/office-ispell/term.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/MultiSource/Benchmarks/MiBench/office-ispell/term.c b/MultiSource/Benchmarks/MiBench/office-ispell/term.c
+index 5fc7401b7..960476d8a 100644
+--- a/MultiSource/Benchmarks/MiBench/office-ispell/term.c
++++ b/MultiSource/Benchmarks/MiBench/office-ispell/term.c
+@@ -78,6 +78,7 @@ static char Rcs_Id[] =
+ 
+ #if defined(__GLIBC__) || defined(__FreeBSD__) || defined(__NetBSD__) || \
+     defined(__OpenBSD__) || defined(__APPLE__) || \
++    defined(__EMSCRIPTEN__) || \
+     (defined(__sun__) && defined(__svr4__))
+ #include <termios.h>
+ #define USE_TERMIOS
+-- 
+2.53.0.1213.gd9a14994de-goog
+

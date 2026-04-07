@@ -1,0 +1,640 @@
+From c0c37bba39f9b3e86216bc9d9926bbaf71dc555b Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 6 Feb 2026 21:36:36 +0000
+Subject: [PATCH 12/30] siod: Emscripten support and GC stack protection
+
+Initial port of the SIOD (Scheme In One Day) application to Emscripten.
+
+Key changes:
+- Manual GC Stack Protection: Added a linked-list based system (`gc_stack_root`) to track LISP objects on the C stack. This is necessary because the moving garbage collector must be able to update pointers when relocating objects, which cannot be done safely with a conservative memory scan of Emscripten's shadow stack.
+- Emscripten GC Integration: Implemented `siod_em_scan_callback` to interface with `emscripten_scan_stack`.
+- Robustness: Added resets for `gc_stack_roots` in the error handler to prevent corruption during non-local jumps.
+- Compilation Fixes: Replaced `d_namlen` with `strlen` in `slibu.c` for Emscripten compatibility and added a `getpass` stub.
+---
+ MultiSource/Applications/siod/slib.c  | 296 +++++++++++++++++++++++---
+ MultiSource/Applications/siod/slibu.c |   8 +-
+ 2 files changed, 273 insertions(+), 31 deletions(-)
+
+diff --git a/MultiSource/Applications/siod/slib.c b/MultiSource/Applications/siod/slib.c
+index f3b89b3ed..d8c3c01ad 100644
+--- a/MultiSource/Applications/siod/slib.c
++++ b/MultiSource/Applications/siod/slib.c
+@@ -80,6 +80,34 @@ gjc@world.std.com
+ #include "siod.h"
+ #include "siodp.h"
+ 
++LISP lprin1(LISP obj, LISP stream);
++
++#ifdef __EMSCRIPTEN__
++#include <stdint.h>
++#include <emscripten.h>
++
++struct gc_stack_root {
++    LISP *location;
++    struct gc_stack_root *next;
++};
++
++struct gc_stack_root *gc_stack_roots = NULL;
++
++#define GC_STACK_PROTECT(_x) struct gc_stack_root _root_##_x = { (LISP*)&(_x), gc_stack_roots }; gc_stack_roots = &_root_##_x
++#define GC_STACK_UNPROTECT(_x) gc_stack_roots = _root_##_x.next
++
++void siod_em_scan_callback(void* start, void* end) {
++    uintptr_t s = (uintptr_t)start;
++    uintptr_t e = (uintptr_t)end;
++    if (s > e) { uintptr_t t = s; s = e; e = t; }
++    s = (s + 3) & ~3;
++    e = e & ~3;
++    if (s < e) {
++        mark_locations_array((LISP*)s, (e - s) / 4);
++    }
++}
++#endif
++
+ static void init_slib_version(void)
+ {setvar(cintern("*slib-version*"),
+ 	cintern("$Id$"),
+@@ -620,6 +648,9 @@ LISP err(const char *message, LISP x)
+       printf("ERROR: %s (see errobj)\n",msg);}
+  if (errjmp_ok == 1)
+    {inside_err = 1;
++#ifdef __EMSCRIPTEN__
++    gc_stack_roots = NULL;
++#endif
+     setvar(sym_errobj,nx,NIL);
+     for(l=catch_framep; l; l = (*l).next)
+       if (EQ((*l).tag,sym_errobj) ||
+@@ -710,9 +741,17 @@ LISP newcell(long type)
+ 
+ LISP cons(LISP x,LISP y)
+ {LISP z;
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(x);
++ GC_STACK_PROTECT(y);
++#endif
+  NEWCELL(z,tc_cons);
+  CAR(z) = x;
+  CDR(z) = y;
++#ifdef __EMSCRIPTEN__
++ gc_stack_roots = old_roots;
++#endif
+  return(z);}
+ 
+ LISP consp(LISP x)
+@@ -1200,7 +1239,10 @@ void free_oldspace(LISP space,LISP end)
+ 	  if (p->gc_free) (*p->gc_free)(ptr);}}
+       
+ void gc_stop_and_copy(void)
+-{LISP newspace,oldspace,end;
++{
++ LISP newspace,oldspace,end,stack_end;
++
++
+  long flag;
+  flag = no_interrupt(1);
+  errjmp_ok = 0;
+@@ -1208,7 +1250,19 @@ void gc_stop_and_copy(void)
+  end = heap;
+  old_heap_used = end - oldspace;
+  newspace = get_newspace();
++#ifdef __EMSCRIPTEN__
++ {
++   struct gc_stack_root *r;
++   for(r = gc_stack_roots; r; r = r->next)
++     *(r->location) = gc_relocate(*(r->location));
++ }
++ emscripten_scan_stack(siod_em_scan_callback);
++#endif
+  scan_registers();
++#ifndef __EMSCRIPTEN__
++ mark_locations((LISP *) stack_start_ptr,
++		(LISP *) &stack_end);
++#endif
+  scan_newspace(newspace);
+  free_oldspace(oldspace,end);
+  errjmp_ok = 1;
+@@ -1264,13 +1318,23 @@ void gc_for_newcell(void)
+    allocate_aheap();}
+ 
+ void gc_mark_and_sweep(void)
+-{LISP stack_end;
++{
++ LISP stack_end;
+  gc_ms_stats_start();
++
++
+  while(heap < heap_end)
+    {heap->type = tc_free_cell;
+     heap->gc_mark = 0;
+     ++heap;}
+-#if defined(__GLIBC__)
++#ifdef __EMSCRIPTEN__
++ {
++   struct gc_stack_root *r;
++   for(r = gc_stack_roots; r; r = r->next)
++     gc_mark(*(r->location));
++ }
++ emscripten_scan_stack(siod_em_scan_callback);
++#elif defined(__GLIBC__)
+  // With glibc, some register is mangled in jmp buffer, so object that
+  // is pointed by those register is collected as garbage. We use getcontext
+  // to avoid such issue.
+@@ -1283,8 +1347,10 @@ void gc_mark_and_sweep(void)
+ 		(LISP *) (((char *) save_regs_gc_mark) + sizeof(save_regs_gc_mark)));
+ #endif
+  mark_protected_registers();
++#ifndef __EMSCRIPTEN__
+  mark_locations((LISP *) stack_start_ptr,
+ 		(LISP *) &stack_end);
++#endif
+ #ifdef THINK_C
+  mark_locations((LISP *) ((char *) stack_start_ptr + 2),
+ 		(LISP *) ((char *) &stack_end + 2));
+@@ -1499,7 +1565,19 @@ LISP gc_info(LISP arg)
+ 
+ LISP leval_args(LISP l,LISP env)
+ {LISP result,v1,v2,tmp;
+- if NULLP(l) return(NIL);
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(l);
++ GC_STACK_PROTECT(env);
++ GC_STACK_PROTECT(result);
++ GC_STACK_PROTECT(v1);
++ GC_STACK_PROTECT(v2);
++ GC_STACK_PROTECT(tmp);
++#define LEVAL_ARGS_RETURN(_v) do {LISP __res = (_v); gc_stack_roots = old_roots; return(__res);} while(0)
++#else
++#define LEVAL_ARGS_RETURN(_v) return(_v)
++#endif
++ if NULLP(l) LEVAL_ARGS_RETURN(NIL);
+  if NCONSP(l) err("bad syntax argument list",l);
+  result = cons(leval(CAR(l),env),NIL);
+  for(v1=result,v2=CDR(l);
+@@ -1508,30 +1586,80 @@ LISP leval_args(LISP l,LISP env)
+   {tmp = cons(leval(CAR(v2),env),NIL);
+    CDR(v1) = tmp;}
+  if NNULLP(v2) err("bad syntax argument list",l);
+- return(result);}
++ LEVAL_ARGS_RETURN(result);}
++#undef LEVAL_ARGS_RETURN
+ 
+ LISP extend_env(LISP actuals,LISP formals,LISP env)
+-{if SYMBOLP(formals)
+-   return(cons(cons(cons(formals,NIL),cons(actuals,NIL)),env));
+- return(cons(cons(formals,actuals),env));}
++{
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(actuals);
++ GC_STACK_PROTECT(formals);
++ GC_STACK_PROTECT(env);
++#endif
++ if SYMBOLP(formals)
++   {
++#ifdef __EMSCRIPTEN__
++     LISP __res = cons(cons(cons(formals,NIL),cons(actuals,NIL)),env);
++     gc_stack_roots = old_roots;
++     return(__res);
++#else
++     return(cons(cons(cons(formals,NIL),cons(actuals,NIL)),env));
++#endif
++   }
++#ifdef __EMSCRIPTEN__
++ {
++   LISP __res = cons(cons(formals,actuals),env);
++   gc_stack_roots = old_roots;
++   return(__res);
++ }
++#else
++ return(cons(cons(formals,actuals),env));
++#endif
++}
+ 
+ #define ENVLOOKUP_TRICK 1
+ 
+ LISP envlookup(LISP var,LISP env)
+ {LISP frame,al,fl,tmp;
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(var);
++ GC_STACK_PROTECT(env);
++ GC_STACK_PROTECT(frame);
++ GC_STACK_PROTECT(al);
++ GC_STACK_PROTECT(fl);
++#endif
+  for(frame=env;CONSP(frame);frame=CDR(frame))
+    {tmp = CAR(frame);
+     if NCONSP(tmp) err("damaged frame",tmp);
+     for(fl=CAR(tmp),al=CDR(tmp);CONSP(fl);fl=CDR(fl),al=CDR(al))
+       {if NCONSP(al) err("too few arguments",tmp);
+-       if EQ(CAR(fl),var) return(al);}
++#ifdef __EMSCRIPTEN__
++       if EQ(CAR(fl),var) {gc_stack_roots = old_roots; return(al);}
++#else
++       if EQ(CAR(fl),var) return(al);
++#endif
++      }
+     /* suggested by a user. It works for reference (although conses)
+        but doesn't allow for set! to work properly... */
+ #if (ENVLOOKUP_TRICK)
+-    if (SYMBOLP(fl) && EQ(fl, var)) return(cons(al, NIL));
++    if (SYMBOLP(fl) && EQ(fl, var))
++      {
++#ifdef __EMSCRIPTEN__
++        LISP __res = cons(al, NIL);
++        gc_stack_roots = old_roots;
++        return(__res);
++#else
++        return(cons(al, NIL));
++#endif
++      }
+ #endif
+   }
+  if NNULLP(frame) err("damaged env",env);
++#ifdef __EMSCRIPTEN__
++ gc_stack_roots = old_roots;
++#endif
+  return(NIL);}
+ 
+ void set_eval_hooks(long type,LISP (*fcn)(LISP, LISP *,LISP *))
+@@ -1545,6 +1673,13 @@ LISP err_closure_code(LISP tmp)
+ LISP leval(LISP x,LISP env)
+ {LISP tmp,arg1;
+  struct user_type_hooks *p;
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(x);
++ GC_STACK_PROTECT(env);
++ GC_STACK_PROTECT(tmp);
++ GC_STACK_PROTECT(arg1);
++#endif
+  STACK_CHECK(&x);
+  loop:
+  INTERRUPT_CHECK();
+@@ -1555,9 +1690,16 @@ LISP leval(LISP x,LISP env)
+  switch TYPE(x)
+    {case tc_symbol:
+       tmp = envlookup(x,env);
++#ifdef __EMSCRIPTEN__
++      if NNULLP(tmp) {gc_stack_roots = old_roots; return(CAR(tmp));}
++#else
+       if NNULLP(tmp) return(CAR(tmp));
++#endif
+       tmp = VCELL(x);
+       if EQ(tmp,unbound_marker) err_ubv(x);
++#ifdef __EMSCRIPTEN__
++      gc_stack_roots = old_roots;
++#endif
+       return(tmp);
+     case tc_cons:
+       tmp = CAR(x);
+@@ -1575,15 +1717,27 @@ LISP leval(LISP x,LISP env)
+ 	   break;}
+       switch TYPE(tmp)
+ 	{case tc_subr_0:
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR0(tmp)(); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR0(tmp)());
++#endif
+ 	 case tc_subr_1:
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR1(tmp)(leval(car(CDR(x)),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR1(tmp)(leval(car(CDR(x)),env)));
++#endif
+ 	 case tc_subr_2:
+ 	   x = CDR(x);
+ 	   arg1 = leval(car(x),env);
+ 	   x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR2(tmp)(arg1, leval(car(x),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR2(tmp)(arg1,
+ 			     leval(car(x),env)));
++#endif
+ 	 case tc_subr_2n:
+ 	   x = CDR(x);
+ 	   arg1 = leval(car(x),env);
+@@ -1592,40 +1746,67 @@ LISP leval(LISP x,LISP env)
+ 			     leval(car(x),env));
+ 	   for(x=cdr(x);CONSP(x);x=CDR(x))
+ 	     arg1 = SUBR2(tmp)(arg1,leval(CAR(x),env));
++#ifdef __EMSCRIPTEN__
++	   gc_stack_roots = old_roots;
++#endif
+ 	   return(arg1);
+ 	 case tc_subr_3:
+ 	   x = CDR(x);
+ 	   arg1 = leval(car(x),env);
+ 	   x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR3(tmp)(arg1, leval(car(x),env), leval(car(cdr(x)),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR3(tmp)(arg1,
+ 			     leval(car(x),env),
+ 			     leval(car(cdr(x)),env)));
++#endif
+ 
+ 	 case tc_subr_4:
+ 	   x = CDR(x);
+ 	   arg1 = leval(car(x),env);
+ 	   x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR4(tmp)(arg1, leval(car(x),env), leval(car(cdr(x)),env), leval(car(cdr(cdr(x))),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR4(tmp)(arg1,
+ 			     leval(car(x),env),
+ 			     leval(car(cdr(x)),env),
+ 			     leval(car(cdr(cdr(x))),env)));
++#endif
+ 
+ 	 case tc_subr_5:
+ 	   x = CDR(x);
+ 	   arg1 = leval(car(x),env);
+ 	   x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR5(tmp)(arg1, leval(car(x),env), leval(car(cdr(x)),env), leval(car(cdr(cdr(x))),env), leval(car(cdr(cdr(cdr(x)))),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR5(tmp)(arg1,
+ 			     leval(car(x),env),
+ 			     leval(car(cdr(x)),env),
+ 			     leval(car(cdr(cdr(x))),env),
+ 			     leval(car(cdr(cdr(cdr(x)))),env)));
++#endif
+ 
+ 	 case tc_lsubr:
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR1(tmp)(leval_args(CDR(x),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR1(tmp)(leval_args(CDR(x),env)));
++#endif
+ 	 case tc_fsubr:
++#ifdef __EMSCRIPTEN__
++	   {LISP __res = SUBR2(tmp)(CDR(x),env); gc_stack_roots = old_roots; return(__res);}
++#else
+ 	   return(SUBR2(tmp)(CDR(x),env));
++#endif
+ 	 case tc_msubr:
++#ifdef __EMSCRIPTEN__
++	   if NULLP(SUBRM(tmp)(&x,&env)) {gc_stack_roots = old_roots; return(x);}
++#else
+ 	   if NULLP(SUBRM(tmp)(&x,&env)) return(x);
++#endif
+ 	   goto loop;
+ 	 case tc_closure:
+ 	   switch TYPE((*tmp).storage_as.closure.code)
+@@ -1636,45 +1817,69 @@ LISP leval(LISP x,LISP env)
+ 		x = CDR((*tmp).storage_as.closure.code);
+ 		goto loop;
+ 	      case tc_subr_1:
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR1(tmp->storage_as.closure.code)(tmp->storage_as.closure.env); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR1(tmp->storage_as.closure.code)
+ 		       (tmp->storage_as.closure.env));
++#endif
+ 	      case tc_subr_2:
+ 		x = CDR(x);
+ 		arg1 = leval(car(x),env);
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR2(tmp->storage_as.closure.code)(tmp->storage_as.closure.env,arg1); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR2(tmp->storage_as.closure.code)
+ 		       (tmp->storage_as.closure.env,arg1));
++#endif
+ 	      case tc_subr_3:
+ 		x = CDR(x);
+ 		arg1 = leval(car(x),env);
+ 		x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR3(tmp->storage_as.closure.code)(tmp->storage_as.closure.env,arg1,leval(car(x),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR3(tmp->storage_as.closure.code)
+ 		       (tmp->storage_as.closure.env,
+ 			arg1,
+ 			leval(car(x),env)));
++#endif
+ 	      case tc_subr_4:
+ 		x = CDR(x);
+ 		arg1 = leval(car(x),env);
+ 		x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR4(tmp->storage_as.closure.code)(tmp->storage_as.closure.env,arg1,leval(car(x),env),leval(car(cdr(x)),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR4(tmp->storage_as.closure.code)
+ 		       (tmp->storage_as.closure.env,
+ 			arg1,
+ 			leval(car(x),env),
+ 			leval(car(cdr(x)),env)));
++#endif
+ 	      case tc_subr_5:
+ 		x = CDR(x);
+ 		arg1 = leval(car(x),env);
+ 		x = NULLP(x) ? NIL : CDR(x);
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR5(tmp->storage_as.closure.code)(tmp->storage_as.closure.env,arg1,leval(car(x),env),leval(car(cdr(x)),env),leval(car(cdr(cdr(x))),env)); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR5(tmp->storage_as.closure.code)
+ 		       (tmp->storage_as.closure.env,
+ 			arg1,
+ 			leval(car(x),env),
+ 			leval(car(cdr(x)),env),
+ 			leval(car(cdr(cdr(x))),env)));
++#endif
+ 
+ 	      case tc_lsubr:
++#ifdef __EMSCRIPTEN__
++		{LISP __res = SUBR1(tmp->storage_as.closure.code)(cons(tmp->storage_as.closure.env,leval_args(CDR(x),env))); gc_stack_roots = old_roots; return(__res);}
++#else
+ 		return(SUBR1(tmp->storage_as.closure.code)
+ 		       (cons(tmp->storage_as.closure.env,
+ 			     leval_args(CDR(x),env))));
++#endif
+ 	      default:
+ 		err_closure_code(tmp);}
+ 	   break;
+@@ -1685,81 +1890,100 @@ LISP leval(LISP x,LISP env)
+ 	 default:
+ 	   p = get_user_type_hooks(TYPE(tmp));
+ 	   if (p->leval)
+-	     {if NULLP((*p->leval)(tmp,&x,&env)) return(x); else goto loop;}
++	     {
++#ifdef __EMSCRIPTEN__
++               if NULLP((*p->leval)(tmp,&x,&env)) {gc_stack_roots = old_roots; return(x);} else goto loop;
++#else
++               if NULLP((*p->leval)(tmp,&x,&env)) return(x); else goto loop;
++#endif
++             }
+ 	   err("bad function",tmp);}
+     default:
++#ifdef __EMSCRIPTEN__
++      gc_stack_roots = old_roots;
++#endif
+       return(x);}}
+ 
+ LISP lapply(LISP fcn,LISP args)
+ {struct user_type_hooks *p;
+  LISP acc;
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(fcn);
++ GC_STACK_PROTECT(args);
++ GC_STACK_PROTECT(acc);
++#define LAPPLY_RETURN(_v) do {LISP __res = (_v); gc_stack_roots = old_roots; return(__res);} while(0)
++#else
++#define LAPPLY_RETURN(_v) return(_v)
++#endif
+  STACK_CHECK(&fcn);
+  INTERRUPT_CHECK();
+  switch TYPE(fcn)
+    {case tc_subr_0:
+-      return(SUBR0(fcn)());
++      LAPPLY_RETURN(SUBR0(fcn)());
+     case tc_subr_1:
+-      return(SUBR1(fcn)(car(args)));
++      LAPPLY_RETURN(SUBR1(fcn)(car(args)));
+     case tc_subr_2:
+-      return(SUBR2(fcn)(car(args),car(cdr(args))));
++      LAPPLY_RETURN(SUBR2(fcn)(car(args),car(cdr(args))));
+     case tc_subr_2n:
+       acc = SUBR2(fcn)(car(args),car(cdr(args)));
+       for(args=cdr(cdr(args));CONSP(args);args=CDR(args))
+ 	acc = SUBR2(fcn)(acc,CAR(args));
+-      return(acc);
++      LAPPLY_RETURN(acc);
+     case tc_subr_3:
+-      return(SUBR3(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args)))));
++      LAPPLY_RETURN(SUBR3(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args)))));
+     case tc_subr_4:
+-      return(SUBR4(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args))),
++      LAPPLY_RETURN(SUBR4(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args))),
+ 			car(cdr(cdr(cdr(args))))));
+     case tc_subr_5:
+-      return(SUBR5(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args))),
++      LAPPLY_RETURN(SUBR5(fcn)(car(args),car(cdr(args)),car(cdr(cdr(args))),
+ 			car(cdr(cdr(cdr(args)))),
+ 			car(cdr(cdr(cdr(cdr(args)))))));
+     case tc_lsubr:
+-      return(SUBR1(fcn)(args));
++      LAPPLY_RETURN(SUBR1(fcn)(args));
+     case tc_fsubr:
+     case tc_msubr:
+     case tc_symbol:
+-      return(err("cannot be applied",fcn));
++      LAPPLY_RETURN(err("cannot be applied",fcn));
+     case tc_closure:
+       switch TYPE(fcn->storage_as.closure.code)
+ 	{case tc_cons:
+-	   return(leval(cdr(fcn->storage_as.closure.code),
++	   LAPPLY_RETURN(leval(cdr(fcn->storage_as.closure.code),
+ 			extend_env(args,
+ 				   car(fcn->storage_as.closure.code),
+ 				   fcn->storage_as.closure.env)));
+ 	 case tc_subr_1:
+-	   return(SUBR1(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR1(fcn->storage_as.closure.code)
+ 		  (fcn->storage_as.closure.env));
+ 	 case tc_subr_2:
+-	   return(SUBR2(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR2(fcn->storage_as.closure.code)
+ 		  (fcn->storage_as.closure.env,
+ 		   car(args)));
+ 	 case tc_subr_3:
+-	   return(SUBR3(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR3(fcn->storage_as.closure.code)
+ 		  (fcn->storage_as.closure.env,
+ 		   car(args),car(cdr(args))));
+ 	 case tc_subr_4:
+-	   return(SUBR4(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR4(fcn->storage_as.closure.code)
+ 		  (fcn->storage_as.closure.env,
+ 		   car(args),car(cdr(args)),car(cdr(cdr(args)))));
+ 	 case tc_subr_5:
+-	   return(SUBR5(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR5(fcn->storage_as.closure.code)
+ 		  (fcn->storage_as.closure.env,
+ 		   car(args),car(cdr(args)),car(cdr(cdr(args))),
+ 		   car(cdr(cdr(cdr(args))))));
+ 	 case tc_lsubr:
+-	   return(SUBR1(fcn->storage_as.closure.code)
++	   LAPPLY_RETURN(SUBR1(fcn->storage_as.closure.code)
+ 		  (cons(fcn->storage_as.closure.env,args)));
+ 	 default:
+-	   return(err_closure_code(fcn));}
++	   LAPPLY_RETURN(err_closure_code(fcn));}
+     default:
+       p = get_user_type_hooks(TYPE(fcn));
+       if (p->leval)
+-	return(err("have eval, dont know apply",fcn));
++	LAPPLY_RETURN(err("have eval, dont know apply",fcn));
+       else
+-	return(err("cannot be applied",fcn));}}
++	LAPPLY_RETURN(err("cannot be applied",fcn));}}
++#undef LAPPLY_RETURN
+ 
+ LISP setvar(LISP var,LISP val,LISP env)
+ {LISP tmp;
+@@ -2233,12 +2457,21 @@ LISP fclose_l(LISP p)
+ {long flag;
+  flag = no_interrupt(1);
+  if NTYPEP(p,tc_c_file) err("not a file",p);
++ if (!p->storage_as.c_file.f) err("file is closed",p);
+  file_gc_free(p);
+  no_interrupt(flag);
+  return(NIL);}
+ 
+ LISP vload(char *ofname,long cflag,long rflag)
+ {LISP form,result,tail,lf,reader = NIL;
++#ifdef __EMSCRIPTEN__
++ struct gc_stack_root *old_roots = gc_stack_roots;
++ GC_STACK_PROTECT(form);
++ GC_STACK_PROTECT(result);
++ GC_STACK_PROTECT(tail);
++ GC_STACK_PROTECT(lf);
++ GC_STACK_PROTECT(reader);
++#endif
+  FILE *f;
+  int c;
+  long j,len;
+@@ -2320,6 +2553,9 @@ LISP vload(char *ofname,long cflag,long rflag)
+  fclose_l(lf);
+  if (siod_verbose_level >= 3)
+    put_st("done.\n");
++#ifdef __EMSCRIPTEN__
++ gc_stack_roots = old_roots;
++#endif
+  return(result);}
+ 
+ LISP load(LISP fname,LISP cflag,LISP rflag)
+diff --git a/MultiSource/Applications/siod/slibu.c b/MultiSource/Applications/siod/slibu.c
+index 21f2c3ff4..7541c9440 100644
+--- a/MultiSource/Applications/siod/slibu.c
++++ b/MultiSource/Applications/siod/slibu.c
+@@ -54,6 +54,12 @@
+ #include <dl.h>
+ #endif
+ 
++#ifdef __EMSCRIPTEN__
++char *getpass(const char *prompt) {
++  return "";
++}
++#endif
++
+ #if defined(__osf__) || defined(sun) || defined(linux) || defined(sgi)
+ #include <dlfcn.h>
+ #endif
+@@ -727,7 +733,7 @@ LISP l_readdir(LISP v)
+  if (!r) return(NIL);
+ #if defined(sun) || defined(sgi) || defined(linux)
+  namlen = safe_strlen(r->d_name,r->d_reclen);
+-#elif defined(__CYGWIN__)
++#elif defined(__CYGWIN__) || defined(__EMSCRIPTEN__)
+  namlen = strlen(r->d_name);
+ #else
+  namlen = r->d_namlen;
+-- 
+2.53.0.1213.gd9a14994de-goog
+

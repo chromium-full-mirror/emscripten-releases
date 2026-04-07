@@ -1,0 +1,48 @@
+From 7b832ae6b6261b0a3b0709f6db909d9a35ea23c9 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 3 Feb 2026 23:35:01 +0000
+Subject: [PATCH 09/30] testcase-* UnitTests: Add newlines to test expectations
+
+Emscripten's NODERAWFS seems to force this when exiting
+---
+ .../UnitTests/testcase-CGExprConstant.reference_output         | 3 ++-
+ SingleSource/UnitTests/testcase-Expr-1.reference_output        | 3 ++-
+ .../UnitTests/testcase-ExprConstant-1.reference_output         | 3 ++-
+ SingleSource/UnitTests/testcase-Value-1.reference_output       | 3 ++-
+ 4 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/SingleSource/UnitTests/testcase-CGExprConstant.reference_output b/SingleSource/UnitTests/testcase-CGExprConstant.reference_output
+index f934cf908..a9ea27475 100644
+--- a/SingleSource/UnitTests/testcase-CGExprConstant.reference_output
++++ b/SingleSource/UnitTests/testcase-CGExprConstant.reference_output
+@@ -1 +1,2 @@
+-2exit 0
++2
++exit 0
+diff --git a/SingleSource/UnitTests/testcase-Expr-1.reference_output b/SingleSource/UnitTests/testcase-Expr-1.reference_output
+index d164cb2f7..4fe966ab7 100644
+--- a/SingleSource/UnitTests/testcase-Expr-1.reference_output
++++ b/SingleSource/UnitTests/testcase-Expr-1.reference_output
+@@ -1 +1,2 @@
+-1exit 2
++1
++exit 2
+diff --git a/SingleSource/UnitTests/testcase-ExprConstant-1.reference_output b/SingleSource/UnitTests/testcase-ExprConstant-1.reference_output
+index c6bcc9126..3280474ff 100644
+--- a/SingleSource/UnitTests/testcase-ExprConstant-1.reference_output
++++ b/SingleSource/UnitTests/testcase-ExprConstant-1.reference_output
+@@ -1 +1,2 @@
+-5exit 1
++5
++exit 1
+diff --git a/SingleSource/UnitTests/testcase-Value-1.reference_output b/SingleSource/UnitTests/testcase-Value-1.reference_output
+index 5e55c3e5e..39f6345a1 100644
+--- a/SingleSource/UnitTests/testcase-Value-1.reference_output
++++ b/SingleSource/UnitTests/testcase-Value-1.reference_output
+@@ -1 +1,2 @@
+-0exit 0
++0
++exit 0
+-- 
+2.53.0.1213.gd9a14994de-goog
+

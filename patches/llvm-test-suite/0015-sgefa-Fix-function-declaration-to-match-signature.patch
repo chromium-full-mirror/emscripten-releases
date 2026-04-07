@@ -1,0 +1,22 @@
+From dd69cca6c56a51d278b0bf0e43b9aaac54418c23 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Wed, 11 Feb 2026 03:50:13 +0000
+Subject: [PATCH 15/30] sgefa: Fix function declaration to match signature
+
+---
+ MultiSource/Applications/sgefa/ge.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/MultiSource/Applications/sgefa/ge.h b/MultiSource/Applications/sgefa/ge.h
+index dc97a01a3..e9e9a862e 100644
+--- a/MultiSource/Applications/sgefa/ge.h
++++ b/MultiSource/Applications/sgefa/ge.h
+@@ -43,4 +43,4 @@ struct FULL {		/* Struct definition for the FULL matrix structure. */
+ 
+ extern int sgefa();
+ extern int sgesl();
+-extern int vexopy();
++extern void vexopy();
+-- 
+2.53.0.1213.gd9a14994de-goog
+

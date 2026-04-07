@@ -1,0 +1,130 @@
+From 7e962c4106e2c14c82bb2b3b0bf4b04e5dff10cf Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 20:30:27 +0000
+Subject: [PATCH 23/30] Simulator: remove C common symbols
+
+---
+ MultiSource/Benchmarks/Prolangs-C/simulator/debugger.c  | 8 ++++----
+ MultiSource/Benchmarks/Prolangs-C/simulator/debugger.h  | 2 +-
+ MultiSource/Benchmarks/Prolangs-C/simulator/load.h      | 4 ++--
+ MultiSource/Benchmarks/Prolangs-C/simulator/machine.c   | 4 ++--
+ MultiSource/Benchmarks/Prolangs-C/simulator/sim_debug.c | 5 -----
+ MultiSource/Benchmarks/Prolangs-C/simulator/stringI.c   | 4 ++--
+ 6 files changed, 11 insertions(+), 16 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.c b/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.c
+index 12f2b3bc0..b7bd93de6 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.c
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.c
+@@ -16,13 +16,13 @@
+ /* ---------------------------------- Globals ------------------------------ */
+ /* MAIN_ROUTINE                       Name of (program) module declared with */
+ /*                                       a START (main routine).             */
+-char MAIN_ROUTINE[LABEL_SIZE_1+1];
++char MAIN_ROUTINE[LABEL_SIZE_1+1] = {0};
+ 
+ /* START_ADDRESS                      Location where execution begins        */
+ int START_ADDRESS = 0;
+ 
+ /* SYM_TAB                            The symbol table                       */
+-SYMBOL_TABLE SYM_TAB;
++SYMBOL_TABLE SYM_TAB = NULL;
+ 
+ /* RETURN_STATUS                      Status of machine when control returned*/
+ int RETURN_STATUS = HALT_1;        /* to debugger.                           */
+@@ -32,8 +32,8 @@ char TYPE_OUT_MODE[6] = "Hex";
+ 
+ /* ----------------------------- Non-Globals ------------------------------- */
+ #define MAX_NUM_BREAK_POINTS         16
+-int BREAK_POINTS[MAX_NUM_BREAK_POINTS+1];
+-int SORTED_BREAK_POINTS[MAX_NUM_BREAK_POINTS+1];
++int BREAK_POINTS[MAX_NUM_BREAK_POINTS+1] = {0};
++int SORTED_BREAK_POINTS[MAX_NUM_BREAK_POINTS+1] = {0};
+ int NUM_BREAK_POINTS = 0;
+ BOOLEAN TRACE = FALSE_1;
+ 
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.h b/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.h
+index 5127e5ebe..869c4d88e 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.h
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/debugger.h
+@@ -20,7 +20,7 @@ extern SYMBOL_TABLE SYM_TAB;
+ extern int RETURN_STATUS;          /* to debugger.                           */
+ 
+ /* TYPE_OUT_MODE                      Remembers the type out mode            */
+-char TYPE_OUT_MODE[6];
++extern char TYPE_OUT_MODE[6];
+ 
+ /* ------------------------------- Procedures ------------------------------ */
+ /* -------------------------------- DEBUGGER ------------------------------- */
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/load.h b/MultiSource/Benchmarks/Prolangs-C/simulator/load.h
+index 11535f592..2c5db2d2a 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/load.h
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/load.h
+@@ -5,8 +5,8 @@
+ 
+ /* --------------------------------- Globals ------------------------------ */
+ /* START_ADDRESS                     Start Address for program execution.   */
+-int START_ADDRESS;
++extern int START_ADDRESS;
+ 
+ /* MAIN_ROUTINE                      Name of (program) module declared with */
+ /*                                      a START (main routine).             */
+-char MAIN_ROUTINE[LABEL_SIZE_1+1];
++extern char MAIN_ROUTINE[LABEL_SIZE_1+1];
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/machine.c b/MultiSource/Benchmarks/Prolangs-C/simulator/machine.c
+index 3dcfc0f2d..c95ccad68 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/machine.c
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/machine.c
+@@ -25,7 +25,7 @@
+ int INTERVAL_TIMER = 0;           /* RETURNING CONTROL TO THE OS            */
+ 
+ /* ---------------------------- THE REGISTERS ----------------------------- */
+-int REGISTER[NUM_REGISTERS];
++int REGISTER[NUM_REGISTERS] = {0};
+ #define A_0       REGISTER[0]          /* 0     A       ACCUMULATOR         */
+ #define X_0       REGISTER[1]          /* 1     X       INDEX REGISTER      */
+ #define L_0       REGISTER[2]          /* 2     L       LINKAGE REGISTER    */
+@@ -49,7 +49,7 @@ int REGISTER[NUM_REGISTERS];
+   struct DEVICE_ENTRY {
+     int STATUS;
+     FILE *STREAM;
+-  } DEVICE[256];
++  } DEVICE[256] = {{0}};
+ 
+ /* --------------------- NON-GLOBAL MACHINE STRUCTURES -------------------- */
+ #include "define-instr-tab.h"
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/sim_debug.c b/MultiSource/Benchmarks/Prolangs-C/simulator/sim_debug.c
+index 6d8fd3716..6d3c2f44e 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/sim_debug.c
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/sim_debug.c
+@@ -20,11 +20,6 @@
+ #include "loadexe.h"
+ #include "print.h"
+ 
+-/* --------------------------------- Globals ------------------------------ */
+-/* MAIN_ROUTINE                      Name of (program) module declared with */
+-/*                                      a START (main routine).             */
+-char MAIN_ROUTINE[LABEL_SIZE_1+1];
+-
+ /* -------------------------------- main ---------------------------------- */
+ int main(int argc,char **argv)
+ {
+diff --git a/MultiSource/Benchmarks/Prolangs-C/simulator/stringI.c b/MultiSource/Benchmarks/Prolangs-C/simulator/stringI.c
+index f0c18f751..2dee7c9d3 100644
+--- a/MultiSource/Benchmarks/Prolangs-C/simulator/stringI.c
++++ b/MultiSource/Benchmarks/Prolangs-C/simulator/stringI.c
+@@ -15,9 +15,9 @@
+ #define LEX_LEN_INCR            128
+ 
+ char CH = ' ';                 /* Current input Character                    */
+-char LEXEME[LEX_LEN_INCR+1];   /* Input String                               */
++char LEXEME[LEX_LEN_INCR+1] = {0};   /* Input String                               */
+ 
+-char *FRONT,*BACK;             /* FRONT and BACK characters of Input String  */
++char *FRONT = NULL, *BACK = NULL;             /* FRONT and BACK characters of Input String  */
+ unsigned LEX_LEN = LEX_LEN_INCR;/* Size of the Input String Buffer           */
+ 
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

@@ -1,0 +1,127 @@
+From 1c92851d79b096ce07021558cebd5acafa8a6992 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 30 Jan 2026 20:00:56 +0000
+Subject: [PATCH 06/30] ClamAV: Fix database loading failure under Emscripten
+ NODERAWFS
+
+This change resolves an issue where clamscan would fail to find any virus
+signatures when running in an Emscripten environment using NODERAWFS.
+
+Root Cause:
+The LLVM test suite uses symbolic links for the ClamAV application and its
+data directories. Under NODERAWFS, which maps C filesystem calls directly
+to Node.js 'fs' modules, calling readdir() on a directory handle opened via
+a relative symbolic link path would occasionally return zero entries. This
+resulted in the "No supported database files found" error, despite the
+directory being accessible via stat().
+
+Solution:
+Modified cl_load in libclamav_readdb.c to resolve the input path using
+realpath() before performing any directory operations. This ensures that
+opendir() and subsequent readdir() calls operate on the canonical host
+path, bypassing symlink traversal issues in the underlying JS/Node.js
+filesystem abstraction.
+
+Note on Output:
+This fix restores database loading functionality (confirmed by the scan
+summary). However, the exact interleaving of stdout and stderr messages
+(e.g., the "virus database older than 7 days" warning) differs from the
+native reference output due to stream merging behavior in Node.js.
+---
+ .../ClamAV/clamscan.reference_output             | 12 ++++++------
+ .../Applications/ClamAV/libclamav_readdb.c       | 16 +++++++++++-----
+ 2 files changed, 17 insertions(+), 11 deletions(-)
+
+diff --git a/MultiSource/Applications/ClamAV/clamscan.reference_output b/MultiSource/Applications/ClamAV/clamscan.reference_output
+index 1cf8b525f..d12d06c64 100644
+--- a/MultiSource/Applications/ClamAV/clamscan.reference_output
++++ b/MultiSource/Applications/ClamAV/clamscan.reference_output
+@@ -1,7 +1,3 @@
+-LibClamAV Warning: **************************************************
+-LibClamAV Warning: ***  The virus database is older than 7 days!  ***
+-LibClamAV Warning: ***   Please update it as soon as possible.    ***
+-LibClamAV Warning: **************************************************
+ Initializing the engine (devel-20071218)
+ 
+ Initializing phishcheck module
+@@ -28,6 +24,10 @@ in cli_cvdload()
+ 
+ MD5(.tar.gz) = %s
+ 
++LibClamAV Warning: **************************************************
++LibClamAV Warning: ***  The virus database is older than 7 days!  ***
++LibClamAV Warning: ***   Please update it as soon as possible.    ***
++LibClamAV Warning: **************************************************
+ in cli_untgz()
+ 
+ cli_untgz: Unpacking %s
+@@ -1009,14 +1009,14 @@ Recognized %s file
+ 
+ clam.exe.bz2: OK
+ Scanning clam-v2.rar
+-LibClamAV Warning: RAR code not compiled-in
+ Recognized %s file
+ 
++LibClamAV Warning: RAR code not compiled-in
+ clam-v2.rar: OK
+ Scanning clam-v3.rar
+-LibClamAV Warning: RAR code not compiled-in
+ Recognized %s file
+ 
++LibClamAV Warning: RAR code not compiled-in
+ clam-v3.rar: OK
+ Scanning clam.zip
+ Recognized %s file
+diff --git a/MultiSource/Applications/ClamAV/libclamav_readdb.c b/MultiSource/Applications/ClamAV/libclamav_readdb.c
+index 9cd1267ae..7055a2d55 100644
+--- a/MultiSource/Applications/ClamAV/libclamav_readdb.c
++++ b/MultiSource/Applications/ClamAV/libclamav_readdb.c
+@@ -1218,15 +1218,19 @@ int cl_load(const char *path, struct cl_engine **engine, unsigned int *signo, un
+ {
+ 	struct stat sb;
+ 	int ret;
++    char *real_path = realpath(path, NULL);
++    const char *used_path = real_path ? real_path : path;
+ 
+ 
+-    if(stat(path, &sb) == -1) {
+-        cli_errmsg("cl_loaddbdir(): Can't get status of %s\n", path);
++    if(stat(used_path, &sb) == -1) {
++        cli_errmsg("cl_loaddbdir(): Can't get status of %s\n", used_path);
++        free(real_path);
+         return CL_EIO;
+     }
+ 
+     if((ret = cli_initengine(engine, options))) {
+ 	cl_free(*engine);
++        free(real_path);
+ 	return ret;
+     }
+ 
+@@ -1234,18 +1238,20 @@ int cl_load(const char *path, struct cl_engine **engine, unsigned int *signo, un
+ 
+     switch(sb.st_mode & S_IFMT) {
+ 	case S_IFREG: 
+-	    ret = cli_load(path, engine, signo, options);
++	    ret = cli_load(used_path, engine, signo, options);
+ 	    break;
+ 
+ 	case S_IFDIR:
+-	    ret = cli_loaddbdir(path, engine, signo, options);
++	    ret = cli_loaddbdir(used_path, engine, signo, options);
+ 	    break;
+ 
+ 	default:
+-	    cli_errmsg("cl_load(%s): Not supported database file type\n", path);
++	    cli_errmsg("cl_load(%s): Not supported database file type\n", used_path);
++            free(real_path);
+ 	    return CL_EOPEN;
+     }
+ 
++    free(real_path);
+     return ret;
+ }
+ 
+-- 
+2.53.0.1213.gd9a14994de-goog
+

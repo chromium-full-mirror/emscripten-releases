@@ -1,0 +1,119 @@
+From 924c443e95e7008d64a925552781449586d71b65 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Fri, 13 Feb 2026 22:27:58 +0000
+Subject: [PATCH 30/30] gs: Fix Emscripten build and runtime traps
+
+- Remove problematic 'extern main();' declarations in gsmain.c that
+  caused linker errors due to Emscripten's function renaming.
+- Add missing function prototypes to ghost.h, gx.h, and oper.h to
+  ensure consistent function signatures and prevent WebAssembly
+  runtime traps.
+- Fix incorrect declaration of name_string_ref in iutil.c.
+---
+ MultiSource/Benchmarks/MallocBench/gs/ghost.h | 23 +++++++++++++++++++
+ .../Benchmarks/MallocBench/gs/gsmain.c        |  6 ++---
+ MultiSource/Benchmarks/MallocBench/gs/gx.h    |  8 +++++++
+ MultiSource/Benchmarks/MallocBench/gs/iutil.c |  3 ---
+ MultiSource/Benchmarks/MallocBench/gs/oper.h  |  1 +
+ 5 files changed, 34 insertions(+), 7 deletions(-)
+
+diff --git a/MultiSource/Benchmarks/MallocBench/gs/ghost.h b/MultiSource/Benchmarks/MallocBench/gs/ghost.h
+index b8cc8ea07..b8d070ab2 100644
+--- a/MultiSource/Benchmarks/MallocBench/gs/ghost.h
++++ b/MultiSource/Benchmarks/MallocBench/gs/ghost.h
+@@ -119,3 +119,26 @@ struct ref_s {
+ 	ushort type_attrs;
+ 	ushort size;
+ };
++
++/* Common interpreter procedures */
++void name_init(void);
++void obj_init(void);
++void scan_init(void);
++void gs_init(void);
++void zfile_init(void);
++void zfont_init(void);
++void zmath_init(void);
++void zmatrix_init(void);
++void interp_init(int);
++void op_init(void);
++void gs_exit(int);
++void initial_enter_name(char *, ref *);
++void debug_dump_refs(ref *, ref *, char *);
++void name_enter(char *, ref *);
++void interp_fix_op(ref *);
++void refcpy(ref *, ref *, uint);
++void gs_get_clock(long *);
++void name_string_ref(ref *, ref *);
++int interpret(ref *, int);
++struct stream_s;
++int scan_token(struct stream_s *, int, ref *);
+diff --git a/MultiSource/Benchmarks/MallocBench/gs/gsmain.c b/MultiSource/Benchmarks/MallocBench/gs/gsmain.c
+index 5ac3a9350..32ea50a28 100644
+--- a/MultiSource/Benchmarks/MallocBench/gs/gsmain.c
++++ b/MultiSource/Benchmarks/MallocBench/gs/gsmain.c
+@@ -111,8 +111,7 @@ gs_main(int argc, char *argv[], char *map_name,
+ #ifdef DEBUG
+ 				/* Print the address of 'main' so that */
+ 				/* we can decipher stack traces later. */
+-			   {	extern main();
+-				printf("[Z]main = %lx\n", (ulong)main);
++			   {
+ 			   }
+ 				if ( !arg[1] )
+ 				   {	/* No options, set all flags */
+@@ -137,8 +136,7 @@ gs_main(int argc, char *argv[], char *map_name,
+ 				   }
+ 				/* Print the address of 'main' so that */
+ 				/* we can decipher return addresses later. */
+-			   {	extern main();
+-				printf("[T]main = %lx\n", (ulong)main);
++			   {
+ 			   }
+ 			   }
+ 			   {	char *delim;
+diff --git a/MultiSource/Benchmarks/MallocBench/gs/gx.h b/MultiSource/Benchmarks/MallocBench/gs/gx.h
+index f3fc16ec7..580ab45ef 100644
+--- a/MultiSource/Benchmarks/MallocBench/gs/gx.h
++++ b/MultiSource/Benchmarks/MallocBench/gs/gx.h
+@@ -31,3 +31,11 @@ extern int gs_log_error(P1(int));
+ #else
+ #  define return_error(err) return err
+ #endif
++
++/* Common graphics library procedures */
++struct gs_color_s;
++struct gx_device_color_s;
++void gx_color_render(struct gs_color_s *, struct gx_device_color_s *, gs_state *);
++void gx_device_no_output(gs_state *);
++void gx_color_load(struct gx_device_color_s *, gs_state *);
++void gx_color_from_rgb(struct gs_color_s *);
+diff --git a/MultiSource/Benchmarks/MallocBench/gs/iutil.c b/MultiSource/Benchmarks/MallocBench/gs/iutil.c
+index 0713aae2f..e30a6529e 100644
+--- a/MultiSource/Benchmarks/MallocBench/gs/iutil.c
++++ b/MultiSource/Benchmarks/MallocBench/gs/iutil.c
+@@ -30,9 +30,6 @@ copies.  */
+ #include "gxdevice.h"			/* for gx_color_index */
+ #include "gzcolor.h"
+ 
+-/* Imported from name.c */
+-extern ref *name_string_ref(P2(ref *, ref *));
+-
+ /* ------ Object utilities ------ */
+ 
+ /* Copy refs from one place to another. */
+diff --git a/MultiSource/Benchmarks/MallocBench/gs/oper.h b/MultiSource/Benchmarks/MallocBench/gs/oper.h
+index 26ebda5fd..71b8cecca 100644
+--- a/MultiSource/Benchmarks/MallocBench/gs/oper.h
++++ b/MultiSource/Benchmarks/MallocBench/gs/oper.h
+@@ -42,6 +42,7 @@ typedef struct {
+ 	op_proc_p proc;
+ } op_def;
+ #define op_def_end {(char *)0, (op_proc_p)0}
++void z_op_init(op_def *);
+ 
+ /* Operand stack manipulation */
+ extern ref *osbot, *osp, *ostop;
+-- 
+2.53.0.1213.gd9a14994de-goog
+
