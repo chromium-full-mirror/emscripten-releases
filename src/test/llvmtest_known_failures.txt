@@ -6,6 +6,10 @@ SingleSource/Regression/C++/EH/Regression-C++-exception_spec_test.js.test
 # minisat fails because the stub library prints to stderr for an unimplemented syscall.
 MultiSource/Applications/minisat/minisat.js.test
 
+# These use floating point math that varies between architectures.
+SingleSource/Benchmarks/Polybench/medley/deriche/deriche.js.test
+SingleSource/Benchmarks/Polybench/medley/floyd-warshall/floyd-warshall.js.test
+
 # Untriaged
 MultiSource/Benchmarks/DOE-ProxyApps-C++/HPCCG/HPCCG.js.test
 MultiSource/Benchmarks/Fhourstones/fhourstones.js.test
