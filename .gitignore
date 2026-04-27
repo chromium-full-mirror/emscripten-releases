@@ -22,3 +22,4 @@
 # Third party repos.
 /third_party/ninja/ninja
 /third_party/ninja/ninja.exe
+/third_party/wasm-files/

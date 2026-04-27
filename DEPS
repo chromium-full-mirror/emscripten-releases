@@ -50,6 +50,26 @@ deps = {
     ],
     'dep_type': 'cipd',
   },
+  'emscripten-releases/third_party/wasm-files': {
+    'dep_type': 'gcs',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/test-files/dart-pop.unopt.wasm',
+        'sha256sum': '9ff90dc215c503224b56ecbaed9ce2db7d70c929281d3b0380ba921a239642e5',
+        'size_bytes': 1330046,
+        'generation': 1776963812644460,
+        'output_file': 'dart-pop.unopt.wasm',
+      },
+      {
+        'object_name': 'emscripten-releases-builds/deps/test-files/dart-flute-complex.unopt.wasm',
+        'sha256sum': 'd63e2a789aad8af871124937ae8b64c28a0d1ca2b9131ec33ddde35cd7c9410a',
+        'size_bytes': 4410188,
+        'generation': 1776963981165463,
+        'output_file': 'dart-flute-complex.unopt.wasm',
+      }
+    ]
+  }
 }
 
 hooks = [

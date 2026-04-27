@@ -361,7 +361,7 @@ class Source(object):
         self.custom_sync(self.name, self.src_dir)
 
 def GitRevision(cwd = None):
-    return proc.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip()
+    return proc.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip().decode('utf-8')
 
 def RevisionModifiesFile(f):
     """Return True if the file f is modified in the index, working tree, or
@@ -382,7 +382,7 @@ def RevisionModifiesFile(f):
     # that's the HEAD commit.
     head_rev = GitRevision(cwd)
     last_rev = proc.check_output(
-        ['git', 'rev-list', '-n1', 'HEAD', f], cwd=cwd).strip()
+        ['git', 'rev-list', '-n1', 'HEAD', f], cwd=cwd).strip().decode('utf-8')
     print('Last rev modifying %s is %s, HEAD is %s' % (f, last_rev, head_rev))
     return head_rev == last_rev
 
@@ -1267,6 +1267,12 @@ def TestEmtest():
     ExecuteEmscriptenTestSuite('emwasm', tests,
                                GetTestDir('emtest-out'))
 
+def GetSkiaPerfRemoteFilename(hash, suffix=''):
+    # Follow the filename format specified at
+    # https://skia.googlesource.com/buildbot/+/refs/heads/main/perf/FORMAT.md#storage
+    return datetime.today().strftime('%Y/%m/%d') + '/' + hash + suffix + '.json'
+
+
 def TestSizeBenchmarks():
     test_dir = GetInstallDir('emscripten')
     ExecuteEmscriptenTestSuite('emwasm', options.test_params,
@@ -1276,15 +1282,81 @@ def TestSizeBenchmarks():
         json_results = json.loads(results_fd.read())
 
     # Embed the git revision in the file.
-    hash = GitRevision().decode('utf-8')
+    hash = GitRevision()
     json_results['git_hash'] = hash
     with open(stats_filename, 'w') as results_fd:
         results_fd.write(json.dumps(json_results, indent=2) + '\n')
 
-    # Follow the filename format specified at
-    # https://skia.googlesource.com/buildbot/+/refs/heads/main/perf/FORMAT.md#storage
-    remote_filename = datetime.today().strftime('%Y/%m/%d') + '/' + hash + '.json'
+    remote_filename = GetSkiaPerfRemoteFilename(hash)
     cloud.UploadSkiaPerf(stats_filename, remote_filename)
+
+
+def TestOptimizationBenchmarks():
+    buildbot.Step('Optimization Benchmarks')
+    wasm_opt = Executable(GetBuildDir('binaryen-out', 'bin', 'wasm-opt'))
+
+    files = [
+        os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-pop.unopt.wasm'),
+        os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-flute-complex.unopt.wasm')
+    ]
+
+    results = []
+
+    out_dir = GetBuildDir('wasm-files')
+    Mkdir(out_dir)
+
+    for f in files:
+        basename = os.path.basename(f)
+        out_file = os.path.join(out_dir, basename)
+
+        cmd = [
+            wasm_opt,
+            '--enable-gc', '--enable-reference-types', '--enable-multivalue',
+            '--enable-exception-handling', '--enable-nontrapping-float-to-int',
+            '--enable-sign-ext', '--enable-bulk-memory', '--enable-threads',
+            '--enable-simd', '--no-inline=*<noInline>*', '--closed-world',
+            '--traps-never-happen', '--type-unfinalizing', '-Os', '--type-ssa',
+            '--gufa', '-Os', '--type-merging', '-Os', '--type-finalizing',
+            '--minimize-rec-groups',
+            '-o', out_file,
+            f
+        ]
+
+        print(f'Running benchmark for {basename}...')
+        start_time = time.time()
+        proc.check_call(cmd)
+        duration = time.time() - start_time
+
+        results.append({
+            'key': {
+                'test': basename,
+                'units': 's'
+            },
+            'measurement': duration
+        })
+
+    # Construct Skia Perf JSON
+    hash = GitRevision()
+    perf_data = {
+        'version': 1,
+        'git_hash': hash,
+        'key': {
+            'bot': 'linux-x64-builder'
+        },
+        'results': results
+    }
+
+    stats_filename = GetTempDir('opt_benchmarks.json')
+    with open(stats_filename, 'w') as f:
+        f.write(json.dumps(perf_data, indent=2) + '\n')
+
+    remote_filename = GetSkiaPerfRemoteFilename(hash, suffix='-wasm-opt')
+
+    if os.environ.get('SKIP_UPLOAD'):
+        print(f'Skipping upload. Results saved to {stats_filename}')
+    else:
+        cloud.UploadSkiaPerf(stats_filename, remote_filename)
+
 
 def TestLLVMTestSuite():
     buildbot.Step('Execute LLVM TestSuite')
@@ -1381,6 +1453,7 @@ ALL_TESTS = [
     Test('emtest', TestEmtest),
     Test('llvmtest', TestLLVMTestSuite),
     Test('sizebenchmarks', TestSizeBenchmarks),
+    Test('optimizationbenchmarks', TestOptimizationBenchmarks),
     Test('binaryenjs', TestBinaryenJS),
 ]
 
