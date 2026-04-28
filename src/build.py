@@ -1329,10 +1329,17 @@ def TestOptimizationBenchmarks():
 
         results.append({
             'key': {
-                'test': basename,
+                'test': f'wasm-opt-time_{basename}',
                 'units': 's'
             },
             'measurement': duration
+        })
+        results.append({
+            'key': {
+                'test': f'wasm-opt-size_{basename}',
+                'units': 'bytes'
+            },
+            'measurement': os.path.getsize(out_file)
         })
 
     # Construct Skia Perf JSON
