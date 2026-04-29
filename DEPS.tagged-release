@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 5.0.6
+# VERSION: 5.0.7
 
 
 vars = {
@@ -27,19 +27,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '54f9f7afa703ade4a34aa3291abbe237bb0cd8a4',
+  'binaryen_revision': 'c6a5e65b77a4b6e9d72fa7ba674632aba4b99099',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '6ea9c28c38cdd40c1032fa04400c9d16230ee180',
+  'emscripten_revision': '263db4cffa6f9fc2ec514a70abac81362ea41849',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'bbeae6932d653b8a71a3a985af0ccf97e13e2e08',
+  'llvm_project_revision': '7b58716d96c3ae4c0c4e6f72e29b16137bb6224b',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': '24d5eb6d818deb1bd2572dbda991fa46de886715',
+  'v8_revision': '44d162d1c1856eb161e79ce5021038a4413f95f2',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -61,6 +61,26 @@ deps = {
     ],
     'dep_type': 'cipd',
   },
+  'emscripten-releases/third_party/wasm-files': {
+    'dep_type': 'gcs',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/test-files/dart-pop.unopt.wasm',
+        'sha256sum': '9ff90dc215c503224b56ecbaed9ce2db7d70c929281d3b0380ba921a239642e5',
+        'size_bytes': 1330046,
+        'generation': 1776963812644460,
+        'output_file': 'dart-pop.unopt.wasm',
+      },
+      {
+        'object_name': 'emscripten-releases-builds/deps/test-files/dart-flute-complex.unopt.wasm',
+        'sha256sum': 'd63e2a789aad8af871124937ae8b64c28a0d1ca2b9131ec33ddde35cd7c9410a',
+        'size_bytes': 4410188,
+        'generation': 1776963981165463,
+        'output_file': 'dart-flute-complex.unopt.wasm',
+      }
+    ]
+  }
 }
 
 hooks = [
