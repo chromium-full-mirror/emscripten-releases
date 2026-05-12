@@ -31,6 +31,7 @@ import textwrap
 import time
 import traceback
 import zipfile
+import zlib
 from datetime import datetime
 
 import buildbot
@@ -1358,6 +1359,15 @@ def TestOptimizationBenchmarks():
                 'units': 'bytes'
             },
             'measurement': os.path.getsize(out_file)
+        })
+        with open(out_file, 'rb') as f:
+            gzipped_size = len(zlib.compress(f.read()))
+        results.append({
+            'key': {
+                'test': f'wasm-opt-gzip-size_{basename}',
+                'units': 'bytes'
+            },
+            'measurement': gzipped_size
         })
 
     # Construct Skia Perf JSON
