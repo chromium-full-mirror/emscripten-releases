@@ -181,6 +181,17 @@ def NodeBin():
     return Executable(os.path.join(NodeBinDir(), 'node'))
 
 
+def JavaHomeDir():
+    assert IsMac(), 'only configured for macOS'
+    arch = 'aarch64' if IsArm64() else 'x64'
+    return GetPrebuilt(
+        f'jdk-26_macos-{arch}_bin', 'jdk-26.0.1.jdk', 'Contents', 'Home')
+
+
+def JavaPath():
+    return os.path.join(JavaHomeDir(), 'bin')
+
+
 def PrebuiltCMakePlatformName():
     return {
         'linux': 'linux',
@@ -1256,6 +1267,13 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     if not IsLinux():
         test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
         test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
+
+    # On Mac, the closure compiler only supports one of x86-64/arm64. Allow
+    # fallback to Java.
+    if IsMac():
+        test_env['JAVA_HOME'] = JavaHomeDir()
+        AddToPath(JavaPath())
+
     try:
         proc.check_call(cmd, cwd=outdir, env=test_env)
     except proc.CalledProcessError:
@@ -1449,6 +1467,11 @@ def TestBinaryenJS():
     outdir = GetBuildDir('binaryenjs-test-out')
     Mkdir(outdir)
     test_env = os.environ.copy()
+    # On Mac, the closure compiler only supports one of x86-64/arm64. Allow
+    # fallback to Java.
+    if IsMac():
+        test_env['JAVA_HOME'] = JavaHomeDir()
+        AddToPath(JavaPath())
     proc.check_call([GetSrcDir('binaryen', 'scripts', 'emcc-tests.sh')],
                     cwd=outdir, env=test_env)
 

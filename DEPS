@@ -69,6 +69,32 @@ deps = {
         'output_file': 'dart-flute-complex.unopt.wasm',
       }
     ]
+  },
+  'emscripten-releases/jdk-26_macos-aarch64_bin': {
+    'dep_type': 'gcs',
+    'condition': 'host_os == "mac" and host_cpu == "arm64"',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/jdk-26_macos-aarch64_bin.tar.gz',
+        'sha256sum': '368bdb70170a1f802b7629850500b8691a0885fdce867c38caa100db2a708a91',
+        'size_bytes': 213639077,
+        'generation': 1778539615643801
+      }
+    ]
+  },
+  'emscripten-releases/jdk-26_macos-x64_bin': {
+    'dep_type': 'gcs',
+    'condition': 'host_os == "mac" and host_cpu == "x64"',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/jdk-26_macos-x64_bin.tar.gz',
+        'sha256sum': 'd9b748df71ff233289f9e08aeb5655a5c1c12521849eeadcb51d9a22d0d3089c',
+        'size_bytes': 216018798,
+        'generation': 1778540142806220
+      }
+    ]
   }
 }
 
