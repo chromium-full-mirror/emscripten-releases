@@ -45,7 +45,7 @@ deps = {
     'packages': [
       {
         'package': 'infra/3pp/tools/ninja/${{platform}}',
-        'version': 'version:2@1.12.1.chromium.4',
+        'version': 'version:3@1.13.2.chromium.4',
       }
     ],
     'dep_type': 'cipd',
