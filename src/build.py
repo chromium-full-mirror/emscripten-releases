@@ -982,7 +982,24 @@ def InstallEmscripten():
 
 
 def Emscripten(build_dir):
-    InstallEmscripten()
+    # Build the windows pylauncher executable.  We do this before the install
+    # step to be sure we use the freshly-built executable rather than the
+    # check-in one.
+    pylauncher_dir = GetSrcDir('emscripten', 'tools', 'pylauncher')
+    if IsWindows():
+        exe = os.path.join(pylauncher_dir, 'pylauncher.exe')
+        os.remove(exe)
+        cc_env = host_toolchains.SetUpVSEnv(pylauncher_dir)
+        proc.check_call([os.path.join(pylauncher_dir, 'build.bat')], cwd=pylauncher_dir, env=cc_env)
+        assert os.path.exists(exe)
+
+    try:
+        InstallEmscripten()
+    finally:
+        if IsWindows():
+            # Once we have done the install clean the pylauncher directory
+            # so the tree is not dirty at the end of the run.
+            proc.check_call(['git', 'checkout', '.'], cwd=pylauncher_dir)
 
     def WriteEmscriptenConfig(infile, outfile):
         with open(infile) as config:
