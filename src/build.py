@@ -61,7 +61,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 62
+CLOBBER_BUILD_TAG = 63
 
 options = None
 
@@ -781,7 +781,7 @@ def LLVM(build_dir, is_cross=False):
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
-        '-DLLVM_ENABLE_LLD=ON',
+        '-DLLVM_USE_LINKER=%s' % options.llvm_linker,
     ]
     if UseStaticLibCXX():
         cmake_flags += ['-DLLVM_STATIC_LINK_CXX_STDLIB=ON']
@@ -1600,6 +1600,10 @@ def ParseArgs():
         '--link-static', dest='link_static', default=False, action='store_true',
         help='Link LLVM statically instead of using the libLLVM dylib'
              ' (required to run the LLVM regression tests)')
+    parser.add_argument(
+        '--llvm-linker', dest='llvm_linker', default='lld',
+        choices=['lld', 'mold', 'gold', 'bfd'],
+        help='Linker to use for building LLVM (lld, mold, gold, bfd)')
 
     return parser.parse_args()
 
