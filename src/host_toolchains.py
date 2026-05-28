@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 #   Copyright 2016 WebAssembly Community Group participants
 #
@@ -158,7 +157,7 @@ def ParseConfigLine(line):
 
 def GetConfigFlag(config_file, flag):
     with open(config_file) as f:
-        for line in f.readlines():
+        for line in f:
             parsed = ParseConfigLine(line)
             if parsed and parsed[0] == flag:
                 return parsed[1]

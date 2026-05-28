@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 #   Copyright 2026 WebAssembly Community Group participants
 #
@@ -17,7 +16,6 @@
 
 import argparse
 import os
-import subprocess
 import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

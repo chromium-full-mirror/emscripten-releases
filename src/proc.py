@@ -19,12 +19,13 @@
 
 # Imports subprocess in its own namespace so we can always refer directly to
 # its attributes.
-import subprocess
 import os
+import subprocess
 import sys
+
 # Imports all of subprocess into the current namespace, effectively
 # re-exporting everything.
-from subprocess import *  # noqa
+from subprocess import *
 
 
 def Which(filename, cwd=None, is_executable=True):

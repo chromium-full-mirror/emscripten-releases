@@ -1,0 +1,13 @@
+target-version = "py311"
+preview = true
+
+lint.ignore = [
+  "UP031", # https://docs.astral.sh/ruff/rules/printf-string-formatting/
+  "TRY002", # https://docs.astral.sh/ruff/rules/raise-vanilla-class/
+  "RUF015", # https://docs.astral.sh/ruff/rules/unnecessary-iterable-allocation-for-first-element/
+  "S102", # https://docs.astral.sh/ruff/rules/exec-builtin/
+  "BLE001", # https://docs.astral.sh/ruff/rules/blind-except/
+  "N999", # https://docs.astral.sh/ruff/rules/invalid-module-name/
+  "SIM115", # https://docs.astral.sh/ruff/rules/open-file-with-context-handler/
+  "RET504", # https://docs.astral.sh/ruff/rules/unnecessary-assign/
+]

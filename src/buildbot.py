@@ -101,7 +101,6 @@ def Fail():
     """Mark one step as failing, but keep going."""
     sys.stdout.flush()
     sys.stdout.write('\n@@@STEP_FAILURE@@@\n')
-    global failed_steps
     failed_steps.append(current_step)
 
 
@@ -118,7 +117,6 @@ def Warn():
   enough about this to make the bot red."""
     sys.stdout.flush()
     sys.stdout.write('\n@@@STEP_WARNINGS@@@\n')
-    global warned_steps
     warned_steps.append(current_step)
 
 

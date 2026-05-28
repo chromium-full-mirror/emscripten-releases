@@ -13,8 +13,8 @@
 #   limitations under the License.
 
 import multiprocessing
-import sys
 import queue
+import sys
 
 
 def g_testing_thread(test_function, work_queue, result_queue):
@@ -28,7 +28,7 @@ def g_testing_thread(test_function, work_queue, result_queue):
         result_queue.put(result)
 
 
-class ParallelRunner(object):
+class ParallelRunner:
     def __init__(self):
         self.processes = None
         self.result_queue = None

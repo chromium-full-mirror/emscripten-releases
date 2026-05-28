@@ -12,8 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import proc
 import buildbot
+import proc
 
 CLOUD_STORAGE_BASE_URL = 'https://storage.googleapis.com/'
 EMSCRIPTEN_RELEASES_CLOUD_STORAGE_PATH = \

@@ -9,7 +9,6 @@ for more details about the presubmit API built into gcl.
 
 import json
 
-
 USE_PYTHON3 = True
 
 def _CheckJSONFiles(input_api, output_api):
@@ -31,10 +30,22 @@ def _CheckJSONFiles(input_api, output_api):
   return [output_api.PresubmitError(r) for r in results]
 
 
+def _CheckRuffLint(input_api, output_api):
+  files = input_api.AffectedSourceFiles(None)
+  py_files = [f.AbsoluteLocalPath() for f in files if f.AbsoluteLocalPath().endswith('.py')]
+  if py_files:
+    try:
+      input_api.subprocess.check_output([input_api.python3_executable, '-m', 'ruff', 'check', *py_files], text=True)
+    except input_api.subprocess.CalledProcessError as e:
+      return [output_api.PresubmitError("Ruff lint failures:\n" + e.stdout)]
+  return []
+
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
   results.extend(_CheckJSONFiles(input_api, output_api))
+  results.extend(_CheckRuffLint(input_api, output_api))
   return results
 
 

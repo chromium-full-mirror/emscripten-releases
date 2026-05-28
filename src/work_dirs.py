@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 #   Copyright 2019 WebAssembly Community Group participants
 #
@@ -36,7 +35,7 @@ def MakeGetterSetter(path_type, default):
 
     def setter(dir):
         if path_type in dirs:
-            raise Exception('Path %s set more than once' % path_type)
+            raise Exception(f'Path {path_type} set more than once')
         dirs[path_type] = os.path.abspath(dir)
 
     return getter, setter

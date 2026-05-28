@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 #   Copyright 2024 WebAssembly Community Group participants
 #
@@ -25,19 +24,19 @@ LTO builds are builds with touch DEPS.tagged-release and have the
 corresponding non-LTO build in their commit message.
 """
 
-import build
-import buildbot
-import cloud
-
-from google.api_core import exceptions
-from google.cloud import secretmanager
-import google_crc32c
 import os
 import re
-import requests
 import subprocess
 import sys
 
+import google_crc32c
+import requests
+from google.api_core import exceptions
+from google.cloud import secretmanager
+
+import build
+import buildbot
+import cloud
 
 MAX_ATTEMPTS = 3
 SECRET_NAME = 'projects/956827487526/secrets/emscripten-releases-token/versions/latest'
@@ -60,14 +59,11 @@ def get_github_token():
             crc32c = google_crc32c.Checksum()
             crc32c.update(response.payload.data)
             if response.payload.data_crc32c != int(crc32c.hexdigest(), 16):
-                raise Exception('Secret checksum fail %s' %
-                                response.payload.data_crc32c)
+                raise Exception(f'Secret checksum fail {response.payload.data_crc32c}')
             return response.payload.data.decode('UTF-8')
         except exceptions.RetryError:
             retry += 1
-            print(
-              'Fetching OTA from Secret Manager has timed out. '
-              'Retrying %d' % retry)
+            print(f'Fetching OTA from Secret Manager has timed out. Retrying {retry}')
     # If we come here, we have hit the retry limit. Fail this run.
     raise Exception('Failed to fetch the OTA password.')
 

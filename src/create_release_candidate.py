@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 #   Copyright 2015 WebAssembly Community Group participants
 #
@@ -46,7 +45,7 @@ def run(cmd, capture_output=False):
         print('Command failed: ' + ' '.join(cmd))
         print(e.stdout)
         print(e.stderr)
-        raise e
+        raise
 
 
 def modify_deps_file(content, version):

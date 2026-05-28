@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 #   Copyright 2015 WebAssembly Community Group participants
 #
@@ -19,8 +18,8 @@ import argparse
 import glob
 import json
 import multiprocessing
-import platform
 import os
+import platform
 import re
 import shutil
 import struct
@@ -32,16 +31,16 @@ import time
 import traceback
 import zipfile
 import zlib
-from datetime import datetime
+from datetime import UTC, datetime
+from urllib.request import URLError, urlopen
 
 import buildbot
 import cloud
-from file_util import Chdir, Mkdir, Remove
 import host_toolchains
 import proc
 import testing
 import work_dirs
-from urllib.request import urlopen, URLError
+from file_util import Chdir, Mkdir, Remove
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -257,7 +256,7 @@ NPROC = multiprocessing.cpu_count()
 
 if IsMac():
     # Experimental temp fix for crbug.com/829034 stdout write sometimes fails
-    from fcntl import fcntl, F_GETFL, F_SETFL
+    from fcntl import F_GETFL, F_SETFL, fcntl
     fd = sys.stdout.fileno()
     flags = fcntl(fd, F_GETFL)
     fcntl(fd, F_SETFL, flags & ~os.O_NONBLOCK)
@@ -367,7 +366,7 @@ def FilterTargets(to_run, all_targets):
             raise Exception(f'{r} not found in target list:\n{pretty_targets}')
 
 
-class Source(object):
+class Source:
     """Metadata about a sync-able source repo on the waterfall"""
     def __init__(self, name, src_dir,
                  custom_sync=None):
@@ -781,7 +780,7 @@ def LLVM(build_dir, is_cross=False):
         '-DLLVM_ENABLE_PROJECTS=lld;clang',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
-        '-DLLVM_ENABLE_TERMINFO=%d' % (not IsLinux()),
+        '-DLLVM_ENABLE_TERMINFO=%d' % int(not IsLinux()),
         # LLVM's PCH support is new and currently seems to break reclient.
         '-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON',
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
@@ -1144,7 +1143,7 @@ def ExtractArchive():
         cwd=upper_dir)
 
 
-class Build(object):
+class Build:
     def __init__(self, name_, runnable_,
                  incremental_build_dir=None,
                  clobber_lto=True,
@@ -1233,7 +1232,7 @@ def BuildRepos(builds):
         b.Run()
 
 
-class Test(object):
+class Test:
     def __init__(self, name_, runnable_):
         self.name = name_
         self.runnable = runnable_
@@ -1314,7 +1313,7 @@ def TestEmtest():
 def GetSkiaPerfRemoteFilename(hash, suffix=''):
     # Follow the filename format specified at
     # https://skia.googlesource.com/buildbot/+/refs/heads/main/perf/FORMAT.md#storage
-    return datetime.today().strftime('%Y/%m/%d') + '/' + hash + suffix + '.json'
+    return datetime.now(UTC).strftime('%Y/%m/%d') + '/' + hash + suffix + '.json'
 
 
 def TestSizeBenchmarks():
@@ -1694,8 +1693,8 @@ def main():
 
     try:
         ret = run(sync_include, build_include, test_include)
-        print('Completed in {}s'.format(time.time() - start))
-        return ret
+        print(f'Completed in {time.time() - start}s')
+        return ret  # noqa: TRY300
     except:  # noqa
         traceback.print_exc()
         # If an except is raised during one of the steps we still need to

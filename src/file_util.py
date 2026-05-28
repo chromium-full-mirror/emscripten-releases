@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 #   Copyright 2015 WebAssembly Community Group participants
 #
@@ -44,7 +43,7 @@ def Mkdir(path):
         if not os.path.isdir(path):
             raise Exception('Path %s is not a directory!' % path)
         if not e.errno == errno.EEXIST:
-            raise e
+            raise
 
 
 def Remove(path):

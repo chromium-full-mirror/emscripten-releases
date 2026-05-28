@@ -57,7 +57,7 @@ class Result:
                                        other.output[:max_size]).quick_ratio()
 
 
-class Tester(object):
+class Tester:
     """Test runner."""
     def __init__(self, command_ctor, outname_ctor, outdir, extras):
         """Command-line constructor accepting input and output file names."""
@@ -127,23 +127,22 @@ def parse_exclude_files(fails, config_attributes):
         return tokens
 
     for excludefile in fails:
-        f = open(excludefile)
-        for line in f:
-            tokens = parse_line(line)
-            if not tokens:
-                continue
-            if len(tokens) > 1:
-                attributes = set(tokens[1].split(','))
-                if not attributes.issubset(config_attributes):
+        with open(excludefile) as f:
+            for line in f:
+                tokens = parse_line(line)
+                if not tokens:
                     continue
-            test = tokens[0]
+                if len(tokens) > 1:
+                    attributes = set(tokens[1].split(','))
+                    if not attributes.issubset(config_attributes):
+                        continue
+                test = tokens[0]
 
-            if test in excludes:
-                print('ERROR: duplicate exclude: [%s]' % line)
-                print('Files: %s and %s' % (excludes[test], excludefile))
-                sys.exit(1)
-            excludes[test] = excludefile
-        f.close()
+                if test in excludes:
+                    print('ERROR: duplicate exclude: [%s]' % line)
+                    print('Files: %s and %s' % (excludes[test], excludefile))
+                    sys.exit(1)
+                excludes[test] = excludefile
     return sorted(excludes.keys())
 
 
@@ -184,7 +183,7 @@ class SimilarityGroup:
 def similarity(results, cutoff):
     """List of lists of result test names with similar outputs."""
     similarities = TriangularArray()
-    for x in range(0, len(results)):
+    for x in range(len(results)):
         for y in range(x + 1, len(results)):
             rx = results[x]
             ry = results[y]
@@ -223,7 +222,7 @@ def similarity(results, cutoff):
     for group in similar_groups:
         for test in group.tests:
             grouped.add(test)
-    uniques = list(set([r.test for r in results]) - grouped)
+    uniques = list({r.test for r in results} - grouped)
     if uniques:
         s = [similarities[(uniques[0], u)] for u in uniques[1:]]
         similar_groups.append(SimilarityGroup(tests=uniques, similarities=s))
@@ -232,7 +231,7 @@ def similarity(results, cutoff):
 
 def make_blocking(fileno):
     try:
-        from fcntl import fcntl, F_GETFL, F_SETFL
+        from fcntl import F_GETFL, F_SETFL, fcntl
         flags = fcntl(fileno, F_GETFL)
         if flags & os.O_NONBLOCK:
             fcntl(fileno, F_SETFL, flags & ~os.O_NONBLOCK)
