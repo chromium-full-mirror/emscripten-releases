@@ -150,8 +150,15 @@ def GetCrossArch():
     raise Exception('Unknown native build architecture')
 
 
-def Executable(name, extension='.exe'):
-    return name + extension if IsWindows() else name
+def Executable(name):
+    if IsWindows():
+        # TODO: Remove this once we finish the transition to executable
+        # launchers in emscripten.
+        if os.path.exists(name + '.bat'):
+            return name + '.bat'
+        else:
+            return name + '.exe'
+    return name
 
 
 def WindowsFSEscape(path):
@@ -987,6 +994,9 @@ def Emscripten(build_dir):
     # check-in one.
     pylauncher_dir = GetSrcDir('emscripten', 'tools', 'pylauncher')
     if IsWindows():
+        # Remove any previously-created launcher scripts that are otherwise
+        # git-ignored.
+        proc.check_call(['git', 'clean', '-fx', '*.bat', '*.exe', '*.ps1'], cwd=GetSrcDir('emscripten'))
         exe = os.path.join(pylauncher_dir, 'pylauncher.exe')
         os.remove(exe)
         cc_env = host_toolchains.SetUpVSEnv(pylauncher_dir)
@@ -1022,7 +1032,7 @@ def Emscripten(build_dir):
     # Use emscripten's embuilder to prebuild the system libraries.
     # This depends on binaryen already being built and installed into the
     # archive/install dir.
-    embuilder = Executable(GetInstallDir('emscripten', 'embuilder'), '.bat')
+    embuilder = Executable(GetInstallDir('emscripten', 'embuilder'))
     proc.check_call([embuilder, 'build', 'SYSTEM'], env=env)
 
     # Remove the sanity file.  This means it will get generated on first
@@ -1257,9 +1267,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     print('Running npm install ...')
     proc.check_call(['npm', 'ci'], cwd=em_install_dir)
 
-    cmd = [
-        Executable(GetInstallDir('emscripten', 'test', 'runner'), '.bat')
-    ] + tests
+    cmd = [Executable(GetInstallDir('emscripten', 'test', 'runner'))] + tests
     test_env = os.environ.copy()
     test_env['EMTEST_SKIP_V8'] = '1'
     test_env['EMTEST_SKIP_SCONS'] = '1'
