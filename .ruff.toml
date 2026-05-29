@@ -4,6 +4,7 @@ preview = true
 lint.ignore = [
   "UP031", # https://docs.astral.sh/ruff/rules/printf-string-formatting/
   "TRY002", # https://docs.astral.sh/ruff/rules/raise-vanilla-class/
+  "TRY300", # https://docs.astral.sh/ruff/rules/try-consider-else/
   "RUF015", # https://docs.astral.sh/ruff/rules/unnecessary-iterable-allocation-for-first-element/
   "S102", # https://docs.astral.sh/ruff/rules/exec-builtin/
   "BLE001", # https://docs.astral.sh/ruff/rules/blind-except/

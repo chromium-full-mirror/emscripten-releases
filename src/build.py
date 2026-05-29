@@ -1694,7 +1694,7 @@ def main():
     try:
         ret = run(sync_include, build_include, test_include)
         print(f'Completed in {time.time() - start}s')
-        return ret  # noqa: TRY300
+        return ret
     except:  # noqa
         traceback.print_exc()
         # If an except is raised during one of the steps we still need to
