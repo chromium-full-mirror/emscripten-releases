@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 5.0.7
+# VERSION: 6.0.0
 
 
 vars = {
@@ -27,19 +27,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'c6a5e65b77a4b6e9d72fa7ba674632aba4b99099',
+  'binaryen_revision': '8531324a9d2f5c04ae69d769f68c4d5910f28fe1',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '263db4cffa6f9fc2ec514a70abac81362ea41849',
+  'emscripten_revision': '7a1de121ae58e23effafd75bd688a48d62547536',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '7b58716d96c3ae4c0c4e6f72e29b16137bb6224b',
+  'llvm_project_revision': '77800224eba1bd273c50fb1153945c38da507a52',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': '44d162d1c1856eb161e79ce5021038a4413f95f2',
+  'v8_revision': 'b3a5219361b98cf8783ee3ce490f36dcb00932cc',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
@@ -56,7 +56,7 @@ deps = {
     'packages': [
       {
         'package': 'infra/3pp/tools/ninja/${{platform}}',
-        'version': 'version:2@1.12.1.chromium.4',
+        'version': 'version:3@1.13.2.chromium.4',
       }
     ],
     'dep_type': 'cipd',
@@ -78,6 +78,32 @@ deps = {
         'size_bytes': 4410188,
         'generation': 1776963981165463,
         'output_file': 'dart-flute-complex.unopt.wasm',
+      }
+    ]
+  },
+  'emscripten-releases/jdk-26_macos-aarch64_bin': {
+    'dep_type': 'gcs',
+    'condition': 'host_os == "mac" and host_cpu == "arm64"',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/jdk-26_macos-aarch64_bin.tar.gz',
+        'sha256sum': '368bdb70170a1f802b7629850500b8691a0885fdce867c38caa100db2a708a91',
+        'size_bytes': 213639077,
+        'generation': 1778539615643801
+      }
+    ]
+  },
+  'emscripten-releases/jdk-26_macos-x64_bin': {
+    'dep_type': 'gcs',
+    'condition': 'host_os == "mac" and host_cpu == "x64"',
+    'bucket': 'webassembly',
+    'objects': [
+      {
+        'object_name': 'emscripten-releases-builds/deps/jdk-26_macos-x64_bin.tar.gz',
+        'sha256sum': 'd9b748df71ff233289f9e08aeb5655a5c1c12521849eeadcb51d9a22d0d3089c',
+        'size_bytes': 216018798,
+        'generation': 1778540142806220
       }
     ]
   }
