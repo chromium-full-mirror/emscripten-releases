@@ -966,7 +966,7 @@ def Binaryen(build_dir, is_cross=False):
         [GetSrcDir('binaryen')],build_dir, is_cross=is_cross)
     cmake_command.extend(['-DINSTALL_LIBS=OFF', '-DBUILD_TESTS=OFF'])
     if ShouldUseLTO():
-        cmake_command.append('-DBUILD_STATIC_LIB=ON')
+        cmake_command.append('-DBUILD_SHARED_LIBS=OFF')
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
     if IsLinux():
         cmake_command.append('-DBUILD_MIMALLOC=ON')
