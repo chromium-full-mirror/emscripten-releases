@@ -68,7 +68,16 @@ def get_github_token():
     raise Exception('Failed to fetch the OTA password.')
 
 
-def trigger_emsdk_workflow(lto, nonlto):
+def get_version(deps_file):
+    with open(deps_file, 'r') as f:
+        content = f.read()
+    match = re.search(r"^# VERSION: (.*)$", content, re.MULTILINE)
+    if match:
+        return match.group(1)
+    return None
+
+
+def trigger_emsdk_workflow(lto, nonlto, version):
     token = get_github_token()
     url = f'https://api.github.com/repos/{EMSDK_REPO_OWNER}/emsdk/actions/workflows/create-release.yml/dispatches'
 
@@ -77,8 +86,10 @@ def trigger_emsdk_workflow(lto, nonlto):
         'inputs': {
             'lto-sha': lto,
             'nonlto-sha': nonlto,
+            'version': version,
         }
     }
+
     headers = {
         'Authorization': f'Bearer {token}',
         'Accept': 'application/vnd.github.v3+json'
@@ -124,7 +135,10 @@ def main(argv):
     builds_done = len(builds)
     if builds_done >= 5:
         print('All builds found, triggering release workflow.')
-        trigger_emsdk_workflow(lto_sha, nonlto_sha)
+        version = get_version(deps_file)
+        assert version, f'Could not parse version from {deps_file}'
+        print(f'Found version {version} in {deps_file}')
+        trigger_emsdk_workflow(lto_sha, nonlto_sha, version)
     else:
         print(f'{builds_done} of 5 builds found, not triggering release workflow.')
 
