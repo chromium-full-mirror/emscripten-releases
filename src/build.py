@@ -987,7 +987,15 @@ def InstallEmscripten():
                     cwd=em_src_dir)
 
 
-def Emscripten(build_dir):
+def Emscripten(is_cross=False):
+    if is_cross:
+        # in the cross build mode we expect that the library files have
+        # already been built in the target directory by the native non-cross
+        # build steps.
+        installed_libdir = GetInstallDir('emscripten/cache/sysroot/lib/wasm32-emscripten')
+        libc = os.path.join(installed_libdir, 'libc.a')
+        assert os.path.isfile(libc), libc
+
     # Build the windows pylauncher executable.  We do this before the install
     # step to be sure we use the freshly-built executable rather than the
     # check-in one.
@@ -1003,13 +1011,21 @@ def Emscripten(build_dir):
         assert os.path.exists(exe)
 
     try:
+        if is_cross:
+            # If we are cross building make sure we tell npm so that `npm install`
+            # will pick the correct binary packages.
+            os.environ['npm_config_arch'] = GetCrossArch()
         InstallEmscripten()
     finally:
+        if is_cross:
+            del os.environ['npm_config_arch']
         if IsWindows():
             # Once we have done the install clean the pylauncher directory
             # so the tree is not dirty at the end of the run.
             proc.check_call(['git', 'checkout', '.'], cwd=pylauncher_dir)
 
+
+def EmscriptenLibs(build_dir):
     def WriteEmscriptenConfig(infile, outfile):
         with open(infile) as config:
             text = config.read().replace('{{WASM_INSTALL}}',
@@ -1084,7 +1100,7 @@ def Emscripten(build_dir):
 def VerifyMacArtifactsBuildArch(is_cross=False):
     # Ensure that all binaries have the correct architecture. There is
     # currently one exception which is allowed to be x86_64:
-    closure_binary = 'google-closure-compiler-osx/compiler'
+    closure_binary = 'google-closure-compiler-macos/compiler'
     print('Verifying architecture of MacOS binaries')
     for root, dirs, files in os.walk(GetInstallDir()):
         for f in files:
@@ -1216,9 +1232,11 @@ def AllBuilds():
         Build('binaryen-cross', Binaryen,
               incremental_build_dir=GetBuildDir('binaryen-cross-out'),
               is_cross=True),
+        Build('emscripten', Emscripten),
+        Build('emscripten-cross', Emscripten, is_cross=True),
         # If the emscripten libs build fails, clobber the LLVM directory.
         # See https://github.com/llvm/llvm-project/issues/156744
-        Build('emscripten', Emscripten,
+        Build('emscripten-libs', EmscriptenLibs,
               incremental_build_dir=GetBuildDir('llvm-out')),
         # Archive
         Build('archive', ArchiveBinaries),
