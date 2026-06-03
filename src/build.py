@@ -977,25 +977,28 @@ def Binaryen(build_dir, is_cross=False):
     proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)
 
 
-def InstallEmscripten():
+def InstallEmscripten(is_cross):
     em_install_dir = GetInstallDir('emscripten')
-    em_src_dir = GetSrcDir('emscripten')
-    Remove(em_install_dir)
     print('Installing emscripten into %s' % em_install_dir)
-    proc.check_call([os.path.join(em_src_dir, 'bootstrap.py')])
-    proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
-                    cwd=em_src_dir)
 
-
-def Emscripten(is_cross=False):
     if is_cross:
-        # in the cross build mode we expect that the library files have
-        # already been built in the target directory by the native non-cross
-        # build steps.
+        # For cross builds we just need to re-run `npm install` with the
+        # correct architecture.
+        proc.check_call(['npm', 'ci', '--verbose', '--cpu', GetCrossArch()], cwd=em_install_dir)
+
+        # We expect the installation to already have been completed by the
+        # native build.
         installed_libdir = GetInstallDir('emscripten/cache/sysroot/lib/wasm32-emscripten')
         libc = os.path.join(installed_libdir, 'libc.a')
         assert os.path.isfile(libc), libc
+    else:
+        Remove(em_install_dir)
+        em_src_dir = GetSrcDir('emscripten')
+        proc.check_call([os.path.join(em_src_dir, 'bootstrap.py')])
+        proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
+                        cwd=em_src_dir)
 
+def Emscripten(is_cross=False):
     # Build the windows pylauncher executable.  We do this before the install
     # step to be sure we use the freshly-built executable rather than the
     # check-in one.
@@ -1011,14 +1014,8 @@ def Emscripten(is_cross=False):
         assert os.path.exists(exe)
 
     try:
-        if is_cross:
-            # If we are cross building make sure we tell npm so that `npm install`
-            # will pick the correct binary packages.
-            os.environ['npm_config_arch'] = GetCrossArch()
-        InstallEmscripten()
+        InstallEmscripten(is_cross)
     finally:
-        if is_cross:
-            del os.environ['npm_config_arch']
         if IsWindows():
             # Once we have done the install clean the pylauncher directory
             # so the tree is not dirty at the end of the run.
