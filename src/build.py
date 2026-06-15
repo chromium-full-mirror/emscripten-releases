@@ -620,6 +620,9 @@ def CMakeCommandBase():
         # CMake's usual logic fails to find LUCI's git on Windows
         git_exe = proc.Which('git')
         command.append('-DGIT_EXECUTABLE=%s' % git_exe)
+        # Workaround for cmcldeps bug with forward slashes on Windows.
+        # TODO: remove when this issue is fixed and we upgrade CMake.
+        command.append('-DCMAKE_NINJA_CMCLDEPS_RC=OFF')
     return command
 
 
