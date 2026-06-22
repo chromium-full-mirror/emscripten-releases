@@ -703,7 +703,13 @@ def CleanLLVMInstall():
                           'diagtool', 'git-clang-format', 'hmaptool', 'ld.lld',
                           'ld64.lld', 'ld64.lld.darwinnew', 'ld64.lld.darwinold',
                           'lld-link', 'libclang.dll', 'llvm-ml', 'llvm-ml64',
-                          'llvm-lib', 'llvm-pdbutil', 'llvm-rc'):
+                          'llvm-lib', 'llvm-pdbutil', 'llvm-rc',
+                          # From clang-tools-extra
+                          'clang-apply-replacements', 'clang-change-namespace',
+                          'clang-doc', 'clang-include-cleaner', 'clang-include-fixer',
+                          'clang-move', 'clang-query', 'clang-reorder-fields',
+                          'clang-tidy', 'find-all-symbols', 'modularize',
+                          'pp-trace', 'run-clang-tidy'):
         Remove(GetInstallDir('bin', Executable(unneeded_tool)))
 
     for lib in ['libclang.%s' for suffix in ('so.*', 'dylib')]:
@@ -774,13 +780,14 @@ def LLVM(build_dir, is_cross=False):
         '-DLLVM_INCLUDE_EXAMPLES=OFF',
         '-DLLVM_BUILD_LLVM_DYLIB=%s' % build_dylib,
         '-DLLVM_LINK_LLVM_DYLIB=%s' % build_dylib,
+        '-DCLANG_LINK_CLANG_DYLIB=%s' % build_dylib,
         '-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON',
         '-DLLVM_ENABLE_BINDINGS=OFF',
         # Our mac bot's toolchain's ld64 is too old for trunk libLTO.
         '-DLLVM_TOOL_LTO_BUILD=OFF',
         '-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON',
         '-DLLVM_TARGETS_TO_BUILD=%s;WebAssembly' % host_arch,
-        '-DLLVM_ENABLE_PROJECTS=lld;clang',
+        '-DLLVM_ENABLE_PROJECTS=lld;clang;clang-tools-extra',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
         '-DLLVM_ENABLE_TERMINFO=%d' % int(not IsLinux()),
@@ -803,7 +810,7 @@ def LLVM(build_dir, is_cross=False):
                    'llvm-objcopy', 'llvm-objdump', 'llvm-profdata', 'llvm-ranlib',
                    'llvm-readobj', 'llvm-size', 'llvm-strings',
                    'llvm-strip', 'llvm-symbolizer', 'clang-resource-headers',
-                   'clang-scan-deps']
+                   'clang-scan-deps', 'clangd']
         ninja_targets = ('distribution', 'install-distribution')
         cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=OFF',
                             '-DLLVM_INCLUDE_TESTS=OFF',
