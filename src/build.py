@@ -1354,7 +1354,7 @@ def TestSizeBenchmarks():
 
 def TestOptimizationBenchmarks():
     buildbot.Step('Optimization Benchmarks')
-    wasm_opt = Executable(GetBuildDir('binaryen-out', 'bin', 'wasm-opt'))
+    wasm_opt = Executable(GetInstallDir('bin', 'wasm-opt'))
 
     files = [
         os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-pop.unopt.wasm'),
