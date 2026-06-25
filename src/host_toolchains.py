@@ -123,7 +123,10 @@ def UsingGoma():
 
 
 def UsingReclient():
-    return 'USE_RECLIENT' in os.environ
+    # Reclient remote builds do not work on Windows try bots. See b/309009233
+    return ('USE_RECLIENT' in os.environ and
+            not (GetHostPlatform() == 'windows' and
+                 not buildbot.IsUploadingBot()))
 
 
 def ReclientDir():
