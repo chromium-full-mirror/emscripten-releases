@@ -29,43 +29,15 @@ import re
 import subprocess
 import sys
 
-import google_crc32c
-import requests
-from google.api_core import exceptions
-from google.cloud import secretmanager
-
-import build
 import buildbot
 import cloud
+import git_util
+import github_actions
 
-MAX_ATTEMPTS = 3
-SECRET_NAME = 'projects/956827487526/secrets/emscripten-releases-token/versions/latest'
-# To test this script locally or on a trybot, modify this and lto_sha below
-EMSDK_REPO_OWNER = 'emscripten-core'
+RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(script_dir)
-
-
-def get_github_token():
-    client = secretmanager.SecretManagerServiceClient()
-    retry = 0
-    response = None
-    while retry < MAX_ATTEMPTS:
-        try:
-            # Access the latest secret version.
-            response = client.access_secret_version(
-                request={'name': SECRET_NAME}, timeout=30.0)
-            crc32c = google_crc32c.Checksum()
-            crc32c.update(response.payload.data)
-            if response.payload.data_crc32c != int(crc32c.hexdigest(), 16):
-                raise Exception(f'Secret checksum fail {response.payload.data_crc32c}')
-            return response.payload.data.decode('UTF-8')
-        except exceptions.RetryError:
-            retry += 1
-            print(f'Fetching OTA from Secret Manager has timed out. Retrying {retry}')
-    # If we come here, we have hit the retry limit. Fail this run.
-    raise Exception('Failed to fetch the OTA password.')
 
 
 def get_version(deps_file):
@@ -77,37 +49,9 @@ def get_version(deps_file):
     return None
 
 
-def trigger_emsdk_workflow(lto, nonlto, version):
-    token = get_github_token()
-    url = f'https://api.github.com/repos/{EMSDK_REPO_OWNER}/emsdk/actions/workflows/create-release.yml/dispatches'
-
-    payload = {
-        'ref': 'main',
-        'inputs': {
-            'lto-sha': lto,
-            'nonlto-sha': nonlto,
-            'version': version,
-        }
-    }
-
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github.v3+json'
-    }
-
-    response = requests.post(url, json=payload, headers=headers)
-
-    if response.status_code == 204:
-        print('Workflow dispatch event triggered successfully!')
-    else:
-        print('Failed to trigger workflow dispatch event.'
-              f'Status code: {response.status_code}')
-        print(response.text)
-
-
 def main(argv):
-    deps_file = os.path.join(root_dir, build.RELEASE_DEPS_FILE)
-    if not build.RevisionModifiesFile(deps_file):
+    deps_file = os.path.join(root_dir, RELEASE_DEPS_FILE)
+    if not git_util.RevisionModifiesFile(deps_file):
         print(f'HEAD revision does not modify {deps_file}')
         return 0
     if not buildbot.IsUploadingBot():
@@ -138,7 +82,7 @@ def main(argv):
         version = get_version(deps_file)
         assert version, f'Could not parse version from {deps_file}'
         print(f'Found version {version} in {deps_file}')
-        trigger_emsdk_workflow(lto_sha, nonlto_sha, version)
+        github_actions.trigger_emsdk_workflow(lto_sha, nonlto_sha, version)
     else:
         print(f'{builds_done} of 5 builds found, not triggering release workflow.')
 

@@ -41,6 +41,7 @@ import proc
 import testing
 import work_dirs
 from file_util import Chdir, Mkdir, Remove
+from git_util import GitRevision, RevisionModifiesFile
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -378,31 +379,6 @@ class Source:
         assert self.custom_sync
         self.custom_sync(self.name, self.src_dir)
 
-def GitRevision(cwd = None):
-    return proc.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip().decode('utf-8')
-
-def RevisionModifiesFile(f):
-    """Return True if the file f is modified in the index, working tree, or
-    HEAD commit."""
-    if not os.path.isfile(f):
-        return False
-    cwd = os.path.dirname(f)
-    # If the file is modified in the index or working tree, then return true.
-    # This happens on trybots.
-    status = proc.check_output(['git', 'status', '--porcelain', f],
-                               cwd=cwd).strip()
-    changed = len(status) != 0
-    s = status if changed else '(unchanged)'
-    print('%s git status: %s' % (f, s))
-    if changed:
-        return True
-    # Else find the most recent commit that modified f, and return true if
-    # that's the HEAD commit.
-    head_rev = GitRevision(cwd)
-    last_rev = proc.check_output(
-        ['git', 'rev-list', '-n1', 'HEAD', f], cwd=cwd).strip().decode('utf-8')
-    print('Last rev modifying %s is %s, HEAD is %s' % (f, last_rev, head_rev))
-    return head_rev == last_rev
 
 
 def SyncToolchain(name, src_dir):
@@ -1265,7 +1241,6 @@ class Test:
     def Test(self):
         self.runnable()
 
-
 def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     buildbot.Step('Execute emscripten testsuite (%s)' % name)
     Mkdir(outdir)
@@ -1328,6 +1303,16 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
         proc.check_call(cmd, cwd=outdir, env=test_env)
     except proc.CalledProcessError:
         buildbot.FailUnless(lambda: warn_only)
+        if 'codesize' in tests:
+            if (buildbot.IsBot() and
+                buildbot.BUILDBOT_BUCKET == buildbot.CI_BUCKET):
+                # Import github_actions dynamically because it uses
+                # packages only available in the vpython env, but gclient hooks
+                # don't run in vpython
+                import github_actions
+                github_actions.trigger_rebaseline_workflow()
+            else:
+                print('Not triggering rebaseline: not on CI bot')
 
 
 def TestEmtest():
