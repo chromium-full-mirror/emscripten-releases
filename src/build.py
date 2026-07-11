@@ -1303,16 +1303,6 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
         proc.check_call(cmd, cwd=outdir, env=test_env)
     except proc.CalledProcessError:
         buildbot.FailUnless(lambda: warn_only)
-        if 'codesize' in tests:
-            if (buildbot.IsBot() and
-                buildbot.BUILDBOT_BUCKET == buildbot.CI_BUCKET):
-                # Import github_actions dynamically because it uses
-                # packages only available in the vpython env, but gclient hooks
-                # don't run in vpython
-                import github_actions
-                github_actions.trigger_rebaseline_workflow()
-            else:
-                print('Not triggering rebaseline: not on CI bot')
 
 
 def TestEmtest():

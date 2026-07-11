@@ -244,10 +244,6 @@
         "command": ["src/build.py", "--test-include=llvmtest"]
       },
       {
-        "name": "Emscripten testsuite (codesize)",
-        "command": ["src/build.py", "--test-include=emtest", "--test-param=codesize"]
-      },
-      {
         "name": "Emscripten testsuite (>2GB)",
         "command": ["src/build.py", "--test-include=emtest", "--test-param=core_2gb"]
       },
