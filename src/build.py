@@ -772,7 +772,6 @@ def LLVM(build_dir, is_cross=False):
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         '-DCLANG_ENABLE_ARCMT=OFF',
         '-DCLANG_ENABLE_STATIC_ANALYZER=OFF',
-        '-DCLANG_TIDY_ENABLE_STATIC_ANALYZER=OFF',
         '-DCLANG_REPOSITORY_STRING=%s' % CLANG_GIT_REPO,
         '-DLLVM_USE_LINKER=%s' % options.llvm_linker,
     ]
