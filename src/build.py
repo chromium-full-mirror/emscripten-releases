@@ -1270,6 +1270,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     test_env = os.environ.copy()
     test_env['EMTEST_SKIP_V8'] = '1'
     test_env['EMTEST_SKIP_SCONS'] = '1'
+    test_env['EMTEST_SKIP_MESON'] = '1'
     test_env['EMTEST_SKIP_CCACHE'] = '1'
     # Our bots don't currently have a recent enough version of node installed
     # to run tests for recent wasm features such as wasm64, wasm EH, or simd.
