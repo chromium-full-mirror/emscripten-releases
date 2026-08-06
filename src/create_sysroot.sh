@@ -8,7 +8,7 @@
 #
 # Once created the sysroot should be uploaded to google storage.
 # e.g:
-#  gsutil cp sysroot_debian_stretch_amd64.tar.xz gs://wasm/
+#  gcloud storage cp sysroot_debian_stretch_amd64.tar.xz gs://wasm/
 
 set -o errexit
 
