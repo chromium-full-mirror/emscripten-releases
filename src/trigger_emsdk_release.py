@@ -49,7 +49,18 @@ def get_version(deps_file):
     return None
 
 
+def check():
+    deps_file = os.path.join(root_dir, RELEASE_DEPS_FILE)
+    version = get_version(deps_file)
+    assert version, f'Could not parse version from {deps_file}'
+    print(f'Parsed version {version} from {RELEASE_DEPS_FILE}')
+    return 0
+
+
 def main(argv):
+    if '--check' in argv or '--test' in argv:
+        return check()
+
     deps_file = os.path.join(root_dir, RELEASE_DEPS_FILE)
     if not git_util.RevisionModifiesFile(deps_file):
         print(f'HEAD revision does not modify {deps_file}')

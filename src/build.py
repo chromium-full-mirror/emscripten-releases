@@ -1194,10 +1194,54 @@ def Summary():
         buildbot.Fail()
 
 
+def TestCompression():
+    print('Testing compression tools...')
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_dir = os.path.join(temp_dir, 'test_dir')
+        os.makedirs(test_dir)
+        test_file = os.path.join(test_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('Emscripten Releases compression test content\n' * 50)
+
+        # 1. Test zip compression with ZIP_DEFLATED (used on Windows bots)
+        zip_path = os.path.join(temp_dir, 'test.zip')
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.write(test_file, 'test.txt')
+        assert os.path.isfile(zip_path) and os.path.getsize(zip_path) > 0
+
+        # 2. Test tar compression with the commands used by uploading bots
+        if not IsWindows():
+            tar_path = os.path.join(temp_dir, 'test.tar.xz')
+            if IsMac():
+                proc.check_call(['tar', 'cJf', tar_path, 'test_dir'], cwd=temp_dir)
+            else:
+                proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar_path, 'test_dir'], cwd=temp_dir)
+            assert os.path.isfile(tar_path) and os.path.getsize(tar_path) > 0
+
+
+def CheckEnvironment():
+    buildbot.Step('Check environment & tools')
+
+    # 1. Verify core host tools on PATH
+    for tool in ('cmake', 'ninja', 'node', 'npm', 'git'):
+        print(f'Checking {tool}: {proc.Which(tool)}')
+        proc.check_call([tool, '--version'])
+
+    # 2. Verify compression tools and libraries (tar/xz, zip)
+    TestCompression()
+
+    # 3. Verify Cloud SDK and GCS connectivity
+    cloud.ListBuilds('36767eb2cfa15eab9b22df0c7015925891cf74b1')
+
+    # 4. Verify release script dependencies & version parsing
+    proc.check_call([sys.executable, os.path.join(SCRIPT_DIR, 'trigger_emsdk_release.py'), '--check'])
+
+
 # TODO: Now that we've gotten rid of the complex filtering mechanism, we can
 # use a better data structure for this.
 def AllBuilds():
     return [
+        Build('check-env', CheckEnvironment),
         # Host tools
         Build('libcxx', LibCXX,
               incremental_build_dir=GetBuildDir('libcxx-out')),
