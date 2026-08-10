@@ -46,6 +46,7 @@ from git_util import GitRevision, RevisionModifiesFile
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 NINJA_DIR = os.path.join(ROOT_DIR, 'third_party', 'ninja')
+GCLOUD_DIR = os.path.join(ROOT_DIR, 'third_party', 'gcloud', 'bin')
 # Python executable that will be used by emscripten subprocesses.
 # For now we just use the running executable, but in the future we could use
 # a different one (for the python binary in emsdk).
@@ -1634,6 +1635,9 @@ def run(sync_targets, build_targets, test_targets):
     # Add ninja to the PATH (needed for both cmake and for running emscripten
     # tests).
     AddToPath(NINJA_DIR)
+
+    # Add gcloud to the PATH (needed for cloud storage uploads/downloads).
+    AddToPath(GCLOUD_DIR)
 
     # `npm` uses whatever `node` is in `PATH`. To make sure it uses the
     # Node.js version we want, we prepend the node bin dir to `PATH`.

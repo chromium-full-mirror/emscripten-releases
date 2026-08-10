@@ -61,6 +61,15 @@ deps = {
     ],
     'dep_type': 'cipd',
   },
+  'emscripten-releases/third_party/gcloud': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/gcloud/${{platform}}',
+        'version': 'version:3@579.0.0.chromium.4',
+      }
+    ],
+    'dep_type': 'cipd',
+  },
   'emscripten-releases/third_party/wasm-files': {
     'dep_type': 'gcs',
     'bucket': 'webassembly',

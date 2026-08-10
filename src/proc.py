@@ -54,7 +54,7 @@ def MungeExe(cmd, cwd):
     if exe.endswith('.py'):
         script = Which(exe, cwd, is_executable=False)
         return [sys.executable, script] + cmd[1:]
-    if exe in ('git', 'npm', 'gclient'):
+    if exe in ('git', 'npm', 'gclient', 'gcloud'):
         return [Which(exe, cwd)] + cmd[1:]
     return cmd
 
