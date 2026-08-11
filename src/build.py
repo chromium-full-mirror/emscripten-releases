@@ -168,7 +168,7 @@ def WindowsFSEscape(path):
 
 # Use prebuilt Node.js because the buildbots don't have node preinstalled
 # Keep in sync with node version used in emsdk.
-NODE_VERSION = '22.16.0'
+NODE_VERSION = '24.19.0'
 NODE_BASE_NAME = 'node-v' + NODE_VERSION + '-'
 
 
@@ -183,7 +183,10 @@ def NodePlatformName():
 
 def NodeBinDir():
     node_subdir = NODE_BASE_NAME + NodePlatformName()
-    return GetPrebuilt(node_subdir, 'bin')
+    if IsWindows():
+        return GetPrebuilt(node_subdir)
+    else:
+        return GetPrebuilt(node_subdir, 'bin')
 
 
 def NodeBin():
