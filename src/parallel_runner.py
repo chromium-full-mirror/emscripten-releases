@@ -39,7 +39,8 @@ class ParallelRunner:
         results = self.collect_results()
         return results
 
-    def create_test_queue(self, inputs):
+    @staticmethod
+    def create_test_queue(inputs):
         test_queue = multiprocessing.Queue()
         for test in inputs:
             test_queue.put(test)
@@ -48,7 +49,7 @@ class ParallelRunner:
     def init_processes(self, test_function, test_queue):
         self.processes = []
         self.result_queue = multiprocessing.Queue()
-        for x in range(multiprocessing.cpu_count()):
+        for _ in range(multiprocessing.cpu_count()):
             p = multiprocessing.Process(target=g_testing_thread,
                                         args=(test_function, test_queue,
                                               self.result_queue))

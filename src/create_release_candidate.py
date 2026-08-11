@@ -37,6 +37,7 @@ top_comment = '''\
 # VERSION: %s
 '''
 
+
 def run(cmd, capture_output=False):
     try:
         return subprocess.run(cmd, cwd=root_dir, capture_output=capture_output,
@@ -65,7 +66,7 @@ def create_cl(source_rev, tag, dry_run):
     deps = run(['git', 'show', f'{source_rev}:DEPS'], capture_output=True)
     deps = modify_deps_file(deps, tag)
     with open(os.path.join(root_dir, 'DEPS.tagged-release'), 'w') as f:
-      f.write(deps)
+        f.write(deps)
 
     if dry_run:
         return
@@ -84,7 +85,7 @@ def create_cl(source_rev, tag, dry_run):
 
 def parse_version():
     deps = open(os.path.join(root_dir, 'DEPS.tagged-release')).read()
-    match = re.search("^# VERSION: (.*)$", deps, re.MULTILINE)
+    match = re.search(r"^# VERSION: (.*)$", deps, re.MULTILINE)
     if not match:
         return None
     return match.group(1)
@@ -93,13 +94,14 @@ def parse_version():
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--revision', help='git revision to use for release')
-    parser.add_argument('-n', '--dry-run', action='store_true', help='update DEPS.tagged_release but do not commit changes or upload them')
+    parser.add_argument('-n', '--dry-run', action='store_true',
+                        help='update DEPS.tagged_release but do not commit changes or upload them')
     parser.add_argument('version', help='emscripten version (e.g. 3.1.66)', nargs='?')
     args = parser.parse_args(argv)
     if not args.version:
         version = parse_version()
         if not version:
-            print('no version specified and failed to parse existing version from DEPS.tagged_release')
+            print('no version specified and failed to parse version from DEPS.tagged_release')
             return 1
         version = [int(v) for v in version.split('.')]
         version[-1] += 1

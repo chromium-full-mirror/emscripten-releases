@@ -27,6 +27,7 @@ single_threaded = False
 
 class Result:
     """Result from a single test that was run."""
+
     def __init__(self, test, success, output):
         self.test = test
         self.success = success
@@ -44,8 +45,7 @@ class Result:
     __nonzero__ = __bool__
 
     def __lt__(self, other):
-        """Sort by test name so that the output files can be compared
-        easily."""
+        """Sort by test name so that the output files can be compared easily."""
         return self.test < other.test
 
     def similarity(self, other):
@@ -59,6 +59,7 @@ class Result:
 
 class Tester:
     """Test runner."""
+
     def __init__(self, command_ctor, outname_ctor, outdir, extras):
         """Command-line constructor accepting input and output file names."""
         if outdir:
@@ -73,7 +74,7 @@ class Tester:
     def setlimits():
         # Set maximum CPU time to 90 seconds in child process
         try:
-            import resource
+            import resource  # noqa
             resource.setrlimit(resource.RLIMIT_CPU, (90, 90))
         except:  # noqa
             pass
@@ -102,7 +103,7 @@ class Tester:
 
 
 def parse_exclude_files(fails, config_attributes):
-    """Returns a sorted list  of exclusions which match the attributes.
+    """Return a sorted list  of exclusions which match the attributes.
 
     Parse the files containing tests to exclude (i.e. expected fails).
     * Each line may contain a comma-separated list of attributes restricting
@@ -148,10 +149,12 @@ def parse_exclude_files(fails, config_attributes):
 
 class TriangularArray:
     """Indexed with two commutable keys."""
+
     def __init__(self):
         self.arr = {}
 
-    def canonicalize(self, key):
+    @staticmethod
+    def canonicalize(key):
         return (min(key[0], key[1]), max(key[0], key[1]))
 
     def __getitem__(self, key):
@@ -170,6 +173,7 @@ class TriangularArray:
 
 class SimilarityGroup:
     """Group of similar results."""
+
     def __init__(self, tests, similarities):
         self.tests = sorted(tests)
         self.similarities = [100. * s for s in similarities]
@@ -180,14 +184,14 @@ class SimilarityGroup:
                        if self.similarities else 0.)
 
 
-def similarity(results, cutoff):
+def similarity(results, cutoff):  # noqa: C901
     """List of lists of result test names with similar outputs."""
     similarities = TriangularArray()
     for x in range(len(results)):
         for y in range(x + 1, len(results)):
             rx = results[x]
             ry = results[y]
-            similarities[(rx.test, ry.test)] = rx.similarity(ry)
+            similarities[rx.test, ry.test] = rx.similarity(ry)
     # A maximum clique would be better suited to group similarities, but this
     # silly traversal is simpler and seems to do the job pretty well.
     similar_groups = []
@@ -205,7 +209,7 @@ def similarity(results, cutoff):
             for other_result in results:
                 other_test = other_result.test
                 if other_test in worklist:
-                    similar = similarities[(test, other_test)]
+                    similar = similarities[test, other_test]
                     if similar > cutoff:
                         worklist.remove(other_test)
                         group_tests.append(other_test)
@@ -224,14 +228,14 @@ def similarity(results, cutoff):
             grouped.add(test)
     uniques = list({r.test for r in results} - grouped)
     if uniques:
-        s = [similarities[(uniques[0], u)] for u in uniques[1:]]
+        s = [similarities[uniques[0], u] for u in uniques[1:]]
         similar_groups.append(SimilarityGroup(tests=uniques, similarities=s))
     return similar_groups
 
 
 def make_blocking(fileno):
     try:
-        from fcntl import F_GETFL, F_SETFL, fcntl
+        from fcntl import F_GETFL, F_SETFL, fcntl  # noqa: PLC0415
         flags = fcntl(fileno, F_GETFL)
         if flags & os.O_NONBLOCK:
             fcntl(fileno, F_SETFL, flags & ~os.O_NONBLOCK)
@@ -240,7 +244,7 @@ def make_blocking(fileno):
         pass
 
 
-def execute(tester, inputs, fails, exclusions=None, attributes=None):
+def execute(tester, inputs, fails, exclusions=None, attributes=None):  # noqa: PLR0915, C901
     """Execute tests in parallel, output results, return failure count."""
     if exclusions:
         input_exclusions = parse_exclude_files(exclusions, None)
@@ -274,7 +278,7 @@ def execute(tester, inputs, fails, exclusions=None, attributes=None):
         sys.stdout.write('\n'.join([
             'Ran %s tests.' % len(results),
             'Got %s successes.' % len(successes),
-            'Got %s failures.' % len(failures)
+            'Got %s failures.' % len(failures),
         ]) + '\n')
         if failures:
             sys.stdout.write('Unexpected failures:\n')
@@ -353,6 +357,6 @@ def execute(tester, inputs, fails, exclusions=None, attributes=None):
         (len(expected_failures), len(similar_expected_failures)),
         'Got %s unexpected failures in %s similarity groups.' %
         (len(unexpected_failures), len(similar_unexpected_failures)),
-        'Got %s unexpected successes.' % len(unexpected_successes), '\n'
+        'Got %s unexpected successes.' % len(unexpected_successes), '\n',
     ]))
     return len(unexpected_failures) + len(unexpected_successes)

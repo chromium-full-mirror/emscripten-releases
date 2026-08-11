@@ -44,7 +44,7 @@ def ListBuilds(revision):
         try:
             os_builds = proc.check_output(
                 ['gcloud', 'storage', 'ls',
-                 f'gs://{GetCloudStoragePath()}{builder}/{revision}'
+                 f'gs://{GetCloudStoragePath()}{builder}/{revision}',
                  ]).decode().strip().split('\n')
         except proc.CalledProcessError:
             os_builds = []

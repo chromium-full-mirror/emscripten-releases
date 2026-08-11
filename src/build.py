@@ -136,7 +136,7 @@ def IsLinux():
 
 
 def IsArm64():
-    return platform.machine() in ('aarch64', 'arm64')
+    return platform.machine() in {'aarch64', 'arm64'}
 
 
 def IsMac():
@@ -206,7 +206,7 @@ def PrebuiltCMakePlatformName():
         'linux': 'linux',
         'linux2': 'linux',
         'darwin': 'macos',
-        'win32': 'windows'
+        'win32': 'windows',
     }[sys.platform]
 
 
@@ -241,13 +241,13 @@ def BuilderPlatformName():
         'linux': 'linux',
         'linux2': 'linux',
         'darwin': 'mac',
-        'win32': 'windows'
+        'win32': 'windows',
     }[sys.platform]
 
 
 # Known failures.
 RUN_LLVM_TESTSUITE_FAILURES = [
-    os.path.join(SCRIPT_DIR, 'test', 'llvmtest_known_failures.txt')
+    os.path.join(SCRIPT_DIR, 'test', 'llvmtest_known_failures.txt'),
 ]
 
 # Optimization levels
@@ -310,12 +310,13 @@ def Tar(directory, print_content=False):
     # tell is to use all the available cores during compression.
     if buildbot.IsUploadingBot():
         if IsMac():
-            proc.check_call(['tar', 'cJf', tar, basename], cwd=up_directory)
+            cmd = ['tar', 'cJf', tar, basename]
         else:
-            proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar, basename], cwd=up_directory)
+            cmd = ['tar', '--use-compress-program', 'xz -T0', '-cf', tar, basename]
     else:
         # If we are not going to upload, use a faster compression method (i.e. none)
-        proc.check_call(['tar', 'cf', tar, basename], cwd=up_directory)
+        cmd = ['tar', 'cf', tar, basename]
+    proc.check_call(cmd, cwd=up_directory)
     proc.check_call(['ls', '-lh', tar], cwd=up_directory)
     return tar
 
@@ -328,7 +329,7 @@ def Zip(directory, print_content=False):
     compression = (zipfile.ZIP_DEFLATED if buildbot.IsUploadingBot()
                    else zipfile.ZIP_STORED)
     with zipfile.ZipFile(archive, 'w', compression) as z:
-        for root, dirs, files in os.walk(directory):
+        for root, _dirs, files in os.walk(directory):
             for name in files:
                 fs_path = os.path.join(root, name)
                 zip_path = os.path.relpath(fs_path, os.path.dirname(directory))
@@ -343,7 +344,7 @@ def UploadArchive(name, archive):
     """Archive the tar/zip file with the given name and the build number."""
 
     def extensions(path):
-        """Return all filename extensions (e.g. .tar.xz or .tgz)"""
+        """Return all filename extensions (e.g. .tar.xz or .tgz)."""
         root, ext = os.path.splitext(path)
         return ext if root == path else extensions(root) + ext
 
@@ -369,9 +370,9 @@ def FilterTargets(to_run, all_targets):
 
 
 class Source:
-    """Metadata about a sync-able source repo on the waterfall"""
-    def __init__(self, name, src_dir,
-                 custom_sync=None):
+    """Metadata about a sync-able source repo on the waterfall."""
+
+    def __init__(self, name, src_dir=None, custom_sync=None):
         self.name = name
         self.src_dir = src_dir
         self.custom_sync = custom_sync
@@ -381,8 +382,7 @@ class Source:
         self.custom_sync(self.name, self.src_dir)
 
 
-
-def SyncToolchain(name, src_dir):
+def SyncToolchain(_name, src_dir):
     if IsWindows():
         host_toolchains.SyncWinToolchain()
     else:
@@ -445,17 +445,17 @@ def SyncArchive(out_dir, name, url, create_out_dir=False):
         f.write(url + '\n')
 
 
-def SyncPrebuiltCMake(name, src_dir):
+def SyncPrebuiltCMake(_name, _src_dir):
     extension = '.zip' if IsWindows() else '.tar.gz'
     url = EMSDK_STORAGE_BASE + PREBUILT_CMAKE_BASE_NAME + extension
     SyncArchive(PrebuiltCMakeDir(), 'cmake', url)
 
 
-def SyncPrebuiltNodeJS(name, src_dir):
+def SyncPrebuiltNodeJS(name, _src_dir):
     extension = {
         'darwin': 'tar.gz',
         'linux': 'tar.xz',
-        'win32': 'zip'
+        'win32': 'zip',
     }[sys.platform]
     out_dir = GetPrebuilt(NODE_BASE_NAME + NodePlatformName())
     tarball = NODE_BASE_NAME + NodePlatformName() + '.' + extension
@@ -468,7 +468,7 @@ def LinuxSysroot(arch):
     return 'sysroot_debian_' + distro
 
 
-def SyncLinuxSysroots(name, src_dir):
+def SyncLinuxSysroots(name, _src_dir):
     if not (IsLinux() and host_toolchains.ShouldUseSysroot()):
         return
     for arch in ('x86_64', 'arm64'):
@@ -478,7 +478,7 @@ def SyncLinuxSysroots(name, src_dir):
                     create_out_dir=True)
 
 
-def SyncReleaseDeps(name, src_dir):
+def SyncReleaseDeps(_name, _src_dir):
     if not ShouldUseLTO():
         print('ShouldUseLTO is false, skipping release DEPS')
         return
@@ -492,15 +492,11 @@ def NoSync(*args):
 
 def AllSources():
     return [
-        Source('host-toolchain', work_dirs.GetV8(),
-               custom_sync=SyncToolchain),
-        Source('cmake', '',  # The source arg is ignored.
-               custom_sync=SyncPrebuiltCMake),
-        Source('nodejs', '',  # The source arg is ignored.
-               custom_sync=SyncPrebuiltNodeJS),
-        Source('sysroot', '',  # The source arg is ignored.
-               custom_sync=SyncLinuxSysroots),
-        Source('deps', '', custom_sync=SyncReleaseDeps)
+        Source('host-toolchain', work_dirs.GetV8(), custom_sync=SyncToolchain),
+        Source('cmake', custom_sync=SyncPrebuiltCMake),
+        Source('nodejs', custom_sync=SyncPrebuiltNodeJS),
+        Source('sysroot', custom_sync=SyncLinuxSysroots),
+        Source('deps', custom_sync=SyncReleaseDeps),
     ]
 
 
@@ -553,7 +549,7 @@ def MaybeOverrideCMakeCompiler():
         if IsLinux() and IsArm64():
             return [
                 '-DCMAKE_C_COMPILER=clang',
-                '-DCMAKE_CXX_COMPILER=clang++'
+                '-DCMAKE_CXX_COMPILER=clang++',
             ]
         else:
             return []
@@ -603,7 +599,7 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False):
+def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False):  # noqa: C901
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
 
@@ -729,11 +725,11 @@ def BuildEnv(build_dir, bin_subdir=False,
     cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1929'
     bin_dir = build_dir if not bin_subdir else os.path.join(build_dir, 'bin')
     Mkdir(bin_dir)
-    assert runtime in ['Release', 'Debug']
+    assert runtime in {'Release', 'Debug'}
     return cc_env
 
 
-def LLVM(build_dir, is_cross=False):
+def LLVM(build_dir, is_cross=False):  # noqa: C901
     buildbot.Step('LLVM')
     Mkdir(build_dir)
     cc_env = BuildEnv(build_dir, bin_subdir=True)
@@ -831,8 +827,8 @@ def LLVM(build_dir, is_cross=False):
     CopyLLVMTools(build_dir)
     install_bin = GetInstallDir('bin')
     for target in ('clang', 'clang++'):
-        for link in 'wasm32-', 'wasm32-wasi-':
-            link = os.path.join(install_bin, link + target)
+        for prefix in 'wasm32-', 'wasm32-wasi-':
+            link = os.path.join(install_bin, prefix + target)
             if not IsWindows():
                 if not os.path.islink(Executable(link)):
                     os.symlink(Executable(target), Executable(link))
@@ -877,7 +873,7 @@ def TestLLVMRegression():
         buildbot.Step('LLVM regression tests')
         RunWithUnixUtils(['ninja', 'check-all'], cwd=build_dir, env=cc_env)
     except proc.CalledProcessError:
-        buildbot.FailUnless(lambda: IsWindows())
+        buildbot.FailUnless(IsWindows)
 
 
 def UseLocalLibCXX():
@@ -904,7 +900,7 @@ def LibCXX(build_dir, is_cross=False):
     # extra special weird case, the LLVM regression test version (which does not
     # use LTO) needs to use static linking but also needs to be PIC because of the
     # dynamic loading tests.
-    cmake_on = { False: 'OFF', True: 'ON' }
+    cmake_on = {False: 'OFF', True: 'ON'}
     should_use_static = UseStaticLibCXX()
 
     BuildEnv(build_dir)
@@ -924,7 +920,7 @@ def LibCXX(build_dir, is_cross=False):
          f'-DLIBCXX_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
-         f'-DCMAKE_INSTALL_PREFIX={LibCXXTempInstall()}'
+         f'-DCMAKE_INSTALL_PREFIX={LibCXXTempInstall()}',
          ], build_dir,
          is_cross=is_cross,
          # Filter out the stdlib flags because we are bootstrapping stdlib
@@ -950,7 +946,7 @@ def Binaryen(build_dir, is_cross=False):
     cc_env = BuildEnv(build_dir, bin_subdir=True, runtime='Debug')
 
     cmake_command = CMakeCommandNative(
-        [GetSrcDir('binaryen')],build_dir, is_cross=is_cross)
+        [GetSrcDir('binaryen')], build_dir, is_cross=is_cross)
     cmake_command.extend(['-DINSTALL_LIBS=OFF', '-DBUILD_TESTS=OFF'])
     if ShouldUseLTO():
         cmake_command.append('-DBUILD_SHARED_LIBS=OFF')
@@ -985,6 +981,7 @@ def InstallEmscripten(is_cross):
         proc.check_call([os.path.join('tools', 'install.py'), em_install_dir],
                         cwd=em_src_dir)
 
+
 def Emscripten(is_cross=False):
     # Build the windows pylauncher executable.  We do this before the install
     # step to be sure we use the freshly-built executable rather than the
@@ -993,7 +990,8 @@ def Emscripten(is_cross=False):
     if IsWindows():
         # Remove any previously-created launcher scripts that are otherwise
         # git-ignored.
-        proc.check_call(['git', 'clean', '-fx', '*.bat', '*.exe', '*.ps1'], cwd=GetSrcDir('emscripten'))
+        proc.check_call(['git', 'clean', '-fx', '*.bat', '*.exe', '*.ps1'],
+                        cwd=GetSrcDir('emscripten'))
         exe = os.path.join(pylauncher_dir, 'pylauncher.exe')
         os.remove(exe)
         cc_env = host_toolchains.SetUpVSEnv(pylauncher_dir)
@@ -1086,7 +1084,7 @@ def VerifyMacArtifactsBuildArch(is_cross=False):
     # currently one exception which is allowed to be x86_64:
     closure_binary = 'google-closure-compiler-macos/compiler'
     print('Verifying architecture of MacOS binaries')
-    for root, dirs, files in os.walk(GetInstallDir()):
+    for root, _dirs, files in os.walk(GetInstallDir()):
         for f in files:
             path = os.path.join(root, f)
             with open(path, 'rb') as fd:
@@ -1213,9 +1211,10 @@ def TestCompression():
         if not IsWindows():
             tar_path = os.path.join(temp_dir, 'test.tar.xz')
             if IsMac():
-                proc.check_call(['tar', 'cJf', tar_path, 'test_dir'], cwd=temp_dir)
+                cmd = ['tar', 'cJf', tar_path, 'test_dir']
             else:
-                proc.check_call(['tar', '--use-compress-program', 'xz -T0', '-cf', tar_path, 'test_dir'], cwd=temp_dir)
+                cmd = ['tar', '--use-compress-program', 'xz -T0', '-cf', tar_path, 'test_dir']
+            proc.check_call(cmd, cwd=temp_dir)
             assert os.path.isfile(tar_path) and os.path.getsize(tar_path) > 0
 
 
@@ -1234,7 +1233,8 @@ def CheckEnvironment():
     cloud.ListBuilds('36767eb2cfa15eab9b22df0c7015925891cf74b1')
 
     # 4. Verify release script dependencies & version parsing
-    proc.check_call([sys.executable, os.path.join(SCRIPT_DIR, 'trigger_emsdk_release.py'), '--check'])
+    proc.check_call([sys.executable, os.path.join(SCRIPT_DIR, 'trigger_emsdk_release.py'),
+                     '--check'])
 
 
 # TODO: Now that we've gotten rid of the complex filtering mechanism, we can
@@ -1285,6 +1285,7 @@ class Test:
 
     def Test(self):
         self.runnable()
+
 
 def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     buildbot.Step('Execute emscripten testsuite (%s)' % name)
@@ -1356,6 +1357,7 @@ def TestEmtest():
     ExecuteEmscriptenTestSuite('emwasm', tests,
                                GetTestDir('emtest-out'))
 
+
 def GetSkiaPerfRemoteFilename(hash, suffix=''):
     # Follow the filename format specified at
     # https://skia.googlesource.com/buildbot/+/refs/heads/main/perf/FORMAT.md#storage
@@ -1386,7 +1388,7 @@ def TestOptimizationBenchmarks():
 
     files = [
         os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-pop.unopt.wasm'),
-        os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-flute-complex.unopt.wasm')
+        os.path.join(ROOT_DIR, 'third_party/wasm-files/dart-flute-complex.unopt.wasm'),
     ]
 
     results = []
@@ -1408,7 +1410,7 @@ def TestOptimizationBenchmarks():
             '--gufa', '-Os', '--type-merging', '-Os', '--type-finalizing',
             '--minimize-rec-groups',
             '-o', out_file,
-            f
+            f,
         ]
 
         print(f'Running benchmark for {basename}...')
@@ -1419,25 +1421,25 @@ def TestOptimizationBenchmarks():
         results.append({
             'key': {
                 'test': f'wasm-opt-time_{basename}',
-                'units': 's'
+                'units': 's',
             },
-            'measurement': duration
+            'measurement': duration,
         })
         results.append({
             'key': {
                 'test': f'wasm-opt-size_{basename}',
-                'units': 'bytes'
+                'units': 'bytes',
             },
-            'measurement': os.path.getsize(out_file)
+            'measurement': os.path.getsize(out_file),
         })
-        with open(out_file, 'rb') as f:
-            gzipped_size = len(zlib.compress(f.read()))
+        with open(out_file, 'rb') as out_file_f:
+            gzipped_size = len(zlib.compress(out_file_f.read()))
         results.append({
             'key': {
                 'test': f'wasm-opt-gzip-size_{basename}',
-                'units': 'bytes'
+                'units': 'bytes',
             },
-            'measurement': gzipped_size
+            'measurement': gzipped_size,
         })
 
     # Construct Skia Perf JSON
@@ -1446,9 +1448,9 @@ def TestOptimizationBenchmarks():
         'version': 1,
         'git_hash': hash,
         'key': {
-            'bot': 'linux-x64-builder'
+            'bot': 'linux-x64-builder',
         },
-        'results': results
+        'results': results,
     }
 
     stats_filename = GetTempDir('opt_benchmarks.json')
@@ -1470,6 +1472,8 @@ def TestLLVMTestSuite():
         ApplyPatches(os.path.join(ROOT_DIR, 'patches', 'llvm-test-suite'),
                      GetSrcDir('llvm-test-suite'))
 
+    test_suite_c_flags = '-msimd128 -mtail-call -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm'
+    test_suite_cxx_flags = test_suite_c_flags + ' -fwasm-exceptions'
     try:
         outdir = GetBuildDir('llvmtest-out')
         # The compiler changes on every run, so incremental builds don't make
@@ -1494,11 +1498,12 @@ def TestLLVMTestSuite():
             '-DCOMPILER_HAS_MATRIX_FLAG=OFF',
             '-DTEST_SUITE_EXTRA_EXE_LINKER_FLAGS=' +
             '-L %s -sTOTAL_MEMORY=1024MB -sEXIT_RUNTIME ' % outdir +
-            '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 -sPTHREAD_POOL_SIZE=2 -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -O3',
+            '-lnodefs.js -sNODERAWFS -sSTACK_SIZE=512KB -sASSERTIONS=1 ' +
+            '-sPTHREAD_POOL_SIZE=2 -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -O3',
             '-DCMAKE_STRIP=' + GetInstallDir('emscripten', 'emstrip.py'),
             '-DTEST_SUITE_LLVM_SIZE=' + GetInstallDir('emscripten', 'emsize.py'),
-            '-DTEST_SUITE_EXTRA_CXX_FLAGS=-msimd128 -fwasm-exceptions -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm -mtail-call',
-            '-DTEST_SUITE_EXTRA_C_FLAGS=-msimd128 -mtail-call -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm',
+            '-DTEST_SUITE_EXTRA_CXX_FLAGS=' + test_suite_cxx_flags,
+            '-DTEST_SUITE_EXTRA_C_FLAGS=' + test_suite_c_flags,
         ]
 
         proc.check_call(command, cwd=outdir)
@@ -1707,7 +1712,7 @@ def run(sync_targets, build_targets, test_targets):
     return buildbot.Failed()
 
 
-def main():
+def main():  # noqa
     global options
     start = time.time()
     options = ParseArgs()
@@ -1738,7 +1743,6 @@ def main():
     sync_include = options.sync_include if options.sync_include else []
     build_include = options.build_include if options.build_include else []
     test_include = options.test_include if options.test_include else []
-
 
     try:
         ret = run(sync_include, build_include, test_include)

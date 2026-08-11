@@ -25,7 +25,7 @@ import sys
 
 # Imports all of subprocess into the current namespace, effectively
 # re-exporting everything.
-from subprocess import *
+from subprocess import *  # noqa
 
 
 def Which(filename, cwd=None, is_executable=True):
@@ -54,7 +54,7 @@ def MungeExe(cmd, cwd):
     if exe.endswith('.py'):
         script = Which(exe, cwd, is_executable=False)
         return [sys.executable, script] + cmd[1:]
-    if exe in ('git', 'npm', 'gclient', 'gcloud'):
+    if exe in {'git', 'npm', 'gclient', 'gcloud'}:
         return [Which(exe, cwd)] + cmd[1:]
     return cmd
 

@@ -37,14 +37,14 @@ def SetupToolchain():
     return [
         sys.executable,
         os.path.join(work_dirs.GetV8(), 'build', 'toolchain', 'win',
-                     'setup_toolchain.py')
+                     'setup_toolchain.py'),
     ]
 
 
 def VSToolchainPy():
     return [
         sys.executable,
-        os.path.join(work_dirs.GetV8(), 'build', 'vs_toolchain.py')
+        os.path.join(work_dirs.GetV8(), 'build', 'vs_toolchain.py'),
     ]
 
 
@@ -58,14 +58,14 @@ def GetPrebuiltClang(binary):
 
 
 def SyncPrebuiltClang(src_dir):
-    """Update the prebuilt clang toolchain used by chromium bots"""
+    """Update the prebuilt clang toolchain used by chromium bots."""
     tools_clang = os.path.join(src_dir, 'tools', 'clang')
     assert os.path.isdir(tools_clang)
     proc.check_call([os.path.join(tools_clang, 'scripts', 'update.py')])
 
 
 def SyncWinToolchain():
-    """Update the VS toolchain used by Chromium bots"""
+    """Update the VS toolchain used by Chromium bots."""
     proc.check_call(VSToolchainPy() + ['update'])
 
 
@@ -87,8 +87,7 @@ def GetVSEnv(dir):
 
 
 def SetUpVSEnv(outdir):
-    """Set up the VS build environment used by Chromium bots"""
-
+    """Set up the VS build environment used by Chromium bots."""
     # Get the chromium-packaged toolchain directory info in a JSON file
     proc.check_call(VSToolchainPy() + ['get_toolchain_dir'])
     with open(WinToolchainJson()) as f:
@@ -101,7 +100,6 @@ def SetUpVSEnv(outdir):
                     [paths['path'], paths['win_sdk'], runtime_dirs, 'win',
                      'x64', 'environment.x64'],
                     cwd=outdir)
-
 
     # Recent versions of CMake use lib.exe to create archives. We need LLVM's
     # lib to use LTO, but it's not included in Chrome's packaging. lld-link
@@ -207,10 +205,11 @@ def IsReproxyRunning(server_address):
 
 
 def StartReproxy(host_platform):
-    # TODO: check that the config has been downloaded correctly (e.g. with the .gclient file) and
-    # that the user is logged into GCE auth
+    # TODO: check that the config has been downloaded correctly (e.g. with the
+    # .gclient file) and that the user is logged into GCE auth
 
-    # is it bad to just do SetReclientEnv(host_platform) here and add server_address to that set of vars?
+    # is it bad to just do SetReclientEnv(host_platform) here and add
+    # server_address to that set of vars?
     server_address = GetReproxyServerAddress(host_platform)
     os.environ['RBE_server_address'] = server_address
 
@@ -219,13 +218,13 @@ def StartReproxy(host_platform):
         return
 
     bootstrap_cmd = [
-        os.path.join(ReclientDir(), 'bootstrap') ,
+        os.path.join(ReclientDir(), 'bootstrap'),
         '-re_proxy=' + os.path.join(ReclientDir(), 'reproxy'),
         '-cfg=' + ReproxyCfg(),
-        '-server_address=' + server_address # this flag doesn't seem to work?
+        '-server_address=' + server_address,  # this flag doesn't seem to work?
     ]
     if buildbot.IsBot():
-        for k ,v in os.environ.items():
+        for k, v in os.environ.items():
             print(f'{k} = {v}')
     proc.check_call(bootstrap_cmd)
 
@@ -238,7 +237,7 @@ def StopReproxy(host_platform):
         f'-re_proxy={reproxy}',
         f'-cfg={ReproxyCfg()}',
         f'-server_address={server_address}',
-        '-shutdown'
+        '-shutdown',
     ])
 
 

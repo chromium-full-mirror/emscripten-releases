@@ -1,14 +1,49 @@
 target-version = "py311"
 preview = true
+line-length = 100
+
+lint.select = [
+  "ARG",
+  "ASYNC",
+  "B",
+  "D",
+  "C4",
+  "C90",
+  "COM",
+  "E",
+  "F",
+  "I",
+  "PERF",
+  "PIE",
+  "PL",
+  "UP",
+  "W",
+  "RUF",
+  "YTT",
+]
 
 lint.ignore = [
+  "D100", # https://docs.astral.sh/ruff/rules/undocumented-public-module/
+  "D101", # https://docs.astral.sh/ruff/rules/undocumented-public-class/
+  "D102", # https://docs.astral.sh/ruff/rules/undocumented-public-method/
+  "D103", # https://docs.astral.sh/ruff/rules/undocumented-public-function/
+  "D104", # https://docs.astral.sh/ruff/rules/undocumented-public-package/
+  "D105", # https://docs.astral.sh/ruff/rules/undocumented-magic-method/
+  "D107", # https://docs.astral.sh/ruff/rules/undocumented-public-init/
+  "D203", # https://docs.astral.sh/ruff/rules/incorrect-blank-line-before-class/
+  "D213", # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
   "UP031", # https://docs.astral.sh/ruff/rules/printf-string-formatting/
   "TRY002", # https://docs.astral.sh/ruff/rules/raise-vanilla-class/
   "TRY300", # https://docs.astral.sh/ruff/rules/try-consider-else/
+  "RUF005", # https://docs.astral.sh/ruff/rules/collection-literal-concatenation/
   "RUF015", # https://docs.astral.sh/ruff/rules/unnecessary-iterable-allocation-for-first-element/
   "S102", # https://docs.astral.sh/ruff/rules/exec-builtin/
   "BLE001", # https://docs.astral.sh/ruff/rules/blind-except/
   "N999", # https://docs.astral.sh/ruff/rules/invalid-module-name/
   "SIM115", # https://docs.astral.sh/ruff/rules/open-file-with-context-handler/
   "RET504", # https://docs.astral.sh/ruff/rules/unnecessary-assign/
+  "PLW0603", # https://docs.astral.sh/ruff/rules/global-statement/
+  "PLW1514", # https://docs.astral.sh/ruff/rules/unspecified-encoding/
+  "PLR0912", # https://docs.astral.sh/ruff/rules/too-many-branches/
+  "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
 ]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Usage: release-info.py <repo> <revision>
+"""Usage: release-info.py <repo> <revision>.
 
 Examples:
 Print info about an emscripten-releases revision:
@@ -19,6 +19,7 @@ As a special case, you can print info about a tag version
 Examples: release-info.py tag 2.0.16
 Or when you use a tag version you can leave out the mode:
 release-info.py 2.0.16
+
 """
 
 # TODO: Support another way to find the checkout directories (i.e. remove the
@@ -52,7 +53,7 @@ def RevisionDate(rev, cwd):
 
 
 def IsAncestor(rev1, rev2, cwd):
-    """Return True if rev1 is an ancestor of rev2"""
+    """Return True if rev1 is an ancestor of rev2."""
     # In other words, the history from rev2 includes rev1
     try:
         Git('merge-base', '--is-ancestor', rev1, rev2, cwd=cwd)
@@ -65,7 +66,7 @@ def IsAncestor(rev1, rev2, cwd):
 
 
 def TagEmrInfo():
-    """Return tag revision info from EMSDK
+    """Return tag revision info from EMSDK.
 
     Map tag version to  emscripten-releases revision.
     Example: { '2.0.16': <hash>, '2.0.15': <hash> }
@@ -84,7 +85,7 @@ def ParseDeps(deps_str):
     """
     # DEPS files are basically python, with a bit of extra environment required
     # that we can fake.
-    def Var(x):
+    def Var(_x):
         return ''
     Globals = {'Var': Var}
     exec(deps_str, Globals)
@@ -92,13 +93,13 @@ def ParseDeps(deps_str):
     revisions = {
         'emscripten': Vars['emscripten_revision'],
         'binaryen': Vars['binaryen_revision'],
-        'llvm-project': Vars['llvm_project_revision']
+        'llvm-project': Vars['llvm_project_revision'],
     }
     return revisions
 
 
 def GetDeps(emr_rev):
-    """Return the relevant DEPS info for an emscripten-releases revision"""
+    """Return the relevant DEPS info for an emscripten-releases revision."""
     # Figure out whether DEPS or DEPS.tagged-release is the correct deps
     changed = Git(
         'show', '--oneline', '--name-only', emr_rev, cwd=EMR_DIR).splitlines()
@@ -112,7 +113,7 @@ def GetDeps(emr_rev):
 
 
 def PrintEmrToolInfo(emr_rev):
-    """Print the date and deps info for an escripten-releases revision"""
+    """Print the date and deps info for an escripten-releases revision."""
     deps = GetDeps(emr_rev)
     emr_rev = Git('rev-parse', emr_rev).strip()
     emr_date = RevisionDate(emr_rev, EMR_DIR)
@@ -149,7 +150,7 @@ def IsTagVersion(revision):
 
 
 def EmrTagInfo(emr_rev):
-    """Find earliest tag that includes emr_rev"""
+    """Find earliest tag that includes emr_rev."""
     taginfo = TagEmrInfo()
     first_tag = None
     first_emr_rev = None
@@ -171,7 +172,7 @@ def EmrTagInfo(emr_rev):
 
 
 def ToolTagInfo(tool, tool_rev):
-    """Find the earliest tag that contains tool_rev"""
+    """Find the earliest tag that contains tool_rev."""
     tool_dir = os.path.join(EMR_DIR, tool)
     tool_rev = Git('rev-parse', tool_rev, cwd=tool_dir).strip()
     taginfo = TagEmrInfo()
@@ -200,13 +201,13 @@ def ToolTagInfo(tool, tool_rev):
 
 
 def FindEmrRevContaining(tool, tool_rev):
-    """Find the earliest emscripten-releases rev that contains tool_rev"""
+    """Find the earliest emscripten-releases rev that contains tool_rev."""
     tool_dir = os.path.join(EMR_DIR, tool)
     tool_rev = Git('rev-parse', tool_rev, cwd=tool_dir).strip()
     first_emr_rev = None
     first_tool_rev = None
     dep_name = tool.replace('-', '_') + '_revision'
-    emr_commits = Git('log', MAIN_BRANCH, '--pretty=format:%H', '-G', dep_name
+    emr_commits = Git('log', MAIN_BRANCH, '--pretty=format:%H', '-G', dep_name,
                       ).strip().split('\n')
     for r in emr_commits:
         emr_rev = r.split()[0]
@@ -221,7 +222,7 @@ def FindEmrRevContaining(tool, tool_rev):
 
 
 def FindEmrRevExact(tool, tool_rev):
-    """Find an emscripten-releases rev that updates tool to tool_rev, if any"""
+    """Find an emscripten-releases rev that updates tool to tool_rev, if any."""
     # This method is much faster but only finds commits that update DEPS to
     # exactly the desired rev. So it only works if every commit is rolled by
     # itself (i.e. not LLVM, and sometimes not other tools) .
@@ -229,7 +230,7 @@ def FindEmrRevExact(tool, tool_rev):
     tool_rev = Git('rev-parse', tool_rev, cwd=tool_dir).strip()
     # Rather than manually searching for the rev that rolled our revision, let
     # git do it for us. We expect to find 0-2 revs
-    deps_revs = Git('log', MAIN_BRANCH, '--format=oneline', '-G', tool_rev
+    deps_revs = Git('log', MAIN_BRANCH, '--format=oneline', '-G', tool_rev,
                     ).strip().split('\n')
     assert len(deps_revs) <= 2
     if len(deps_revs) == 0:
@@ -324,7 +325,7 @@ if __name__ == '__main__':
         PrintTagFullInfo(args.revision)
     elif not args.mode or args.mode == 'emscripten-releases':
         PrintEmrToolInfo(args.revision)
-    elif args.mode in ('llvm-project', 'binaryen', 'emscripten'):
+    elif args.mode in {'llvm-project', 'binaryen', 'emscripten'}:
         tag, emr_rev, tool_rev = ToolTagInfo(args.mode, args.revision)
         if not tag:
             PrintEmrRevContaining(args.mode, args.revision)

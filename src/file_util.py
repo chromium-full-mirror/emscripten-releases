@@ -41,7 +41,7 @@ def Mkdir(path):
         os.makedirs(path)
     except OSError as e:
         if not os.path.isdir(path):
-            raise Exception('Path %s is not a directory!' % path)
+            raise Exception('Path %s is not a directory!' % path) from e
         if not e.errno == errno.EEXIST:
             raise
 
@@ -74,6 +74,7 @@ def CopyTree(src, dst):
       src: Source. Must be an existing directory.
       dst: Destination directory. If it exists, must be a directory. Otherwise
            it will be created, along with parent directories.
+
     """
     print('Copying directory %s to %s' % (src, dst))
     if not os.path.isdir(dst):

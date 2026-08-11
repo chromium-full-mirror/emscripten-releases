@@ -14,7 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-"""Trigger the EMSDK release workflow on github when HEAD is an LTO release
+"""Trigger the EMSDK release workflow on github when HEAD is an LTO release.
 
 After an LTO build has finished, check whether all associated builds
 have been uploaded. If so, post an API call to GitHub to trigger the
@@ -41,7 +41,7 @@ root_dir = os.path.dirname(script_dir)
 
 
 def get_version(deps_file):
-    with open(deps_file, 'r') as f:
+    with open(deps_file) as f:
         content = f.read()
     match = re.search(r"^# VERSION: (.*)$", content, re.MULTILINE)
     if match:
@@ -75,7 +75,7 @@ def main(argv):
     message_body = subprocess.check_output(
         ['git', 'log', '-1', '--pretty=%b', lto_sha], cwd=root_dir, text=True)
 
-    match = re.search('DEPS from revision (.*)', message_body)
+    match = re.search(r'DEPS from revision (.*)', message_body)
     if not match:
         print('non-LTO DEPS revision not found in commit message')
         # TODO: exit with error instead?
@@ -99,4 +99,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main())

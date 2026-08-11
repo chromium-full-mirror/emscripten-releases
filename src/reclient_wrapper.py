@@ -21,7 +21,7 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SCRIPT_DIR)
 
-import host_toolchains
+import host_toolchains  # noqa: E402
 
 
 def main():
@@ -38,7 +38,7 @@ def main():
     args, compiler_cmd = parser.parse_known_args()
 
     # If no arguments are passed, show help
-    if not (args.start_reproxy or args.stop_reproxy or args.status_reproxy) and not compiler_cmd:
+    if not any((args.start_reproxy, args.stop_reproxy, args.status_reproxy, compiler_cmd)):
         parser.print_help()
         return 1
 

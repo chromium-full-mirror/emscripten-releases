@@ -51,7 +51,7 @@ def trigger_github_workflow(repo, workflow, payload):
 
     headers = {
         'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
     }
 
     response = requests.post(url, json=payload, headers=headers)
@@ -73,7 +73,7 @@ def trigger_emsdk_workflow(lto, nonlto, version):
             'lto-sha': lto,
             'nonlto-sha': nonlto,
             'version': version,
-        }
+        },
     }
     trigger_github_workflow(f'{EMSDK_REPO_OWNER}/emsdk', 'create-release.yml', payload)
 
@@ -82,4 +82,5 @@ def trigger_rebaseline_workflow():
     payload = {
         'ref': 'main',
     }
-    trigger_github_workflow(f'{EMSDK_REPO_OWNER}/emscripten', 'rebaseline-tests.yml', payload)
+    trigger_github_workflow(f'{EMSDK_REPO_OWNER}/emscripten', 'rebaseline-tests.yml',
+                            payload)

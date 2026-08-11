@@ -25,7 +25,7 @@ SCHEDULERS = {
     None: 'forced',
     'None': 'forced',
     'llvm_commits': 'llvm',
-    'clang_commits': 'clang'
+    'clang_commits': 'clang',
 }
 
 # Buildbot-provided environment.
@@ -39,7 +39,7 @@ BUILDBOT_BUCKET = os.environ.get('BUILDBOT_BUCKET', None)
 
 EMSCRIPTEN_RELEASES_BOT = 'emscripten-releases'
 
-assert BUILDBOT_MASTERNAME in [None, EMSCRIPTEN_RELEASES_BOT], \
+assert BUILDBOT_MASTERNAME in {None, EMSCRIPTEN_RELEASES_BOT}, \
     'unknown mastername: %s' % str(BUILDBOT_MASTERNAME)
 
 # Possible buckets include "ci" for normal builds, "try" for try builds, and
@@ -47,7 +47,7 @@ assert BUILDBOT_MASTERNAME in [None, EMSCRIPTEN_RELEASES_BOT], \
 CI_BUCKET = 'ci'
 TRY_BUCKET = 'try'
 
-assert BUILDBOT_BUCKET in [None, CI_BUCKET, TRY_BUCKET], \
+assert BUILDBOT_BUCKET in {None, CI_BUCKET, TRY_BUCKET}, \
     'unknown bucket: %s' % str(BUILDBOT_BUCKET)
 
 
@@ -66,8 +66,7 @@ def IsUploadingBot():
     """Return True if this is a bot that should upload builds."""
     if not IsBot():
         return False
-    assert BUILDBOT_BUCKET in (CI_BUCKET, TRY_BUCKET),\
-        'Unrecognized BUILDBOT_BUCKET'
+    assert BUILDBOT_BUCKET in {CI_BUCKET, TRY_BUCKET}, 'Unrecognized BUILDBOT_BUCKET'
     # We are on emscripten-releases. CI bots upload, but not try.
     return BUILDBOT_BUCKET == CI_BUCKET
 
@@ -113,8 +112,11 @@ def FailedList():
 
 
 def Warn():
-    """We mark this step as failing, but this step is flaky so we don't care
-  enough about this to make the bot red."""
+    """Mark this step as failing, but non-fatal.
+
+    We mark this step as failing, but this step is flaky so we don't care
+    enough about this to make the bot red.
+    """
     sys.stdout.flush()
     sys.stdout.write('\n@@@STEP_WARNINGS@@@\n')
     warned_steps.append(current_step)

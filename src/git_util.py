@@ -22,8 +22,7 @@ def GitRevision(cwd=None):
 
 
 def RevisionModifiesFile(f):
-    """Return True if the file f is modified in the index, working tree, or
-    HEAD commit."""
+    """Return True if the file f is modified in the index, working tree, or HEAD commit."""
     if not os.path.isfile(f):
         return False
     cwd = os.path.dirname(f)
