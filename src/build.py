@@ -1130,9 +1130,6 @@ def ArchiveBinaries(is_cross=False):
         print(f'Copying {archive} to {copy}')
         shutil.copy(archive, copy)
 
-    # To save space, Only upload release builds of aarch64-linux
-    if is_cross and IsLinux() and not ShouldUseLTO():
-        return
     UploadArchive(filename, archive)
 
 
