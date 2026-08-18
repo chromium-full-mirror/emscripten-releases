@@ -14,6 +14,7 @@
 
 import os
 
+import buildbot
 import proc
 
 
@@ -22,19 +23,24 @@ def GitRevision(cwd=None):
 
 
 def RevisionModifiesFile(f):
-    """Return True if the file f is modified in the index, working tree, or HEAD commit."""
+    """Return True if the file f is modified in HEAD commit.
+
+    Exception: When running on trybots the current revision is not yet committed
+    so we look for local changes in the working tree instead.
+    """
     if not os.path.isfile(f):
         return False
     cwd = os.path.dirname(f)
-    # If the file is modified in the index or working tree, then return true.
-    # This happens on trybots.
-    status = proc.check_output(['git', 'status', '--porcelain', f],
-                               cwd=cwd).strip()
-    changed = len(status) != 0
-    s = status if changed else '(unchanged)'
-    print('%s git status: %s' % (f, s))
-    if changed:
-        return True
+
+    # On trybots, the change being tested is applied directly to the working tree.
+    # We should only check if f itself is modified and never inspect HEAD.
+    if buildbot.IsTryBot():
+        status = proc.check_output(['git', 'status', '--porcelain', f],
+                                   cwd=cwd).strip()
+        changed = len(status) != 0
+        print('%s git status: %s' % (f, status if changed else '(unchanged)'))
+        return changed
+
     # Else find the most recent commit that modified f, and return true if
     # that's the HEAD commit.
     head_rev = GitRevision(cwd)

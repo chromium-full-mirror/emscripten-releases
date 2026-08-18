@@ -56,6 +56,11 @@ def IsBot():
     return BUILDBOT_BUILDNUMBER is not None
 
 
+def IsTryBot():
+    """Return True if running on a trybot."""
+    return BUILDBOT_BUCKET == TRY_BUCKET
+
+
 def BuildNumber():
     if IsBot():
         return BUILDBOT_REVISION
