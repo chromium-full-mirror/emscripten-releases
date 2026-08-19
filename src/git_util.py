@@ -33,18 +33,18 @@ def RevisionModifiesFile(f):
     cwd = os.path.dirname(f)
 
     # On trybots, the change being tested is applied directly to the working tree.
-    # We should only check if f itself is modified and never inspect HEAD.
+    # We should only check if `f` itself is modified and never inspect HEAD.
     if buildbot.IsTryBot():
         status = proc.check_output(['git', 'status', '--porcelain', f],
-                                   cwd=cwd).strip()
-        changed = len(status) != 0
+                                   cwd=cwd, text=True).strip()
+        changed = bool(status)
         print('%s git status: %s' % (f, status if changed else '(unchanged)'))
         return changed
 
-    # Else find the most recent commit that modified f, and return true if
-    # that's the HEAD commit.
-    head_rev = GitRevision(cwd)
-    last_rev = proc.check_output(
-        ['git', 'rev-list', '-n1', 'HEAD', f], cwd=cwd).strip().decode('utf-8')
-    print('Last rev modifying %s is %s, HEAD is %s' % (f, last_rev, head_rev))
-    return head_rev == last_rev
+    # Otherwise, see if `f` was modified in the HEAD commit using `git show`
+    out = proc.check_output(
+        ['git', 'show', '--name-only', '--format=', 'HEAD', '--', f],
+        cwd=cwd, text=True).strip()
+    changed = bool(out)
+    print('%s modified in HEAD: %s' % (f, changed))
+    return changed
