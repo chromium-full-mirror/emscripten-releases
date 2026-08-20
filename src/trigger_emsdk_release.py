@@ -33,6 +33,7 @@ import buildbot
 import cloud
 import git_util
 import github_actions
+import proc
 
 RELEASE_DEPS_FILE = 'DEPS.tagged-release'
 
@@ -60,6 +61,9 @@ def check():
 def main(argv):
     if '--check' in argv or '--test' in argv:
         return check()
+
+    gcloud_dir = os.path.join(root_dir, 'third_party', 'gcloud', 'bin')
+    proc.AddToPath(gcloud_dir)
 
     deps_file = os.path.join(root_dir, RELEASE_DEPS_FILE)
     if not git_util.RevisionModifiesFile(deps_file):

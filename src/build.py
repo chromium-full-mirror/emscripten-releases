@@ -1344,7 +1344,7 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     # fallback to Java.
     if IsMac():
         test_env['JAVA_HOME'] = JavaHomeDir()
-        AddToPath(JavaPath())
+        proc.AddToPath(JavaPath())
 
     try:
         proc.check_call(cmd, cwd=outdir, env=test_env)
@@ -1548,7 +1548,7 @@ def TestLLVMTestSuite():
 
 
 def TestBinaryenJS():
-    AddToPath(GetInstallDir('emscripten'))
+    proc.AddToPath(GetInstallDir('emscripten'))
     outdir = GetBuildDir('binaryenjs-test-out')
     Mkdir(outdir)
     test_env = os.environ.copy()
@@ -1556,7 +1556,7 @@ def TestBinaryenJS():
     # fallback to Java.
     if IsMac():
         test_env['JAVA_HOME'] = JavaHomeDir()
-        AddToPath(JavaPath())
+        proc.AddToPath(JavaPath())
     proc.check_call([GetSrcDir('binaryen', 'scripts', 'emcc-tests.sh')],
                     cwd=outdir, env=test_env)
 
@@ -1666,11 +1666,6 @@ def ParseArgs():
     return parser.parse_args()
 
 
-def AddToPath(path):
-    print("adding to path: %s" % path)
-    os.environ['PATH'] = path + os.pathsep + os.environ['PATH']
-
-
 def run(sync_targets, build_targets, test_targets):
     Clobber()
     Chdir(SCRIPT_DIR)
@@ -1679,18 +1674,18 @@ def run(sync_targets, build_targets, test_targets):
     SyncRepos(sync_targets)
 
     # Add prebuilt cmake to PATH so any subprocesses use a consistent cmake.
-    AddToPath(os.path.dirname(PrebuiltCMakeBin()))
+    proc.AddToPath(os.path.dirname(PrebuiltCMakeBin()))
 
     # Add ninja to the PATH (needed for both cmake and for running emscripten
     # tests).
-    AddToPath(NINJA_DIR)
+    proc.AddToPath(NINJA_DIR)
 
     # Add gcloud to the PATH (needed for cloud storage uploads/downloads).
-    AddToPath(GCLOUD_DIR)
+    proc.AddToPath(GCLOUD_DIR)
 
     # `npm` uses whatever `node` is in `PATH`. To make sure it uses the
     # Node.js version we want, we prepend the node bin dir to `PATH`.
-    AddToPath(NodeBinDir())
+    proc.AddToPath(NodeBinDir())
 
     try:
         BuildRepos(build_targets)

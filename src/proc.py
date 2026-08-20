@@ -28,6 +28,11 @@ import sys
 from subprocess import *  # noqa
 
 
+def AddToPath(path):
+    print("adding to path: %s" % path)
+    os.environ['PATH'] = path + os.pathsep + os.environ['PATH']
+
+
 def Which(filename, cwd=None, is_executable=True):
     if os.path.isabs(filename):
         return filename
