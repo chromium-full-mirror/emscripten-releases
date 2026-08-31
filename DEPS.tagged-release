@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 6.0.8
+# VERSION: 6.0.9
 
 
 vars = {
@@ -27,19 +27,19 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '89a81ef9b72ef1c677be6be89178d19598e5760f',
+  'binaryen_revision': 'd03c25ea43d8f147fc222f9b88ff3bf641abe8da',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': 'aeb67926e7de656da38bc807d83050af93578758',
+  'emscripten_revision': '4e4223852a0835923411059a3929907d7df1232e',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '4bfd08c2d769736841ae4f5705d76fa6daa39027',
+  'llvm_project_revision': '510126255f89d693717c1ce7105b593f995f07c1',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': 'd9740b53ddd6e9f2a86492c0fac070a41ce7ef67',
+  'v8_revision': '8a55ab2bed3aa45104e1987513f22f77c2e38e6d',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
