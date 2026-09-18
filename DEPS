@@ -33,6 +33,7 @@ vars = {
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
   'llvm-test-suite_revision': '6c6a59906becace341d439cb7e45a56a4b96640a',
+  'checkout_submodules': True,
 }
 
 deps = {
@@ -118,6 +119,7 @@ hooks = [
   {
     'name': 'binaryen_submodule_init',
     'pattern': '.',
+    'condition': 'checkout_submodules',
     'action': ['git', '-C', 'emscripten-releases/binaryen',
                'submodule', 'update', '--force', '--init'],
   },
