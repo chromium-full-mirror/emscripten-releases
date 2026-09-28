@@ -43,6 +43,11 @@ def _CheckRuffLint(input_api, output_api):
 def _CommonChecks(input_api, output_api):
     """Run checks common to both upload and commit."""
     results = []
+    results.extend(
+        input_api.RunTests(
+            input_api.canned_checks.CheckVPythonSpec(input_api, output_api),
+        ),
+    )
     results.extend(_CheckJSONFiles(input_api, output_api))
     results.extend(_CheckRuffLint(input_api, output_api))
     return results
