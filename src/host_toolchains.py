@@ -15,6 +15,7 @@
 
 import json
 import os
+import socket
 import sys
 
 import buildbot
@@ -173,31 +174,41 @@ def GetReproxyServerAddress(host_platform):
     return server_address
 
 
-def SetReclientEnv(host_platform):
+def RewrapperFlags(host_platform):
     exec_root = work_dirs.GetExecRoot()
-    os.environ['RBE_exec_root'] = exec_root
-    # Reclient's canonicalize working_dir feature doesn't work with CMake's absolute paths.
-    os.environ['RBE_canonicalize_working_dir'] = 'False'
-    os.environ['RBE_env_var_allowlist'] = 'INCLUDE,LIB,LIBPATH'
-
     rewrapper_cfg = RewrapperCfg(host_platform)
-    if not os.path.exists(rewrapper_cfg):
-        return
-
-    rbe_platform = GetConfigFlag(rewrapper_cfg, 'platform')
-    if not rbe_platform or 'InputRootAbsolutePath' in rbe_platform:
-        return
-
-    os.environ[
-        'RBE_platform'] = f'{rbe_platform},InputRootAbsolutePath={exec_root}'
-
-    os.environ['RBE_server_address'] = GetReproxyServerAddress(host_platform)
+    flags = [
+        f'-cfg={rewrapper_cfg}',
+        f'-exec_root={exec_root}',
+        # Reclient's canonicalize working_dir feature doesn't work with CMake's
+        # absolute paths.
+        '-canonicalize_working_dir=false',
+        '-env_var_allowlist=INCLUDE,LIB,LIBPATH',
+    ]
+    if os.path.exists(rewrapper_cfg):
+        rbe_platform = GetConfigFlag(rewrapper_cfg, 'platform')
+        if rbe_platform and 'InputRootAbsolutePath' not in rbe_platform:
+            flags.append(
+                f'-platform={rbe_platform},InputRootAbsolutePath={exec_root}')
+    return flags
 
 
 def IsReproxyRunning(server_address):
     if server_address.startswith('unix://'):
         sock_path = server_address[7:]
-        return os.path.exists(sock_path)
+        if not os.path.exists(sock_path):
+            return False
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                s.connect(sock_path)
+            return True
+        except OSError:
+            try:
+                os.unlink(sock_path)
+            except OSError:
+                pass
+            return False
     elif server_address.startswith('pipe://'):
         raise Exception('TODO: Support starting reproxy on windows')
     else:
@@ -207,10 +218,9 @@ def IsReproxyRunning(server_address):
 def StartReproxy(host_platform):
     # TODO: check that the config has been downloaded correctly (e.g. with the
     # .gclient file) and that the user is logged into GCE auth
-
-    # is it bad to just do SetReclientEnv(host_platform) here and add
-    # server_address to that set of vars?
     server_address = GetReproxyServerAddress(host_platform)
+    # reproxy.cfg does not specify server_address, and bootstrap does not
+    # forward its -server_address flag to reproxy, so pass it via the env.
     os.environ['RBE_server_address'] = server_address
 
     if IsReproxyRunning(server_address):
@@ -226,7 +236,7 @@ def StartReproxy(host_platform):
     if buildbot.IsBot():
         for k, v in os.environ.items():
             print(f'{k} = {v}')
-    proc.check_call(bootstrap_cmd)
+    proc.check_call(bootstrap_cmd, start_new_session=True)
 
 
 def StopReproxy(host_platform):
@@ -248,18 +258,9 @@ def GomaDir():
 def CMakeLauncherFlags(host_platform):
     flags = []
     if UsingReclient():
-        if 'WRAP_RECLIENT' in os.environ:
-            # For local and agent use, use a local wrapper for reclient, which
-            # internally handles starting reproxy. This allows 'ninja' to just
-            # work, without needing to run in build.py
-            compiler_launcher = ';'.join([
-                sys.executable,
-                os.path.join(os.path.dirname(__file__), 'reclient_wrapper.py')])
-        else:
-            # Use unwrapped reclient for bots, to avoid python overhead..
-            compiler_launcher = ';'.join([
-                os.path.join(ReclientDir(), 'rewrapper'),
-                f'-cfg={RewrapperCfg(host_platform)}'])
+        compiler_launcher = ';'.join(
+            [os.path.join(ReclientDir(), 'rewrapper')] +
+            RewrapperFlags(host_platform))
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:

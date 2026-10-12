@@ -662,9 +662,9 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
         command.extend(host_toolchains.CMakeLauncherFlags(host_toolchains.GetHostPlatform()))
     command.extend(args)
     # On Windows, CMake chokes on paths containing backslashes that come from
-    # the command line. Probably they just need to be escaped, but using '/'
-    # instead is easier and works just as well.
-    return [WindowsFSEscape(arg) for arg in command]
+    # the command line. Avoid WindowsFSEscape here because it mangles the URLs
+    # we pass on the command line.
+    return [arg.replace('\\', '/') for arg in command]
 
 
 def CleanLLVMInstall():
@@ -707,8 +707,6 @@ def CopyLLVMTools(build_dir):
 
 def BuildEnv(build_dir, bin_subdir=False,
              runtime='Release'):
-    if host_toolchains.UsingReclient():
-        host_toolchains.SetReclientEnv(host_toolchains.GetHostPlatform())
     if IsMac():
         # We need a ranlib that understands bitcode, but llvm-ranlib is not
         # included in Chrome's packaging. But ranlib is just ar by another name

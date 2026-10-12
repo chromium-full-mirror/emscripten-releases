@@ -26,22 +26,19 @@ import host_toolchains  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Reclient wrapper for compiler execution and reproxy management.',
-        usage='%(prog)s [options] | <compiler> [compiler_args...]')
-    parser.add_argument('--start-reproxy', action='store_true',
-                        help='Start the reproxy process')
-    parser.add_argument('--stop-reproxy', action='store_true',
-                        help='Stop the reproxy process')
-    parser.add_argument('--status-reproxy', action='store_true',
-                        help='Check the status of the reproxy process')
+        description='Manage the reclient reproxy process.')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--start', '--start-reproxy', dest='start_reproxy',
+                       action='store_true',
+                       help='Start the reproxy process (default)')
+    group.add_argument('--stop', '--stop-reproxy', dest='stop_reproxy',
+                       action='store_true',
+                       help='Stop the reproxy process')
+    group.add_argument('--status', '--status-reproxy', dest='status_reproxy',
+                       action='store_true',
+                       help='Check the status of the reproxy process')
 
-    args, compiler_cmd = parser.parse_known_args()
-
-    # If no arguments are passed, show help
-    if not any((args.start_reproxy, args.stop_reproxy, args.status_reproxy, compiler_cmd)):
-        parser.print_help()
-        return 1
-
+    args = parser.parse_args()
     host_platform = host_toolchains.GetHostPlatform()
 
     if args.status_reproxy:
@@ -57,23 +54,11 @@ def main():
             print(f'Reproxy is STOPPED (at {server_address})')
             return 1
 
-    if args.start_reproxy:
-        host_toolchains.StartReproxy(host_platform)
-        return 0
-
     if args.stop_reproxy:
         return host_toolchains.StopReproxy(host_platform)
 
-    # Set up environment variables
-    host_toolchains.SetReclientEnv(host_platform)
-
-    rewrapper = os.path.join(host_toolchains.ReclientDir(), 'rewrapper')
-    rewrapper_cfg = host_toolchains.RewrapperCfg(host_platform)
-
-    # The arguments passed to this script are the compiler and its arguments
-    cmd = [rewrapper, f'-cfg={rewrapper_cfg}'] + compiler_cmd
-
-    os.execv(rewrapper, cmd)
+    host_toolchains.StartReproxy(host_platform)
+    return 0
 
 
 if __name__ == '__main__':
