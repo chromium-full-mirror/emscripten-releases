@@ -1335,8 +1335,8 @@ def ExecuteEmscriptenTestSuite(name, tests, outdir, warn_only=False):
     test_env['EMTEST_SKIP_FLAKY'] = '1'
     test_env['EMSDK_PYTHON'] = EMSDK_PYTHON
     test_env['EMTEST_BENCHMARKERS'] = 'size'
+    test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
     if not IsLinux():
-        test_env['EMTEST_LACKS_NATIVE_CLANG'] = '1'
         test_env['EMTEST_SKIP_PKG_CONFIG'] = '1'
 
     # On Mac, the closure compiler only supports one of x86-64/arm64. Allow
