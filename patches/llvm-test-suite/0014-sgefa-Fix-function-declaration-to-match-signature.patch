@@ -1,7 +1,7 @@
-From dd69cca6c56a51d278b0bf0e43b9aaac54418c23 Mon Sep 17 00:00:00 2001
+From 5704b856897874113533c1e16854b5121250b0ec Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Wed, 11 Feb 2026 03:50:13 +0000
-Subject: [PATCH 15/30] sgefa: Fix function declaration to match signature
+Subject: [PATCH 14/22] sgefa: Fix function declaration to match signature
 
 ---
  MultiSource/Applications/sgefa/ge.h | 2 +-
@@ -18,5 +18,5 @@ index dc97a01a3..e9e9a862e 100644
 -extern int vexopy();
 +extern void vexopy();
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

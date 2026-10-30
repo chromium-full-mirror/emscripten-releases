@@ -1,7 +1,7 @@
-From 22bcdd2f5b68bf77fd922a728f2c3b7b9501905a Mon Sep 17 00:00:00 2001
+From 1a44ed1cbf0ee4addfe74fe1b87b5b902f26f8e1 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Wed, 11 Feb 2026 04:31:31 +0000
-Subject: [PATCH 16/30] ALAC: Fix stdin/stdout support by buffering to
+Subject: [PATCH 15/22] ALAC: Fix stdin/stdout support by buffering to
  temporary files
 
 The alacconvert-encode and alacconvert-decode tools rely on fseek and
@@ -244,5 +244,5 @@ index 9dd5f016e..ab00eb34c 100644
  	return 0;
  }
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

@@ -1,7 +1,7 @@
-From 8e4e88e3512de9dd5a74f2bc4304f0bb10122815 Mon Sep 17 00:00:00 2001
+From a911c4813e710f1f4258e34b7157c3b3637eeacc Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Tue, 3 Feb 2026 23:53:19 +0000
-Subject: [PATCH 10/30] BuiltinTypeInfo: Add extra newline to reference output
+Subject: [PATCH 10/22] BuiltinTypeInfo: Add extra newline to reference output
 
 Emscripten's NODERAWFS seems to force this on exit.
 ---
@@ -17,5 +17,5 @@ index 5e55c3e5e..39f6345a1 100644
 +0
 +exit 0
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

@@ -1,0 +1,71 @@
+From 9533f87bbb43988a1fddda385a79b59743c035a2 Mon Sep 17 00:00:00 2001
+From: Derek Schuff <dschuff@chromium.org>
+Date: Tue, 27 Jan 2026 05:32:15 +0000
+Subject: [PATCH 01/22] lencod: fix signature mismatches
+
+---
+ MultiSource/Applications/JM/lencod/q_matrix.c  | 4 ++--
+ MultiSource/Applications/JM/lencod/q_offsets.c | 4 ++--
+ MultiSource/Applications/JM/lencod/slice.c     | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/MultiSource/Applications/JM/lencod/q_matrix.c b/MultiSource/Applications/JM/lencod/q_matrix.c
+index 9e65ba6ce..cdad5552e 100644
+--- a/MultiSource/Applications/JM/lencod/q_matrix.c
++++ b/MultiSource/Applications/JM/lencod/q_matrix.c
+@@ -14,7 +14,7 @@
+ #include "global.h"
+ #include "memalloc.h"
+ 
+-extern char *GetConfigFileContent (char *Filename, int error_type);
++extern char *GetConfigFileContent (char *Filename);
+ 
+ #define MAX_ITEMS_TO_PARSE  1000
+ 
+@@ -423,7 +423,7 @@ void Init_QMatrix (void)
+   if(input->ScalingMatrixPresentFlag)
+   {
+     printf ("Parsing QMatrix file %s ", input->QmatrixFile);
+-    content = GetConfigFileContent(input->QmatrixFile, 0);
++    content = GetConfigFileContent(input->QmatrixFile);
+     if(content!='\0')
+       ParseMatrix(content, strlen (content));
+     else
+diff --git a/MultiSource/Applications/JM/lencod/q_offsets.c b/MultiSource/Applications/JM/lencod/q_offsets.c
+index 01e80f1d2..3259eac5b 100644
+--- a/MultiSource/Applications/JM/lencod/q_offsets.c
++++ b/MultiSource/Applications/JM/lencod/q_offsets.c
+@@ -14,7 +14,7 @@
+ #include "global.h"
+ #include "memalloc.h"
+ 
+-extern char *GetConfigFileContent (char *Filename, int error_type);
++extern char *GetConfigFileContent (char *Filename);
+ 
+ #define MAX_ITEMS_TO_PARSE  1000
+ 
+@@ -357,7 +357,7 @@ void Init_QOffsetMatrix ()
+   {
+     printf ("Parsing Quantization Offset Matrix file %s ",
+       input->QOffsetMatrixFile);
+-    content = GetConfigFileContent (input->QOffsetMatrixFile, 0);
++    content = GetConfigFileContent (input->QOffsetMatrixFile);
+     if (content != '\0')
+       ParseQOffsetMatrix (content, strlen (content));
+     else
+diff --git a/MultiSource/Applications/JM/lencod/slice.c b/MultiSource/Applications/JM/lencod/slice.c
+index 85102e94b..62a4819fa 100644
+--- a/MultiSource/Applications/JM/lencod/slice.c
++++ b/MultiSource/Applications/JM/lencod/slice.c
+@@ -98,7 +98,7 @@ int start_slice()
+ 
+     currStream->write_flag = 0;
+     if (i==0)     // First partition
+-      header_len += SliceHeader (0);
++      header_len += SliceHeader ();
+     else          // Second/Third partition
+       header_len += Partition_BC_Header(i);
+ 
+-- 
+2.56.0.212.g129ede20d9-goog
+

@@ -1,7 +1,7 @@
-From 1c92851d79b096ce07021558cebd5acafa8a6992 Mon Sep 17 00:00:00 2001
+From bca96509e21c60bec6de479445886a7945b0a9d4 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 20:00:56 +0000
-Subject: [PATCH 06/30] ClamAV: Fix database loading failure under Emscripten
+Subject: [PATCH 06/22] ClamAV: Fix database loading failure under Emscripten
  NODERAWFS
 
 This change resolves an issue where clamscan would fail to find any virus
@@ -123,5 +123,5 @@ index 9cd1267ae..7055a2d55 100644
  }
  
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

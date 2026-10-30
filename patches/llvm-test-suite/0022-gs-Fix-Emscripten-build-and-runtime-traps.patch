@@ -1,7 +1,7 @@
-From 924c443e95e7008d64a925552781449586d71b65 Mon Sep 17 00:00:00 2001
+From 359fa194526fac00e57efee0049493a278b152cb Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 13 Feb 2026 22:27:58 +0000
-Subject: [PATCH 30/30] gs: Fix Emscripten build and runtime traps
+Subject: [PATCH 22/22] gs: Fix Emscripten build and runtime traps
 
 - Remove problematic 'extern main();' declarations in gsmain.c that
   caused linker errors due to Emscripten's function renaming.
@@ -115,5 +115,5 @@ index 26ebda5fd..71b8cecca 100644
  /* Operand stack manipulation */
  extern ref *osbot, *osp, *ostop;
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

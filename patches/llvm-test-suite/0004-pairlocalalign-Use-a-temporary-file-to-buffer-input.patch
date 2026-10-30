@@ -1,7 +1,7 @@
-From 2a7b20b9b2778bf2f67211e5ccdbca1845841f70 Mon Sep 17 00:00:00 2001
+From 684f1c71920d526fb7b42503cf70627708106b55 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 00:55:49 +0000
-Subject: [PATCH 04/30] pairlocalalign: Use a temporary file to buffer input
+Subject: [PATCH 04/22] pairlocalalign: Use a temporary file to buffer input
 
   The main function in pairlocalalign.c followed this sequence when no input file was specified:
    1. It assigned infp = stdin.
@@ -53,5 +53,5 @@ index 7c5c5afd4..04954033a 100644
  	getnumlen( infp );
  	rewind( infp );
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

@@ -1,7 +1,7 @@
-From 63dcc2184c1fbeffbb29875402b409eb3694cac4 Mon Sep 17 00:00:00 2001
+From e6f3368ec98e2df2def978e5476ded011d90cae9 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Wed, 11 Feb 2026 00:48:47 +0000
-Subject: [PATCH 13/30] Burg: Fix function pointer typedef
+Subject: [PATCH 12/22] Burg: Fix function pointer typedef
 
 ---
  MultiSource/Applications/Burg/b.h | 2 +-
@@ -21,5 +21,5 @@ index 106bd0d16..ea22e2e8a 100644
  extern void reveachList ARGS((ListFn, List));
  
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

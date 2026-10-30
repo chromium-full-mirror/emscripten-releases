@@ -1,7 +1,7 @@
-From 3e6988ec731ca9093525623d31ffe732ec61234e Mon Sep 17 00:00:00 2001
+From 412b831376106985e5c04e717eefa481e2260537 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Tue, 27 Jan 2026 05:32:25 +0000
-Subject: [PATCH 02/30] 7zip: Modify macros to avoid use of getpass function
+Subject: [PATCH 02/22] 7zip: Modify macros to avoid use of getpass function
 
 ---
  MultiSource/Benchmarks/7zip/CPP/myWindows/config.h | 3 +++
@@ -22,5 +22,5 @@ index 58fa1f5fd..a5f2005a7 100644
      #if !defined(sun) && !defined(_AIX)
        #define ENV_HAVE_TIMEGM
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

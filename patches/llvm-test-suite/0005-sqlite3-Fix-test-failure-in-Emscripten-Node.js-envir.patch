@@ -1,7 +1,7 @@
-From f879ca7ef90052d7b2740f56de8549288a14e958 Mon Sep 17 00:00:00 2001
+From bc0ef944d3593059bacd29b485d4d689291d7f12 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 17:13:09 +0000
-Subject: [PATCH 05/30] sqlite3: Fix test failure in Emscripten/Node.js
+Subject: [PATCH 05/22] sqlite3: Fix test failure in Emscripten/Node.js
  environment
 
 The sqlite3 test was failing due to an output mismatch where interactive
@@ -57,5 +57,5 @@ index 6fe9324a6..272d98117 100644
    }
    if( i<argc ){
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 

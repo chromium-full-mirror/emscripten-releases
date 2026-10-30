@@ -1,7 +1,7 @@
-From 627162be026b90fdf5f49ac377e6ad6503c4af90 Mon Sep 17 00:00:00 2001
+From 02baea7d5dba5350fb9ed276bf4539965bc0d962 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 13 Feb 2026 20:47:32 +0000
-Subject: [PATCH 25/30] CLAMR: Fix build for Emscripten
+Subject: [PATCH 18/22] CLAMR: Fix build for Emscripten
 
 - Guard local fmemopen implementation to use system version on Emscripten.
 - Provide local SLIST macros in genmalloc.c as <sys/queue.h> is missing.
@@ -88,5 +88,5 @@ index b4b4e5080..79dac6236 100644
  #include <stdlib.h>
  #include "genmalloc.h"
 -- 
-2.53.0.1213.gd9a14994de-goog
+2.56.0.212.g129ede20d9-goog
 
