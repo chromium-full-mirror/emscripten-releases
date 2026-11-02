@@ -1,5 +1,6 @@
 # Managed by DEPS checkouts
 /binaryen/
+/buildtools/
 /emscripten/
 /llvm-project/
 /llvm-test-suite/

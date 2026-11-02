@@ -129,11 +129,11 @@ def UsingReclient():
 
 
 def ReclientDir():
-    return os.path.join(work_dirs.GetV8(), 'buildtools', 'reclient')
+    return os.path.join(work_dirs.GetSync(), 'buildtools', 'reclient')
 
 
 def RewrapperCfg(platform):
-    return os.path.join(work_dirs.GetV8(),
+    return os.path.join(work_dirs.GetSync(),
                         'buildtools',
                         'reclient_cfgs',
                         'chromium-browser-clang',
@@ -141,7 +141,7 @@ def RewrapperCfg(platform):
 
 
 def ReproxyCfg():
-    return os.path.join(work_dirs.GetV8(),
+    return os.path.join(work_dirs.GetSync(),
                         'buildtools',
                         'reclient_cfgs',
                         'reproxy.cfg')

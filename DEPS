@@ -34,6 +34,10 @@ vars = {
   # and whatever else without interference from each other.
   'llvm-test-suite_revision': '6c6a59906becace341d439cb7e45a56a4b96640a',
   'checkout_submodules': True,
+  # Fetch reclient binaries and configs required for RBE builds.
+  'download_reclient': True,
+  'rbe_instance': Str('projects/rbe-chrome-untrusted/instances/default_instance'),
+  'reclient_version': 're_client_version:0.185.0.db415f21-gomaip',
 }
 
 deps = {
@@ -42,6 +46,17 @@ deps = {
   'emscripten-releases/llvm-project': Var('llvm_project_url') + '@' + Var('llvm_project_revision'),
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
+  'emscripten-releases/buildtools/reclient': {
+    'packages': [
+      {
+        'package': 'infra/rbe/client/${{platform}}',
+        'version': Var('reclient_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'download_reclient and '
+                 '(host_cpu != "arm64" or host_os == "mac")',
+  },
   'emscripten-releases/third_party/ninja': {
     'packages': [
       {
@@ -122,6 +137,13 @@ hooks = [
     'condition': 'checkout_submodules',
     'action': ['git', '-C', 'emscripten-releases/binaryen',
                'submodule', 'update', '--force', '--init'],
+  },
+  {
+    'name': 'configure_reclient_cfgs',
+    'pattern': '.',
+    'condition': 'download_reclient',
+    'action': ['python3', 'emscripten-releases/src/configure_reclient_cfgs.py',
+               Var('rbe_instance')],
   },
 ]
 
