@@ -8,10 +8,7 @@ vars = {
   'emscripten_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten',
   'llvm_project_url': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-project',
   'v8_url': 'https://chromium.googlesource.com/v8/v8',
-  # WARNING: This is a mirror of the old LLVM git mirror of the SVN repo. The github
-  # repo URL is different, and has different hashes.
-  'llvm-test-suite_url': 'https://chromium.googlesource.com/native_client/pnacl-llvm-testsuite',
-  # TODO: v8 for testing, Gcc for torture tests, Update llvm test-suite to github
+  'llvm-test-suite_url': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-test-suite',
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
