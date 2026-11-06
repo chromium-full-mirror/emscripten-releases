@@ -1,4 +1,4 @@
-From 5704b856897874113533c1e16854b5121250b0ec Mon Sep 17 00:00:00 2001
+From 69081923e15f49cced5dbf38230bacd31c85a226 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Wed, 11 Feb 2026 03:50:13 +0000
 Subject: [PATCH 14/22] sgefa: Fix function declaration to match signature
@@ -18,5 +18,5 @@ index dc97a01a3..e9e9a862e 100644
 -extern int vexopy();
 +extern void vexopy();
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

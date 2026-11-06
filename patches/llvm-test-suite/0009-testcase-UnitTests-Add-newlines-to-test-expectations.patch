@@ -1,4 +1,4 @@
-From 86571d31713dbad32f5c2c37cf3c198aa745b19e Mon Sep 17 00:00:00 2001
+From db97361d6588b8a9b3128eb4a6063ce025d8edd6 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Tue, 3 Feb 2026 23:35:01 +0000
 Subject: [PATCH 09/22] testcase-* UnitTests: Add newlines to test expectations
@@ -44,5 +44,5 @@ index 5e55c3e5e..39f6345a1 100644
 +0
 +exit 0
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

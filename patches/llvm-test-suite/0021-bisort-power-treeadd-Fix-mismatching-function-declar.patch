@@ -1,4 +1,4 @@
-From 21c6c335a6b2ca533741900ebb773350e1bd858f Mon Sep 17 00:00:00 2001
+From 1542ff61c59f25bcad7b1e574d92d398df1b256d Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Sat, 14 Feb 2026 03:39:54 +0000
 Subject: [PATCH 21/22] bisort, power, treeadd: Fix mismatching function
@@ -49,5 +49,5 @@ index 97828a8cf..0897a043d 100644
  tree_t *TreeAlloc (int level, int lo, int proc) {
    if (level == 0)
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

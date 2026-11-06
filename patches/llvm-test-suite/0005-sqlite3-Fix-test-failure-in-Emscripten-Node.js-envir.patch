@@ -1,4 +1,4 @@
-From bc0ef944d3593059bacd29b485d4d689291d7f12 Mon Sep 17 00:00:00 2001
+From 3d4c0a5ca9feda2ffd415e81782952f7d8c20c6b Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 17:13:09 +0000
 Subject: [PATCH 05/22] sqlite3: Fix test failure in Emscripten/Node.js
@@ -57,5 +57,5 @@ index 6fe9324a6..272d98117 100644
    }
    if( i<argc ){
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

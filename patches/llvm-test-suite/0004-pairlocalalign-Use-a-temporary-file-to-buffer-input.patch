@@ -1,4 +1,4 @@
-From 684f1c71920d526fb7b42503cf70627708106b55 Mon Sep 17 00:00:00 2001
+From c585f05c22c49966ede29ecb115ed4d27839ba73 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 00:55:49 +0000
 Subject: [PATCH 04/22] pairlocalalign: Use a temporary file to buffer input
@@ -53,5 +53,5 @@ index 7c5c5afd4..04954033a 100644
  	getnumlen( infp );
  	rewind( infp );
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

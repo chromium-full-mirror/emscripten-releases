@@ -29,7 +29,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
-  'llvm-test-suite_revision': '6c6a59906becace341d439cb7e45a56a4b96640a',
+  'llvm-test-suite_revision': 'db60f7a84546b7af3d3f1e2e187a1baf7cf155a8',
   'checkout_submodules': True,
   # Fetch reclient binaries and configs required for RBE builds.
   'download_reclient': True,

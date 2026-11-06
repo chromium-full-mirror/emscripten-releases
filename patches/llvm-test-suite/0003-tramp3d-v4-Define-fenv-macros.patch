@@ -1,4 +1,4 @@
-From 3cdabea039326fa85057942d236de57d7ec99251 Mon Sep 17 00:00:00 2001
+From 578970d5835f8a710de54d8a4d34b756c3893908 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Wed, 28 Jan 2026 01:13:08 +0000
 Subject: [PATCH 03/22] tramp3d-v4: Define fenv macros
@@ -35,5 +35,5 @@ index 8f9afb834..32a55e646 100644
  #include <complex>
  #include <algorithm>
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

@@ -1,4 +1,4 @@
-From 02baea7d5dba5350fb9ed276bf4539965bc0d962 Mon Sep 17 00:00:00 2001
+From 3f24b24a801c45a990ef858a47b27ab8610ddc14 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 13 Feb 2026 20:47:32 +0000
 Subject: [PATCH 18/22] CLAMR: Fix build for Emscripten
@@ -88,5 +88,5 @@ index b4b4e5080..79dac6236 100644
  #include <stdlib.h>
  #include "genmalloc.h"
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

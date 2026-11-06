@@ -1,4 +1,4 @@
-From 1720f67107c48e070297e91335dd698f92fbbe8c Mon Sep 17 00:00:00 2001
+From 871ee56631b2811cd21dd3d101abd36f76c6d3da Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Tue, 3 Feb 2026 20:20:36 +0000
 Subject: [PATCH 07/22] ackermann: remove recursion to avoid stack overflow
@@ -40,5 +40,5 @@ index a46945c55..3c4430ef7 100644
  int main(int argc, char *argv[]) {
  #ifdef SMALL_PROBLEM_SIZE
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

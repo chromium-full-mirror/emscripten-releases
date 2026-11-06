@@ -1,4 +1,4 @@
-From d3ee21b8e347ca7589da75c16f196b6f24e291fe Mon Sep 17 00:00:00 2001
+From 80a455013c19dfe29368bfae3ada9b0b2cccd9ee Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 13 Feb 2026 22:00:56 +0000
 Subject: [PATCH 19/22] office-ispell: Add define to enable USE_TERMIOS instead
@@ -21,5 +21,5 @@ index 5fc7401b7..960476d8a 100644
  #include <termios.h>
  #define USE_TERMIOS
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

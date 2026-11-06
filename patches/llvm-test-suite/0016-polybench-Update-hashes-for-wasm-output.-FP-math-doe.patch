@@ -1,4 +1,4 @@
-From 223832e9668682fe3341712d7cea85d6bc4f1643 Mon Sep 17 00:00:00 2001
+From 18d33418b68ea188a2d454469213492248a6c8ad Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Thu, 12 Feb 2026 00:14:16 +0000
 Subject: [PATCH 16/22] polybench: Update hashes for wasm output. FP math
@@ -216,5 +216,5 @@ index a10422ce2..66e24e11f 100644
 -1c3784e0b07769f7ef84d1e39b23a1e4
 +97958e5ad0df4e509d5b7b8134fa6ccc
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

@@ -1,4 +1,4 @@
-From 9533f87bbb43988a1fddda385a79b59743c035a2 Mon Sep 17 00:00:00 2001
+From 739ff99d6b988e036b89411b2d58b35cdcfbc9e6 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Tue, 27 Jan 2026 05:32:15 +0000
 Subject: [PATCH 01/22] lencod: fix signature mismatches
@@ -67,5 +67,5 @@ index 85102e94b..62a4819fa 100644
        header_len += Partition_BC_Header(i);
  
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

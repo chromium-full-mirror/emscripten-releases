@@ -1,4 +1,4 @@
-From 0e520af7ded21cf3b16c05d050d8989d023f34a0 Mon Sep 17 00:00:00 2001
+From 34d9347a12ae4b5854bd91b8f85d7619bc0314b5 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 6 Feb 2026 21:36:36 +0000
 Subject: [PATCH 11/22] siod: Emscripten support and GC stack protection
@@ -636,5 +636,5 @@ index 21f2c3ff4..7541c9440 100644
  #else
   namlen = r->d_namlen;
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

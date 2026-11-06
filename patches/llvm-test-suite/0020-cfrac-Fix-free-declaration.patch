@@ -1,4 +1,4 @@
-From b0ff5669fed6c3252237ea4c3b212374892fdb00 Mon Sep 17 00:00:00 2001
+From 63b7f4d1f32540f5a637b7d80ecba38e108e0fee Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Sat, 14 Feb 2026 04:04:55 +0000
 Subject: [PATCH 20/22] cfrac: Fix free() declaration
@@ -21,5 +21,5 @@ index 136b9b48e..e83dc98fa 100644
  #endif
  
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

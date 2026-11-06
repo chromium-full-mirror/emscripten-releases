@@ -1,4 +1,4 @@
-From 359fa194526fac00e57efee0049493a278b152cb Mon Sep 17 00:00:00 2001
+From df694db843a485bcff5889b8c77e49870b060f56 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 13 Feb 2026 22:27:58 +0000
 Subject: [PATCH 22/22] gs: Fix Emscripten build and runtime traps
@@ -115,5 +115,5 @@ index 26ebda5fd..71b8cecca 100644
  /* Operand stack manipulation */
  extern ref *osbot, *osp, *ostop;
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 

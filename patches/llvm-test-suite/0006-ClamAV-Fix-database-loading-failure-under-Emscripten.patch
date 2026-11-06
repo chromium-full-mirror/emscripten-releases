@@ -1,4 +1,4 @@
-From bca96509e21c60bec6de479445886a7945b0a9d4 Mon Sep 17 00:00:00 2001
+From cb79bc0a890837290c6a332105b7781ee6dfe345 Mon Sep 17 00:00:00 2001
 From: Derek Schuff <dschuff@chromium.org>
 Date: Fri, 30 Jan 2026 20:00:56 +0000
 Subject: [PATCH 06/22] ClamAV: Fix database loading failure under Emscripten
@@ -73,7 +73,7 @@ index 1cf8b525f..d12d06c64 100644
  Scanning clam.zip
  Recognized %s file
 diff --git a/MultiSource/Applications/ClamAV/libclamav_readdb.c b/MultiSource/Applications/ClamAV/libclamav_readdb.c
-index 9cd1267ae..7055a2d55 100644
+index 75c6a12b4..ee23664b1 100644
 --- a/MultiSource/Applications/ClamAV/libclamav_readdb.c
 +++ b/MultiSource/Applications/ClamAV/libclamav_readdb.c
 @@ -1218,15 +1218,19 @@ int cl_load(const char *path, struct cl_engine **engine, unsigned int *signo, un
@@ -123,5 +123,5 @@ index 9cd1267ae..7055a2d55 100644
  }
  
 -- 
-2.56.0.212.g129ede20d9-goog
+2.56.0.455.g6c5a503b38-goog
 
