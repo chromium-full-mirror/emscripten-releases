@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 6.0.13
+# VERSION: 7.0.0
 
 
 vars = {
@@ -19,32 +19,33 @@ vars = {
   'emscripten_url': 'https://chromium.googlesource.com/external/github.com/emscripten-core/emscripten',
   'llvm_project_url': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-project',
   'v8_url': 'https://chromium.googlesource.com/v8/v8',
-  # WARNING: This is a mirror of the old LLVM git mirror of the SVN repo. The github
-  # repo URL is different, and has different hashes.
-  'llvm-test-suite_url': 'https://chromium.googlesource.com/native_client/pnacl-llvm-testsuite',
-  # TODO: v8 for testing, Gcc for torture tests, Update llvm test-suite to github
+  'llvm-test-suite_url': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-test-suite',
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': 'a631c1445ced72a905b3303b26f148fc706647dd',
+  'binaryen_revision': 'a9141c8ccdd082009c61970e715c02a8652a3f6f',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': 'e13ee988ce3d87a738dd8f3661d02223308c412a',
+  'emscripten_revision': '777e6e5db7b4990bcaeb1b9998ed642cc84e6629',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': '83ee07799c341b60965f07892f7bb3d175da05be',
+  'llvm_project_revision': '84ba7b37f02df5a5567e31a1bcfa0f607e578f12',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
-  'v8_revision': '22c424141bb96c0faadf62dfe49d362b9e6ab5bb',
+  'v8_revision': 'e16f1cccf0eb6c5cb209cdcc10267b762fdcc06a',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_test_suite
   # and whatever else without interference from each other.
   'llvm-test-suite_revision': '6c6a59906becace341d439cb7e45a56a4b96640a',
   'checkout_submodules': True,
+  # Fetch reclient binaries and configs required for RBE builds.
+  'download_reclient': True,
+  'rbe_instance': Str('projects/rbe-chrome-untrusted/instances/default_instance'),
+  'reclient_version': 're_client_version:0.185.0.db415f21-gomaip',
 }
 
 deps = {
@@ -53,6 +54,17 @@ deps = {
   'emscripten-releases/llvm-project': Var('llvm_project_url') + '@' + Var('llvm_project_revision'),
   'v8': Var('v8_url') + '@' + Var('v8_revision'),
   'emscripten-releases/llvm-test-suite': Var('llvm-test-suite_url') + '@' + Var('llvm-test-suite_revision'),
+  'emscripten-releases/buildtools/reclient': {
+    'packages': [
+      {
+        'package': 'infra/rbe/client/${{platform}}',
+        'version': Var('reclient_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'download_reclient and '
+                 '(host_cpu != "arm64" or host_os == "mac")',
+  },
   'emscripten-releases/third_party/ninja': {
     'packages': [
       {
@@ -133,6 +145,13 @@ hooks = [
     'condition': 'checkout_submodules',
     'action': ['git', '-C', 'emscripten-releases/binaryen',
                'submodule', 'update', '--force', '--init'],
+  },
+  {
+    'name': 'configure_reclient_cfgs',
+    'pattern': '.',
+    'condition': 'download_reclient',
+    'action': ['python3', 'emscripten-releases/src/configure_reclient_cfgs.py',
+               Var('rbe_instance')],
   },
 ]
 
