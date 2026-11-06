@@ -33,7 +33,7 @@ vars = {
   'checkout_submodules': True,
   # Fetch reclient binaries and configs required for RBE builds.
   'download_reclient': True,
-  'rbe_instance': Str('projects/rbe-chrome-untrusted/instances/default_instance'),
+  'rbe_instance': 'projects/rbe-chrome-untrusted/instances/default_instance',
   'reclient_version': 're_client_version:0.185.0.db415f21-gomaip',
 }
 

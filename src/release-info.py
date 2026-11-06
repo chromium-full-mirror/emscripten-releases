@@ -87,7 +87,7 @@ def ParseDeps(deps_str):
     # that we can fake.
     def Var(_x):
         return ''
-    Globals = {'Var': Var}
+    Globals = {'Var': Var, 'Str': str}
     exec(deps_str, Globals)
     Vars = Globals['vars']
     revisions = {
