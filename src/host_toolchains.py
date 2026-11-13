@@ -65,6 +65,26 @@ def SyncPrebuiltClang(src_dir):
     proc.check_call([os.path.join(tools_clang, 'scripts', 'update.py')])
 
 
+def EnsurePrebuiltClangCoverageTools():
+    """Ensure prebuilt llvm-profdata matching the host clang is downloaded."""
+    exe = 'llvm-profdata.exe' if sys.platform == 'win32' else 'llvm-profdata'
+    prebuilt = GetPrebuiltClang(exe)
+    if os.path.isfile(prebuilt):
+        return prebuilt
+    coverage_dir = os.path.join(work_dirs.GetV8(), 'third_party', 'llvm-build',
+                                'coverage_tools')
+    tools_clang = os.path.join(work_dirs.GetV8(), 'tools', 'clang')
+    proc.check_call([
+        sys.executable,
+        os.path.join(tools_clang, 'scripts', 'update.py'),
+        '--package=coverage_tools',
+        f'--output-dir={coverage_dir}',
+    ])
+    profdata = os.path.join(coverage_dir, 'bin', exe)
+    assert os.path.isfile(profdata), f'Expected llvm-profdata at {profdata}'
+    return profdata
+
+
 def SyncWinToolchain():
     """Update the VS toolchain used by Chromium bots."""
     proc.check_call(VSToolchainPy() + ['update'])
@@ -174,7 +194,7 @@ def GetReproxyServerAddress(host_platform):
     return server_address
 
 
-def RewrapperFlags(host_platform):
+def RewrapperFlags(host_platform, extra_inputs=None):
     exec_root = work_dirs.GetExecRoot()
     rewrapper_cfg = RewrapperCfg(host_platform)
     flags = [
@@ -185,6 +205,12 @@ def RewrapperFlags(host_platform):
         '-canonicalize_working_dir=false',
         '-env_var_allowlist=INCLUDE,LIB,LIBPATH',
     ]
+    if extra_inputs:
+        rel_inputs = [
+            os.path.relpath(p, exec_root).replace('\\', '/')
+            for p in extra_inputs
+        ]
+        flags.append(f'-inputs={",".join(rel_inputs)}')
     if os.path.exists(rewrapper_cfg):
         rbe_platform = GetConfigFlag(rewrapper_cfg, 'platform')
         if rbe_platform and 'InputRootAbsolutePath' not in rbe_platform:
@@ -255,12 +281,12 @@ def GomaDir():
     return os.environ['GOMA_DIR']
 
 
-def CMakeLauncherFlags(host_platform):
+def CMakeLauncherFlags(host_platform, extra_reclient_inputs=None):
     flags = []
     if UsingReclient():
         compiler_launcher = ';'.join(
             [os.path.join(ReclientDir(), 'rewrapper')] +
-            RewrapperFlags(host_platform))
+            RewrapperFlags(host_platform, extra_inputs=extra_reclient_inputs))
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:

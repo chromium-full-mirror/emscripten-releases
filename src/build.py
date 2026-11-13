@@ -31,6 +31,7 @@ import time
 import traceback
 import zipfile
 import zlib
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from urllib.request import URLError, urlopen
 
@@ -266,18 +267,23 @@ if IsMac():
     flags = fcntl(fd, F_GETFL)
     fcntl(fd, F_SETFL, flags & ~os.O_NONBLOCK)
 
-g_should_use_lto = None
+g_should_release_optimize = None
 
 
-def ShouldUseLTO():
-    if options.use_lto == 'auto':
+def ShouldReleaseOptimize():
+    if options.release_optimize == 'auto':
         # Avoid shelling out to git (via RevisionModifiesFile) more than once.
-        global g_should_use_lto
-        if g_should_use_lto is None:
-            g_should_use_lto = RevisionModifiesFile(
+        global g_should_release_optimize
+        if g_should_release_optimize is None:
+            g_should_release_optimize = RevisionModifiesFile(
                 GetSrcDir(RELEASE_DEPS_FILE))
-        return g_should_use_lto
-    return options.use_lto == 'true'
+        return g_should_release_optimize
+    return options.release_optimize == 'true'
+
+
+def ShouldUsePGO():
+    # TODO: Enable PGO on macOS and Windows once tested.
+    return ShouldReleaseOptimize() and IsLinux()
 
 
 def CopyBinaryToArchive(binary, prefix=''):
@@ -482,8 +488,8 @@ def SyncLinuxSysroots(name, _src_dir):
 
 
 def SyncReleaseDeps(_name, _src_dir):
-    if not ShouldUseLTO():
-        print('ShouldUseLTO is false, skipping release DEPS')
+    if not ShouldReleaseOptimize():
+        print('ShouldReleaseOptimize is false, skipping release DEPS')
         return
     shutil.copy2(GetSrcDir(RELEASE_DEPS_FILE), GetSrcDir('DEPS'))
     proc.check_call(['gclient', 'sync'], cwd=GetSrcDir())
@@ -571,15 +577,16 @@ def MaybeOverrideCMakeCompiler():
                      Executable(host_toolchains.GetPrebuiltClang('lld-link')))
         tools.append('-DCMAKE_AR=' +
                      host_toolchains.GetPrebuiltClang('lib.bat'))
-    elif IsMac():
+    else:
         tools.append('-DCMAKE_AR=' +
                      host_toolchains.GetPrebuiltClang('llvm-ar'))
         tools.append('-DCMAKE_RANLIB=' +
                      host_toolchains.GetPrebuiltClang('llvm-ranlib'))
-        # LLVM's CMake wants to use libtool isntead of llvm-ar, but the Chrome
-        # clang package doesn't have libtool. If we set CMAKE_LIBTOOL empty, it
-        # will fall back to the default.
-        tools.append('-DCMAKE_LIBTOOL=')
+        if IsMac():
+            # LLVM's CMake wants to use libtool instead of llvm-ar, but the Chrome
+            # clang package doesn't have libtool. If we set CMAKE_LIBTOOL empty, it
+            # will fall back to the default.
+            tools.append('-DCMAKE_LIBTOOL=')
     return tools
 
 
@@ -602,7 +609,9 @@ def CMakeCommandBase():
     return command
 
 
-def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False):  # noqa: C901
+def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
+        args, build_dir, is_cross=False, filter_out_stdlib=False,
+        extra_cflags='', extra_ldflags='', extra_reclient_inputs=None):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
 
@@ -639,13 +648,21 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
             cflags += f' --target={arch}-apple-darwin'
             cxxflags += f' --target={arch}-apple-darwin'
 
+    ldflags = ''
     if UseLocalLibCXX() and not filter_out_stdlib:
         inc = LibCXXTempInstall('include', 'c++', 'v1')
         cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
         lib = LibCXXTempInstall('lib')
-        command.append(f'-DCMAKE_EXE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-        command.append(f'-DCMAKE_SHARED_LINKER_FLAGS=-L{lib} -stdlib=libc++')
-        command.append(f'-DCMAKE_MODULE_LINKER_FLAGS=-L{lib} -stdlib=libc++')
+        ldflags = f'-L{lib} -stdlib=libc++'
+    if extra_cflags:
+        cflags = f'{cflags} {extra_cflags}'
+        cxxflags = f'{cxxflags} {extra_cflags}'
+    if extra_ldflags:
+        ldflags = f'{ldflags} {extra_ldflags}'.strip()
+    if ldflags:
+        command.append(f'-DCMAKE_EXE_LINKER_FLAGS={ldflags}')
+        command.append(f'-DCMAKE_SHARED_LINKER_FLAGS={ldflags}')
+        command.append(f'-DCMAKE_MODULE_LINKER_FLAGS={ldflags}')
     # On Windows  C(++) FLAGS are set with C(XX)FLAGS environment variables in BuildEnv function
     if not IsWindows():
         command.append(f'-DCMAKE_C_FLAGS={cflags}')
@@ -659,7 +676,9 @@ def CMakeCommandNative(args, build_dir, is_cross=False, filter_out_stdlib=False)
     if host_toolchains.ShouldForceHostClang():
         # Goma and Reclient don't have the "default" SDK compilers in its cache, so only
         # use them when using our prebuilt Clang.
-        command.extend(host_toolchains.CMakeLauncherFlags(host_toolchains.GetHostPlatform()))
+        command.extend(host_toolchains.CMakeLauncherFlags(
+            host_toolchains.GetHostPlatform(),
+            extra_reclient_inputs=extra_reclient_inputs))
     command.extend(args)
     # On Windows, CMake chokes on paths containing backslashes that come from
     # the command line. Avoid WindowsFSEscape here because it mangles the URLs
@@ -707,14 +726,13 @@ def CopyLLVMTools(build_dir):
 
 def BuildEnv(build_dir, bin_subdir=False,
              runtime='Release'):
-    if IsMac():
-        # We need a ranlib that understands bitcode, but llvm-ranlib is not
-        # included in Chrome's packaging. But ranlib is just ar by another name
-        ranlib = host_toolchains.GetPrebuiltClang('llvm-ranlib')
-        if not os.path.exists(ranlib):
-            os.symlink(host_toolchains.GetPrebuiltClang('llvm-ar'), ranlib)
-        return None
     if not IsWindows():
+        if host_toolchains.ShouldForceHostClang():
+            # We need a ranlib that understands bitcode, but llvm-ranlib is not
+            # included in Chrome's packaging. But ranlib is just ar by another name
+            ranlib = host_toolchains.GetPrebuiltClang('llvm-ranlib')
+            if not os.path.exists(ranlib):
+                os.symlink(host_toolchains.GetPrebuiltClang('llvm-ar'), ranlib)
         return None
     cc_env = host_toolchains.SetUpVSEnv(build_dir)
     # This value matches the version of cl.exe currently used by the bots, but
@@ -730,24 +748,128 @@ def BuildEnv(build_dir, bin_subdir=False,
     return cc_env
 
 
-def LLVM(build_dir, is_cross=False):  # noqa: C901
-    buildbot.Step('LLVM')
-    Mkdir(build_dir)
-    cc_env = BuildEnv(build_dir, bin_subdir=True)
-    build_dylib = 'ON'
-    if IsWindows() or ShouldUseLTO() or options.link_static:
-        build_dylib = 'OFF'
+def GetHostLLVMProfdata():
+    if host_toolchains.ShouldForceHostClang():
+        return host_toolchains.EnsurePrebuiltClangCoverageTools()
+    return proc.Which('llvm-profdata')
 
-    # We configure LLVM to support the host architecture as well as
-    # WebAssembly.  However, when we are cross compiling the host
-    # architecture is different the build architecture.
-    host_arch = 'Native'
-    if is_cross:
-        if platform.machine() == 'x86_64':
-            host_arch = 'AArch64'
-        else:
-            host_arch = 'X86'
 
+def MergeProfrawFiles(search_dirs, output_file):
+    profraw_files = []
+    for d in search_dirs:
+        if not os.path.isdir(d):
+            continue
+        for root, _dirs, files in os.walk(d):
+            profraw_files.extend(
+                os.path.join(root, f) for f in files if f.endswith('.profraw')
+            )
+    if not profraw_files:
+        raise Exception(f'No .profraw files found in {search_dirs}')
+    print(f'Merging {len(profraw_files)} .profraw files into {output_file}')
+    profdata_bin = GetHostLLVMProfdata()
+    proc.check_call([profdata_bin, 'merge', f'-output={output_file}', *profraw_files])
+
+
+def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
+    """Compile standalone C/C++ training inputs to linear-memory .wasm.
+
+    During LLVM PGO training, clang_bin_dir points to the instrumented LLVM
+    build so that compiling and linking these inputs exercises the WebAssembly
+    backend and wasm-ld. When Binaryen is built standalone (without building
+    LLVM first), EnsureWasmPGOInputs passes the host prebuilt Clang instead,
+    which works because Chromium's prebuilt Clang already includes the
+    WebAssembly backend and wasm-ld.
+    """
+    Remove(out_dir)
+    Mkdir(out_dir)
+    clang = Executable(os.path.join(clang_bin_dir, 'clang'))
+    clangxx = Executable(os.path.join(clang_bin_dir, 'clang++'))
+    em_dir = GetSrcDir('emscripten')
+    c_includes = [
+        '-isystem', os.path.join(em_dir, 'system', 'lib', 'libc', 'musl', 'arch', 'emscripten'),
+        '-isystem', os.path.join(em_dir, 'system', 'lib', 'libc', 'musl', 'arch', 'generic'),
+        '-isystem', os.path.join(em_dir, 'system', 'lib', 'libc', 'musl', 'include'),
+        '-isystem', os.path.join(em_dir, 'system', 'include'),
+    ]
+    cxx_includes = [
+        '-isystem', os.path.join(em_dir, 'system', 'lib', 'libcxx', 'include'),
+        '-isystem', os.path.join(em_dir, 'system', 'lib', 'libcxxabi', 'include'),
+    ] + c_includes
+    common_flags = ['--target=wasm32-unknown-emscripten', '-msimd128']
+    # Passing -nostdlib with --allow-undefined leaves standard library calls as
+    # unresolved Wasm imports so wasm-ld can produce complete .wasm binaries
+    # without needing to compile libc/libc++/compiler-rt first.
+    link_flags = [
+        '-fuse-ld=lld', '-nostdlib', '-Wl,--no-entry', '-Wl,--export-all',
+        '-Wl,--allow-undefined',
+    ]
+
+    # 1. C amalgamation: sqlite3.c (-O2 compile + object link)
+    sqlite_src = os.path.join(em_dir, 'test', 'third_party', 'sqlite', 'sqlite3.c')
+    sqlite_obj = os.path.join(out_dir, 'sqlite3.o')
+    sqlite_wasm = os.path.join(out_dir, 'sqlite3.wasm')
+    proc.check_call([clang, *common_flags, '-O2', *c_includes, '-c', sqlite_src, '-o', sqlite_obj])
+    proc.check_call([clang, *common_flags, *link_flags, sqlite_obj, '-o', sqlite_wasm])
+
+    # 2. Multi-file C++20: Box2D (-O3 non-LTO object link + -O3 ThinLTO link)
+    box2d_dir = os.path.join(em_dir, 'test', 'third_party', 'box2d')
+    box2d_srcs = sorted(glob.glob(os.path.join(box2d_dir, 'Box2D', '**', '*.cpp'), recursive=True))
+    cxx_flags = [*common_flags, '-std=c++20', '-fwasm-exceptions', f'-I{box2d_dir}', *cxx_includes]
+
+    obj_dir = os.path.join(out_dir, 'box2d-o3-objs')
+    lto_dir = os.path.join(out_dir, 'box2d-lto-objs')
+    Mkdir(obj_dir)
+    Mkdir(lto_dir)
+    box2d_objs = []
+    box2d_lto_objs = []
+    compile_cmds = []
+    for i, src in enumerate(box2d_srcs):
+        stem = f'{i}_{os.path.splitext(os.path.basename(src))[0]}.o'
+        obj = os.path.join(obj_dir, stem)
+        lto_obj = os.path.join(lto_dir, stem)
+        box2d_objs.append(obj)
+        box2d_lto_objs.append(lto_obj)
+        compile_cmds.append([clangxx, *cxx_flags, '-O3', '-c', src, '-o', obj])
+        compile_cmds.append([clangxx, *cxx_flags, '-O3', '-flto=thin', '-c', src, '-o', lto_obj])
+
+    workers = min(NPROC, 16)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(proc.check_call, compile_cmds))
+
+    box2d_o3_wasm = os.path.join(out_dir, 'box2d-o3.wasm')
+    box2d_lto_wasm = os.path.join(out_dir, 'box2d-lto.wasm')
+    proc.check_call([clangxx, *common_flags, *link_flags, *box2d_objs, '-o', box2d_o3_wasm])
+    proc.check_call([clangxx, *common_flags, '-flto=thin', *link_flags,
+                     *box2d_lto_objs, '-o', box2d_lto_wasm])
+
+    # 3. STL-heavy C++20 at -Oz: havlak.cpp
+    havlak_src = os.path.join(em_dir, 'test', 'third_party', 'havlak.cpp')
+    havlak_wasm = os.path.join(out_dir, 'havlak-oz.wasm')
+    proc.check_call([clangxx, *common_flags, '-Oz', '-std=c++20', '-fwasm-exceptions',
+                     *cxx_includes, *link_flags, havlak_src, '-o', havlak_wasm])
+
+    return [sqlite_wasm, box2d_o3_wasm, box2d_lto_wasm, havlak_wasm]
+
+
+def EnsureWasmPGOInputs():
+    out_dir = GetBuildDir('wasm-pgo-inputs')
+    expected = [os.path.join(out_dir, name) for name in (
+        'sqlite3.wasm', 'box2d-o3.wasm', 'box2d-lto.wasm', 'havlak-oz.wasm')]
+    # Reuse the .wasm files already produced during LLVM's PGO training step if
+    # LLVM was built before Binaryen.
+    if all(os.path.isfile(p) for p in expected):
+        return expected
+    # Otherwise (e.g. when building Binaryen standalone before LLVM), compile
+    # the training inputs with the host prebuilt Clang, which already includes
+    # the WebAssembly target and wasm-ld.
+    if host_toolchains.ShouldForceHostClang():
+        clang_bin_dir = os.path.dirname(host_toolchains.GetPrebuiltClang('clang'))
+    else:
+        clang_bin_dir = os.path.dirname(proc.Which('clang'))
+    return CompileWasmPGOInputs(clang_bin_dir, out_dir)
+
+
+def BaseLLVMCMakeFlags(build_dylib, host_arch):
     cmake_flags = [
         '-DLLVM_ENABLE_LIBXML2=OFF',
         '-DLLVM_ENABLE_ZSTD=OFF',
@@ -761,7 +883,6 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
         '-DLLVM_TOOL_LTO_BUILD=OFF',
         '-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON',
         '-DLLVM_TARGETS_TO_BUILD=%s;WebAssembly' % host_arch,
-        '-DLLVM_ENABLE_PROJECTS=lld;clang;clang-tools-extra',
         # linking libtinfo dynamically causes problems on some linuxes,
         # https://github.com/emscripten-core/emsdk/issues/252
         '-DLLVM_ENABLE_TERMINFO=%d' % int(not IsLinux()),
@@ -774,11 +895,84 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
         '-DLLVM_USE_LINKER=%s' % options.llvm_linker,
     ]
     if UseStaticLibCXX():
-        cmake_flags += ['-DLLVM_STATIC_LINK_CXX_STDLIB=ON']
+        cmake_flags.append('-DLLVM_STATIC_LINK_CXX_STDLIB=ON')
+    return cmake_flags
+
+
+def CopyLibCXXToLLVMBuild(build_dir):
+    # Copy the libc++ library to the build dir so that tablegen will run
+    for suffix in ('2.dylib', 'so.2'):
+        dylib = GetInstallDir('lib', f'libc++.{suffix}')
+        if os.path.isfile(dylib):
+            shutil.copy(dylib, os.path.join(build_dir, 'lib'))
+
+
+def BuildLLVMInstrumented(inst_dir, profdata_file):
+    buildbot.Step('LLVM (PGO instrument & train)')
+    Mkdir(inst_dir)
+    cc_env = BuildEnv(inst_dir, bin_subdir=True)
+    cmake_flags = BaseLLVMCMakeFlags('OFF', 'Native') + [
+        '-DLLVM_ENABLE_PROJECTS=lld;clang',
+        '-DLLVM_ENABLE_ASSERTIONS=OFF',
+        '-DLLVM_BUILD_INSTRUMENTED=IR',
+    ]
+    cmake_cmd = CMakeCommandNative(
+        [GetLLVMSrcDir('llvm')] + cmake_flags,
+        inst_dir,
+        extra_cflags='-Wno-backend-plugin')
+    proc.check_call(cmake_cmd, cwd=inst_dir, env=cc_env)
+    CopyLibCXXToLLVMBuild(inst_dir)
+
+    jobs = host_toolchains.NinjaJobs()
+    # Suppress profile output from instrumented llvm-tblgen/clang-tblgen runs
+    # while building lld and clang: generate-profraw immediately clears
+    # profiles/ afterward, and we care about clang execution, not tablegen.
+    build_only_env = (cc_env or os.environ) | {'LLVM_PROFILE_FILE': os.devnull}
+    proc.check_call(['ninja', '-v', 'lld', 'clang'] + jobs, cwd=inst_dir, env=build_only_env)
+    # Run upstream's generate-profraw target (which clears old profiles first
+    # and then compiles hello_world.cpp + LLVMSupport).
+    proc.check_call(['ninja', '-v', 'generate-profraw'] + jobs, cwd=inst_dir, env=cc_env)
+
+    # Also compile and link C/C++ Wasm inputs so the WebAssembly backend and
+    # wasm-ld (both regular object linking and ThinLTO) are profiled.
+    CompileWasmPGOInputs(os.path.join(inst_dir, 'bin'), GetBuildDir('wasm-pgo-inputs'))
+
+    MergeProfrawFiles(
+        [os.path.join(inst_dir, 'profiles'),
+         os.path.join(inst_dir, 'tools', 'clang', 'utils', 'perf-training')],
+        profdata_file)
+    RemoveIfBot(inst_dir)
+
+
+def LLVM(build_dir, is_cross=False):  # noqa: C901
+    profdata_file = GetBuildDir('llvm.profdata')
+    if ShouldUsePGO() and not is_cross:
+        BuildLLVMInstrumented(GetBuildDir('llvm-pgo-out'), profdata_file)
+
+    buildbot.Step('LLVM')
+    Mkdir(build_dir)
+    cc_env = BuildEnv(build_dir, bin_subdir=True)
+    build_dylib = 'ON'
+    if IsWindows() or ShouldReleaseOptimize() or options.link_static:
+        build_dylib = 'OFF'
+
+    # We configure LLVM to support the host architecture as well as
+    # WebAssembly.  However, when we are cross compiling the host
+    # architecture is different the build architecture.
+    host_arch = 'Native'
+    if is_cross:
+        if platform.machine() == 'x86_64':
+            host_arch = 'AArch64'
+        else:
+            host_arch = 'X86'
+
+    cmake_flags = BaseLLVMCMakeFlags(build_dylib, host_arch) + [
+        '-DLLVM_ENABLE_PROJECTS=lld;clang;clang-tools-extra',
+    ]
 
     ninja_targets = ('all', 'install')
 
-    if ShouldUseLTO():
+    if ShouldReleaseOptimize():
         targets = ['clang', 'lld', 'llvm-ar', 'llvm-addr2line', 'llvm-cov',
                    'llvm-cxxfilt', 'llvm-dwarfdump', 'llvm-dwp', 'llvm-nm',
                    'llvm-objcopy', 'llvm-objdump', 'llvm-profdata', 'llvm-ranlib',
@@ -795,6 +989,13 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
     else:
         cmake_flags.extend(['-DLLVM_ENABLE_ASSERTIONS=ON'])
 
+    extra_cflags = ''
+    extra_reclient_inputs = None
+    if ShouldUsePGO() and os.path.isfile(profdata_file):
+        cmake_flags.append(f'-DLLVM_PROFDATA_FILE={profdata_file}')
+        extra_cflags = '-Wno-backend-plugin'
+        extra_reclient_inputs = [profdata_file]
+
     if is_cross:
         # Cross builds need a native version of the tablegen tools to
         # run on the build machine. These can be built in a separate
@@ -808,15 +1009,12 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
     cmake_cmd = CMakeCommandNative(
         [GetLLVMSrcDir('llvm')] + cmake_flags,
         build_dir,
-        is_cross=is_cross)
+        is_cross=is_cross,
+        extra_cflags=extra_cflags,
+        extra_reclient_inputs=extra_reclient_inputs)
 
     proc.check_call(cmake_cmd, cwd=build_dir, env=cc_env)
-
-    # Copy the libc++ library to the build dir so that tablegen will run
-    for suffix in ('2.dylib', 'so.2'):
-        dylib = GetInstallDir('lib', f'libc++.{suffix}')
-        if os.path.isfile(dylib):
-            shutil.copy(dylib, os.path.join(build_dir, 'lib'))
+    CopyLibCXXToLLVMBuild(build_dir)
 
     jobs = host_toolchains.NinjaJobs()
     proc.check_call(['ninja', '-v', ninja_targets[0]] + jobs,
@@ -843,7 +1041,7 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
     # LTO builds clobber their working directories after build to avoid
     # incremental build problems. But we saved native_build_dir for the cross
     # build, so clobber it now.
-    if is_cross and ShouldUseLTO():
+    if is_cross and ShouldReleaseOptimize():
         RemoveIfBot(native_build_dir)
 
 
@@ -888,7 +1086,7 @@ def LibCXXTempInstall(*args):
 
 
 def UseStaticLibCXX():
-    return UseLocalLibCXX() and (ShouldUseLTO() or options.link_static)
+    return UseLocalLibCXX() and (ShouldReleaseOptimize() or options.link_static)
 
 
 def LibCXX(build_dir, is_cross=False):
@@ -920,7 +1118,7 @@ def LibCXX(build_dir, is_cross=False):
          '-DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON',
          f'-DLIBCXX_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
          f'-DLIBCXXABI_INSTALL_STATIC_LIBRARY={cmake_on[should_use_static]}',
-         f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldUseLTO()]}',
+         f'-DCMAKE_POSITION_INDEPENDENT_CODE={cmake_on[not ShouldReleaseOptimize()]}',
          f'-DCMAKE_INSTALL_PREFIX={LibCXXTempInstall()}',
          ], build_dir,
          is_cross=is_cross,
@@ -940,16 +1138,94 @@ def LibCXX(build_dir, is_cross=False):
         shutil.copy2(src, GetInstallDir('lib'))
 
 
+def BuildBinaryenInstrumented(inst_dir, profdata_file):
+    buildbot.Step('binaryen (PGO instrument & train)')
+    profraw_dir = os.path.join(inst_dir, 'profiles')
+    Remove(profraw_dir)
+    Mkdir(inst_dir)
+    Mkdir(profraw_dir)
+    cc_env = BuildEnv(inst_dir, bin_subdir=True, runtime='Debug')
+
+    pgo_gen_flag = f'-fprofile-generate={profraw_dir}'
+    cmake_command = CMakeCommandNative(
+        [GetSrcDir('binaryen')],
+        inst_dir,
+        extra_cflags=pgo_gen_flag,
+        extra_ldflags=pgo_gen_flag)
+    cmake_command.extend([
+        '-DINSTALL_LIBS=OFF',
+        '-DBUILD_TESTS=OFF',
+        '-DBUILD_SHARED_LIBS=OFF',
+        '-DBUILD_EMSCRIPTEN_TOOLS_ONLY=ON',
+    ])
+    if IsLinux():
+        cmake_command.append('-DBUILD_MIMALLOC=ON')
+
+    proc.check_call(cmake_command, cwd=inst_dir, env=cc_env)
+    proc.check_call(['ninja', '-v', 'wasm-opt'] + host_toolchains.NinjaJobs(),
+                    cwd=inst_dir, env=cc_env)
+
+    wasm_inputs = EnsureWasmPGOInputs()
+    wasm_opt = Executable(os.path.join(inst_dir, 'bin', 'wasm-opt'))
+    out_dir = os.path.join(inst_dir, 'train-out')
+    Mkdir(out_dir)
+    opt_pipelines = (
+        ('o2', ['-O2', '--optimize-stack-ir', '--strip-debug', '--strip-producers']),
+        ('o3', ['-O3', '--optimize-stack-ir', '--strip-debug', '--strip-producers']),
+        ('oz', ['-Oz', '--optimize-stack-ir', '--strip-debug', '--strip-producers']),
+    )
+
+    def run_wasm_opt(task):
+        idx, wasm_in, tag, opt_flags = task
+        out_wasm = os.path.join(out_dir, f'{idx}_{tag}_{os.path.basename(wasm_in)}')
+        env = os.environ.copy()
+        env['LLVM_PROFILE_FILE'] = os.path.join(profraw_dir, f'binaryen-{idx}-%p.profraw')
+        proc.check_call([wasm_opt, *opt_flags, wasm_in, '-o', out_wasm], env=env)
+
+    tasks = []
+    idx = 0
+    for wasm_in in wasm_inputs:
+        for tag, opt_flags in opt_pipelines:
+            tasks.append((idx, wasm_in, tag, opt_flags))
+            idx += 1
+
+    with ThreadPoolExecutor(max_workers=min(NPROC, len(tasks))) as pool:
+        list(pool.map(run_wasm_opt, tasks))
+
+    MergeProfrawFiles([profraw_dir], profdata_file)
+    RemoveIfBot(inst_dir)
+
+
 def Binaryen(build_dir, is_cross=False):
+    profdata_file = GetBuildDir('binaryen.profdata')
+    if ShouldUsePGO() and not is_cross:
+        BuildBinaryenInstrumented(GetBuildDir('binaryen-pgo-out'), profdata_file)
+
     buildbot.Step('binaryen')
     Mkdir(build_dir)
     # Currently it's a bad idea to do a non-asserts build of Binaryen
     cc_env = BuildEnv(build_dir, bin_subdir=True, runtime='Debug')
 
+    extra_cflags = ''
+    extra_ldflags = ''
+    extra_reclient_inputs = None
+    if ShouldUsePGO() and os.path.isfile(profdata_file):
+        # Other tools (e.g. wasm-as, wasm-reduce) define main(), which collides
+        # with wasm-opt's main() entry in the IR profile and triggers a harmless
+        # hash-mismatch warning under -Wbackend-plugin (promoted by -Werror).
+        extra_cflags = f'-fprofile-instr-use={profdata_file} -Wno-backend-plugin'
+        extra_ldflags = f'-fprofile-instr-use={profdata_file}'
+        extra_reclient_inputs = [profdata_file]
+
     cmake_command = CMakeCommandNative(
-        [GetSrcDir('binaryen')], build_dir, is_cross=is_cross)
+        [GetSrcDir('binaryen')],
+        build_dir,
+        is_cross=is_cross,
+        extra_cflags=extra_cflags,
+        extra_ldflags=extra_ldflags,
+        extra_reclient_inputs=extra_reclient_inputs)
     cmake_command.extend(['-DINSTALL_LIBS=OFF', '-DBUILD_TESTS=OFF'])
-    if ShouldUseLTO():
+    if ShouldReleaseOptimize():
         cmake_command.append('-DBUILD_SHARED_LIBS=OFF')
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
     if IsLinux():
@@ -1045,7 +1321,7 @@ def EmscriptenLibs(build_dir):
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
 
-    if ShouldUseLTO():
+    if ShouldReleaseOptimize():
         # Get the version number from the first line of the git commit at HEAD,
         # which should be of the form "Version x.y.z RC"
         # (see create_release_candidate.py).
@@ -1155,9 +1431,9 @@ class Build:
             self.kwargs['build_dir'] = incremental_build_dir
 
     def Run(self):
-        # When using LTO we always want a clean build (the previous
-        # build was non-LTO)
-        if self.incremental_build_dir and ShouldUseLTO():
+        # When building release-optimized we always want a clean build (the
+        # previous build was non-LTO/PGO)
+        if self.incremental_build_dir and ShouldReleaseOptimize():
             RemoveIfBot(self.incremental_build_dir)
         try:
             if host_toolchains.UsingReclient() and not buildbot.IsBot():
@@ -1170,9 +1446,9 @@ class Build:
                 RemoveIfBot(self.incremental_build_dir)
             raise
         finally:
-            # When using LTO we want to always clean up afterward,
-            # (the next build will be non-LTO).
-            if self.incremental_build_dir and ShouldUseLTO() and self.clobber_lto:
+            # When building release-optimized we want to always clean up
+            # afterward (the next build will be non-LTO/PGO).
+            if self.incremental_build_dir and ShouldReleaseOptimize() and self.clobber_lto:
                 RemoveIfBot(self.incremental_build_dir)
 
 
@@ -1650,9 +1926,9 @@ def ParseArgs():
         '--no-test-cleanup', dest='cleanup_test_patches', default=True, action='store_false',
         help="Skip cleaning up patched changes in tests after running")
     parser.add_argument(
-        '--use-lto', dest='use_lto', default=False, action='store',
-        choices=['true', 'false', 'auto'],
-        help='Use extra optimization for host binaries')
+        '--release-optimize', '--use-lto', dest='release_optimize',
+        default='false', action='store', choices=['true', 'false', 'auto'],
+        help='Build release-optimized host binaries (LTO and PGO)')
     parser.add_argument(
         '--link-static', dest='link_static', default=False, action='store_true',
         help='Link LLVM statically instead of using the libLLVM dylib'

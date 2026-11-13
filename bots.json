@@ -7,19 +7,19 @@
       },
       {
         "name": "Setup Release DEPS",
-        "command": ["src/build.py", "--sync-include=deps", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--release-optimize=auto"]
       },
       {
         "name": "Build libcxx",
-        "command": ["src/build.py", "--build-include=libcxx", "--use-lto=auto"]
-      },
-      {
-        "name": "Build Binaryen",
-        "command": ["src/build.py", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=libcxx", "--release-optimize=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=llvm", "--release-optimize=auto"]
+      },
+      {
+        "name": "Build Binaryen",
+        "command": ["src/build.py", "--build-include=binaryen", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten",
@@ -35,15 +35,15 @@
       },
       {
         "name": "Build libcxx (cross)",
-        "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
-      },
-      {
-        "name": "Build Binaryen (cross)",
-        "command": ["src/build.py", "--build-include=binaryen-cross", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=libcxx-cross", "--release-optimize=auto"]
       },
       {
         "name": "Build LLVM (cross)",
-        "command": ["src/build.py", "--build-include=llvm-cross", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=llvm-cross", "--release-optimize=auto"]
+      },
+      {
+        "name": "Build Binaryen (cross)",
+        "command": ["src/build.py", "--build-include=binaryen-cross", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten (cross)",
@@ -51,7 +51,7 @@
       },
       {
         "name": "Archive Binaries (cross)",
-        "command": ["src/build.py", "--build-include=archive-cross", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=archive-cross", "--release-optimize=auto"]
       },
       {
         "name": "Trigger emsdk release workflow",
@@ -91,19 +91,19 @@
       },
       {
         "name": "Setup Release DEPS",
-        "command": ["src/build.py", "--sync-include=deps", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--release-optimize=auto"]
       },
       {
         "name": "Build libcxx",
-        "command": ["src/build.py", "--build-include=libcxx", "--use-lto=auto"]
-      },
-      {
-        "name": "Build Binaryen",
-        "command": ["src/build.py", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=libcxx", "--release-optimize=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=llvm", "--release-optimize=auto"]
+      },
+      {
+        "name": "Build Binaryen",
+        "command": ["src/build.py", "--build-include=binaryen", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten",
@@ -119,15 +119,15 @@
       },
       {
         "name": "Build libcxx (cross)",
-        "command": ["src/build.py", "--build-include=libcxx-cross", "--use-lto=auto"]
-      },
-      {
-        "name": "Build Binaryen (cross)",
-        "command": ["src/build.py", "--build-include=binaryen-cross", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=libcxx-cross", "--release-optimize=auto"]
       },
       {
         "name": "Build LLVM (cross)",
-        "command": ["src/build.py", "--build-include=llvm-cross", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=llvm-cross", "--release-optimize=auto"]
+      },
+      {
+        "name": "Build Binaryen (cross)",
+        "command": ["src/build.py", "--build-include=binaryen-cross", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten (cross)",
@@ -170,15 +170,15 @@
       },
       {
         "name": "Setup Release DEPS",
-        "command": ["src/build.py", "--sync-include=deps", "--use-lto=auto"]
-      },
-      {
-        "name": "Build Binaryen",
-        "command": ["src/build.py", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--release-optimize=auto"]
       },
       {
         "name": "Build LLVM",
-        "command": ["src/build.py", "--build-include=llvm", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=llvm", "--release-optimize=auto"]
+      },
+      {
+        "name": "Build Binaryen",
+        "command": ["src/build.py", "--build-include=binaryen", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten",
@@ -218,7 +218,7 @@
       },
       {
         "name": "Setup Release DEPS",
-        "command": ["src/build.py", "--sync-include=deps", "--use-lto=auto"]
+        "command": ["src/build.py", "--sync-include=deps", "--release-optimize=auto"]
       },
       {
         "name": "Build libcxx",
@@ -234,7 +234,7 @@
       },
       {
         "name": "Build Binaryen",
-        "command": ["src/build.py", "--build-include=binaryen", "--use-lto=auto"]
+        "command": ["src/build.py", "--build-include=binaryen", "--release-optimize=auto"]
       },
       {
         "name": "Install Emscripten",
