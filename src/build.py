@@ -292,8 +292,8 @@ def ShouldReleaseOptimize():
 
 
 def ShouldUsePGO():
-    # TODO: Enable PGO on macOS and Windows once tested.
-    return ShouldReleaseOptimize() and IsLinux()
+    # TODO: Enable PGO on Windows once tested.
+    return ShouldReleaseOptimize() and (IsLinux() or IsMac())
 
 
 def CopyBinaryToArchive(binary, prefix=''):
