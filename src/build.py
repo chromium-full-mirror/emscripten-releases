@@ -803,13 +803,17 @@ def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
         '-fuse-ld=lld', '-nostdlib', '-Wl,--no-entry', '-Wl,--export-all',
         '-Wl,--allow-undefined',
     ]
+    # By default lld exits via _exit(), skipping atexit profile flushing unless
+    # LLD_IN_TEST=1 makes it return normally from main().
+    link_env = os.environ | {'LLD_IN_TEST': '1'}
 
     # 1. C amalgamation: sqlite3.c (-O2 compile + object link)
     sqlite_src = os.path.join(em_dir, 'test', 'third_party', 'sqlite', 'sqlite3.c')
     sqlite_obj = os.path.join(out_dir, 'sqlite3.o')
     sqlite_wasm = os.path.join(out_dir, 'sqlite3.wasm')
     proc.check_call([clang, *common_flags, '-O2', *c_includes, '-c', sqlite_src, '-o', sqlite_obj])
-    proc.check_call([clang, *common_flags, *link_flags, sqlite_obj, '-o', sqlite_wasm])
+    proc.check_call([clang, *common_flags, *link_flags, sqlite_obj, '-o', sqlite_wasm],
+                    env=link_env)
 
     # 2. Multi-file C++20: Box2D (-O3 non-LTO object link + -O3 ThinLTO link)
     box2d_dir = os.path.join(em_dir, 'test', 'third_party', 'box2d')
@@ -838,15 +842,17 @@ def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
 
     box2d_o3_wasm = os.path.join(out_dir, 'box2d-o3.wasm')
     box2d_lto_wasm = os.path.join(out_dir, 'box2d-lto.wasm')
-    proc.check_call([clangxx, *common_flags, *link_flags, *box2d_objs, '-o', box2d_o3_wasm])
+    proc.check_call([clangxx, *common_flags, *link_flags, *box2d_objs, '-o', box2d_o3_wasm],
+                    env=link_env)
     proc.check_call([clangxx, *common_flags, '-flto=thin', *link_flags,
-                     *box2d_lto_objs, '-o', box2d_lto_wasm])
+                     *box2d_lto_objs, '-o', box2d_lto_wasm], env=link_env)
 
     # 3. STL-heavy C++20 at -Oz: havlak.cpp
     havlak_src = os.path.join(em_dir, 'test', 'third_party', 'havlak.cpp')
     havlak_wasm = os.path.join(out_dir, 'havlak-oz.wasm')
     proc.check_call([clangxx, *common_flags, '-Oz', '-std=c++20', '-fwasm-exceptions',
-                     *cxx_includes, *link_flags, havlak_src, '-o', havlak_wasm])
+                     *cxx_includes, *link_flags, havlak_src, '-o', havlak_wasm],
+                    env=link_env)
 
     return [sqlite_wasm, box2d_o3_wasm, box2d_lto_wasm, havlak_wasm]
 
@@ -914,6 +920,7 @@ def BuildLLVMInstrumented(inst_dir, profdata_file):
     cmake_flags = BaseLLVMCMakeFlags('OFF', 'Native') + [
         '-DLLVM_ENABLE_PROJECTS=lld;clang',
         '-DLLVM_ENABLE_ASSERTIONS=OFF',
+        '-DLLVM_INCLUDE_TESTS=OFF',
         '-DLLVM_BUILD_INSTRUMENTED=IR',
     ]
     cmake_cmd = CMakeCommandNative(
@@ -925,22 +932,19 @@ def BuildLLVMInstrumented(inst_dir, profdata_file):
 
     jobs = host_toolchains.NinjaJobs()
     # Suppress profile output from instrumented llvm-tblgen/clang-tblgen runs
-    # while building lld and clang: generate-profraw immediately clears
-    # profiles/ afterward, and we care about clang execution, not tablegen.
+    # while building lld and clang; we only want profiles from Wasm training.
     build_only_env = (cc_env or os.environ) | {'LLVM_PROFILE_FILE': os.devnull}
     proc.check_call(['ninja', '-v', 'lld', 'clang'] + jobs, cwd=inst_dir, env=build_only_env)
-    # Run upstream's generate-profraw target (which clears old profiles first
-    # and then compiles hello_world.cpp + LLVMSupport).
-    proc.check_call(['ninja', '-v', 'generate-profraw'] + jobs, cwd=inst_dir, env=cc_env)
 
-    # Also compile and link C/C++ Wasm inputs so the WebAssembly backend and
+    profraw_dir = os.path.join(inst_dir, 'profiles')
+    Remove(profraw_dir)
+    Mkdir(profraw_dir)
+
+    # Compile and link C/C++ Wasm inputs so the WebAssembly backend and
     # wasm-ld (both regular object linking and ThinLTO) are profiled.
     CompileWasmPGOInputs(os.path.join(inst_dir, 'bin'), GetBuildDir('wasm-pgo-inputs'))
 
-    MergeProfrawFiles(
-        [os.path.join(inst_dir, 'profiles'),
-         os.path.join(inst_dir, 'tools', 'clang', 'utils', 'perf-training')],
-        profdata_file)
+    MergeProfrawFiles([profraw_dir], profdata_file)
     RemoveIfBot(inst_dir)
 
 
