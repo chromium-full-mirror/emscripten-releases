@@ -152,6 +152,15 @@ def GetCrossArch():
     raise Exception('Unknown native build architecture')
 
 
+def GetCrossArchNPM():
+    """Return the cross-build architecture using Node/npm `--cpu` names."""
+    return {
+        'x86_64': 'x64',
+        'aarch64': 'arm64',
+        'arm64': 'arm64',
+    }[GetCrossArch()]
+
+
 def Executable(name):
     if IsWindows():
         # TODO: Remove this once we finish the transition to executable
@@ -1246,9 +1255,12 @@ def InstallEmscripten(is_cross):
     print('Installing emscripten into %s' % em_install_dir)
 
     if is_cross:
-        # For cross builds we just need to re-run `npm install` with the
-        # correct architecture.
-        proc.check_call(['npm', 'ci', '--verbose', '--cpu', GetCrossArch()], cwd=em_install_dir)
+        # For cross builds we just need to re-run `npm ci` with the
+        # correct architecture and without devDependencies.
+        proc.check_call(
+            ['npm', 'ci', '--verbose', '--omit=dev', '--cpu', GetCrossArchNPM()],
+            cwd=em_install_dir,
+        )
 
         # We expect the installation to already have been completed by the
         # native build.
