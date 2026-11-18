@@ -81,12 +81,68 @@ def normalize_rbe_instance(instance):
     return instance, m.group(1)
 
 
+def find_luci_auth_bin():
+    luci_auth = shutil.which('luci-auth')
+    if not luci_auth:
+        return None
+    # On Windows, depot_tools puts `luci-auth.bat` on PATH, while the actual
+    # binary lives next to it in `.cipd_bin\luci-auth.exe`. Reclient's
+    # reproxy.exe invokes credentials_helper directly without cmd.exe, so
+    # resolve the underlying .exe when present.
+    cipd_luci_auth = os.path.join(
+        os.path.dirname(luci_auth), '.cipd_bin', 'luci-auth.exe')
+    if os.path.isfile(cipd_luci_auth):
+        return cipd_luci_auth
+    return luci_auth
+
+
+def luci_auth_flags(luci_auth):
+    return (
+        '# LUCI auth flags\n'
+        f'credentials_helper={luci_auth}\n'
+        'credentials_helper_args=token -scopes-context -json-output=- '
+        '-json-format=reclient -lifetime=5m\n'
+    )
+
+
+def find_windows_auth_flags():
+    luci_auth = find_luci_auth_bin()
+    if luci_auth:
+        res = subprocess.run(
+            [luci_auth, 'info', '-scopes-context'],
+            capture_output=True,
+            check=False,
+        )
+        if res.returncode == 0:
+            return luci_auth_flags(luci_auth)
+
+    adc_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+    if not adc_path and os.environ.get('APPDATA'):
+        adc_path = os.path.join(
+            os.environ['APPDATA'], 'gcloud', 'application_default_credentials.json')
+    if adc_path and os.path.isfile(adc_path):
+        return '# ADC auth flags\nuse_application_default_credentials=true\n'
+
+    if not os.environ.get('SWARMING_HEADLESS') and not os.environ.get('BUILDBOT_BUILDNUMBER'):
+        print(
+            'No Reclient credentials found for Windows RBE.\n'
+            'To authenticate for local RBE builds, run:\n'
+            '  luci-auth login -scopes-context\n',
+            file=sys.stderr,
+            flush=True,
+        )
+
+    if luci_auth:
+        return luci_auth_flags(luci_auth)
+    return '# ADC auth flags\nuse_application_default_credentials=true\n'
+
+
 def generate_reproxy_cfg(rbe_instance, rbe_project):
     credshelper = os.path.join(RECLIENT_DIR, 'credshelper')
     depsscanner = os.path.join(RECLIENT_DIR, 'scandeps_server')
     if sys.platform.startswith('win'):
         depsscanner += '.exe'
-        auth_flags = '# ADC auth flags\nuse_application_default_credentials=true\n'
+        auth_flags = find_windows_auth_flags()
     elif sys.platform == 'darwin':
         auth_flags = (
             'use_external_auth_token=true\n'

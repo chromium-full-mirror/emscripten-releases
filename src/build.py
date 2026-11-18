@@ -39,6 +39,7 @@ import buildbot
 import cloud
 import host_toolchains
 import proc
+import relativize_ninja
 import testing
 import work_dirs
 from file_util import Chdir, Mkdir, Remove
@@ -63,7 +64,7 @@ EMSDK_STORAGE_BASE = 'https://webassembly.storage.googleapis.com/emscripten-rele
 # Update this number each time you want to create a clobber build.  If the
 # clobber_version.txt file in the build dir doesn't match we remove ALL work
 # dirs.  This works like a simpler version of chromium's landmine feature.
-CLOBBER_BUILD_TAG = 68
+CLOBBER_BUILD_TAG = 69
 
 options = None
 
@@ -618,6 +619,11 @@ def CMakeCommandBase():
     return command
 
 
+def QuoteWinSysrootFlag(prefix):
+    vs_root = host_toolchains.GetWinToolchainRoot().replace('\\', '/')
+    return f'"{prefix}{vs_root}"'
+
+
 def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
         args, build_dir, is_cross=False, filter_out_stdlib=False,
         extra_cflags='', extra_ldflags='', extra_reclient_inputs=None):
@@ -658,6 +664,8 @@ def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
             cxxflags += f' --target={arch}-apple-darwin'
 
     ldflags = ''
+    if IsWindows() and host_toolchains.ShouldForceHostClang():
+        ldflags = QuoteWinSysrootFlag('/winsysroot:')
     if UseLocalLibCXX() and not filter_out_stdlib:
         inc = LibCXXTempInstall('include', 'c++', 'v1')
         cxxflags = f'-stdlib++-isystem{inc} {cxxflags}'
@@ -693,6 +701,24 @@ def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
     # the command line. Avoid WindowsFSEscape here because it mangles the URLs
     # we pass on the command line.
     return [arg.replace('\\', '/') for arg in command]
+
+
+def RunCMakeNative(cmake_cmd, build_dir, env=None):
+    if env and 'CFLAGS' in env:
+        # On Windows, CFLAGS/CXXFLAGS are passed via the environment, which CMake
+        # only reads on initial cache creation; clear stale CMakeCache.txt if the
+        # cached flags don't match (e.g. after a win_toolchain or flag update).
+        cmake_cache = os.path.join(build_dir, 'CMakeCache.txt')
+        if os.path.isfile(cmake_cache):
+            cflags_pat = rf'^CMAKE_C_FLAGS:STRING={re.escape(env["CFLAGS"])}(?:\s+/DWIN32|\s*$)'
+            with open(cmake_cache, errors='replace') as f:
+                stale = re.search(cflags_pat, f.read(), re.MULTILINE) is None
+            if stale:
+                Remove(cmake_cache)
+    proc.check_call(cmake_cmd, cwd=build_dir, env=env)
+    if (IsWindows() and host_toolchains.ShouldForceHostClang() and
+            host_toolchains.UsingReclient()):
+        relativize_ninja.relativize_ninja_dir(build_dir, work_dirs.GetExecRoot())
 
 
 def CleanLLVMInstall():
@@ -745,12 +771,25 @@ def BuildEnv(build_dir, bin_subdir=False,
         return None
     cc_env = host_toolchains.SetUpVSEnv(build_dir)
     # This value matches the version of cl.exe currently used by the bots, but
-    # it needs to be made explicit in order to run on Goma
+    # it needs to be made explicit in order to run on Goma/Reclient
     # (crbug.com/1292405). This will need to be updated when LLVM or another of
     # our projects requires a newer MSVC version.
     # Flags need to be injected via the env (rather than on the CMake command
     # line) so they add to rather than overriding the default flags.
-    cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = '-fmsc-version=1929'
+    win_cflags = ['-fmsc-version=1929']
+    if host_toolchains.ShouldForceHostClang():
+        win_cflags.extend([
+            '-no-canonical-prefixes',
+            '-ffile-compilation-dir=.',
+            QuoteWinSysrootFlag('/winsysroot'),
+        ])
+    cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = ' '.join(win_cflags)
+    if 'INCLUDE' in cc_env:
+        rc_incs = [
+            '/I"' + p.replace('\\', '/') + '"'
+            for p in cc_env['INCLUDE'].split(';') if p
+        ]
+        cc_env['RCFLAGS'] = ' '.join(rc_incs)
     bin_dir = build_dir if not bin_subdir else os.path.join(build_dir, 'bin')
     Mkdir(bin_dir)
     assert runtime in {'Release', 'Debug'}
@@ -936,7 +975,7 @@ def BuildLLVMInstrumented(inst_dir, profdata_file):
         [GetLLVMSrcDir('llvm')] + cmake_flags,
         inst_dir,
         extra_cflags='-Wno-backend-plugin')
-    proc.check_call(cmake_cmd, cwd=inst_dir, env=cc_env)
+    RunCMakeNative(cmake_cmd, inst_dir, env=cc_env)
     CopyLibCXXToLLVMBuild(inst_dir)
 
     jobs = host_toolchains.NinjaJobs()
@@ -1026,7 +1065,7 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
         extra_cflags=extra_cflags,
         extra_reclient_inputs=extra_reclient_inputs)
 
-    proc.check_call(cmake_cmd, cwd=build_dir, env=cc_env)
+    RunCMakeNative(cmake_cmd, build_dir, env=cc_env)
     CopyLibCXXToLLVMBuild(build_dir)
 
     jobs = host_toolchains.NinjaJobs()
@@ -1139,7 +1178,7 @@ def LibCXX(build_dir, is_cross=False):
          filter_out_stdlib=True)
     if IsMac():
         cmd.append('-DLIBCXX_USE_COMPILER_RT=ON')
-    proc.check_call(cmd, cwd=build_dir)
+    RunCMakeNative(cmd, build_dir)
     proc.check_call(['ninja', '-v', 'cxx', 'cxxabi'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir)
     proc.check_call(['ninja', 'install-cxx', 'install-cxxabi'], cwd=build_dir)
@@ -1174,7 +1213,7 @@ def BuildBinaryenInstrumented(inst_dir, profdata_file):
     if IsLinux():
         cmake_command.append('-DBUILD_MIMALLOC=ON')
 
-    proc.check_call(cmake_command, cwd=inst_dir, env=cc_env)
+    RunCMakeNative(cmake_command, inst_dir, env=cc_env)
     proc.check_call(['ninja', '-v', 'wasm-opt'] + host_toolchains.NinjaJobs(),
                     cwd=inst_dir, env=cc_env)
 
@@ -1244,7 +1283,7 @@ def Binaryen(build_dir, is_cross=False):
     if IsLinux():
         cmake_command.append('-DBUILD_MIMALLOC=ON')
 
-    proc.check_call(cmake_command, cwd=build_dir, env=cc_env)
+    RunCMakeNative(cmake_command, build_dir, env=cc_env)
     proc.check_call(['ninja', '-v'] + host_toolchains.NinjaJobs(),
                     cwd=build_dir, env=cc_env)
     proc.check_call(['ninja', 'install'], cwd=build_dir, env=cc_env)

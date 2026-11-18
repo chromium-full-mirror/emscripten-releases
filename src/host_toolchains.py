@@ -13,6 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import ctypes
 import json
 import os
 import socket
@@ -51,6 +52,13 @@ def VSToolchainPy():
 
 def WinToolchainJson():
     return os.path.join(work_dirs.GetV8(), 'build', 'win_toolchain.json')
+
+
+def GetWinToolchainRoot():
+    if not os.path.isfile(WinToolchainJson()):
+        proc.check_call(VSToolchainPy() + ['get_toolchain_dir'])
+    with open(WinToolchainJson()) as f:
+        return json.load(f)['path']
 
 
 def GetPrebuiltClang(binary):
@@ -142,14 +150,17 @@ def UsingGoma():
 
 
 def UsingReclient():
-    # Reclient remote builds do not work on Windows try bots. See b/309009233
-    return ('USE_RECLIENT' in os.environ and
-            not (GetHostPlatform() == 'windows' and
-                 not buildbot.IsUploadingBot()))
+    return 'USE_RECLIENT' in os.environ
 
 
 def ReclientDir():
     return os.path.join(work_dirs.GetSync(), 'buildtools', 'reclient')
+
+
+def ReclientBin(name):
+    if sys.platform == 'win32':
+        name += '.exe'
+    return os.path.join(ReclientDir(), name)
 
 
 def RewrapperCfg(platform):
@@ -200,10 +211,6 @@ def RewrapperFlags(host_platform, extra_inputs=None):
     flags = [
         f'-cfg={rewrapper_cfg}',
         f'-exec_root={exec_root}',
-        # Reclient's canonicalize working_dir feature doesn't work with CMake's
-        # absolute paths.
-        '-canonicalize_working_dir=false',
-        '-env_var_allowlist=INCLUDE,LIB,LIBPATH',
     ]
     if extra_inputs:
         rel_inputs = [
@@ -211,6 +218,22 @@ def RewrapperFlags(host_platform, extra_inputs=None):
             for p in extra_inputs
         ]
         flags.append(f'-inputs={",".join(rel_inputs)}')
+    if host_platform == 'windows':
+        # On Windows, relativize_ninja.py rewrites CMake's absolute paths in
+        # build.ninja/rules.ninja and /winsysroot replaces %INCLUDE%, allowing
+        # RBE's canonicalize_working_dir=true to work unwrapped on both Linux
+        # cross-workers (untrusted/try) and native Windows workers (trusted/CI).
+        # Override rewrapper_windows.cfg's default 'racing' strategy (matching
+        # depot_tools/reclient_helper.py) to avoid local CPU/file-lock contention.
+        flags.append('-exec_strategy=remote_local_fallback')
+        return flags
+
+    # Reclient's canonicalize working_dir feature doesn't work with CMake's
+    # absolute paths on POSIX; mount exec_root at InputRootAbsolutePath instead.
+    flags.extend([
+        '-canonicalize_working_dir=false',
+        '-env_var_allowlist=INCLUDE,LIB,LIBPATH',
+    ])
     if os.path.exists(rewrapper_cfg):
         rbe_platform = GetConfigFlag(rewrapper_cfg, 'platform')
         if rbe_platform and 'InputRootAbsolutePath' not in rbe_platform:
@@ -236,7 +259,9 @@ def IsReproxyRunning(server_address):
                 pass
             return False
     elif server_address.startswith('pipe://'):
-        raise Exception('TODO: Support starting reproxy on windows')
+        pipe_name = server_address[7:].replace('/', '\\')
+        pipe_path = f'\\\\.\\pipe\\{pipe_name}'
+        return bool(ctypes.windll.kernel32.WaitNamedPipeW(pipe_path, 500))
     else:
         raise Exception(f'Unknown server address type: {server_address}')
 
@@ -254,22 +279,31 @@ def StartReproxy(host_platform):
         return
 
     bootstrap_cmd = [
-        os.path.join(ReclientDir(), 'bootstrap'),
-        '-re_proxy=' + os.path.join(ReclientDir(), 'reproxy'),
+        ReclientBin('bootstrap'),
+        '-re_proxy=' + ReclientBin('reproxy'),
         '-cfg=' + ReproxyCfg(),
         '-server_address=' + server_address,  # this flag doesn't seem to work?
     ]
     if buildbot.IsBot():
         for k, v in os.environ.items():
             print(f'{k} = {v}')
-    proc.check_call(bootstrap_cmd, start_new_session=True)
+    try:
+        proc.check_call(bootstrap_cmd, start_new_session=True)
+    except proc.CalledProcessError:
+        if host_platform == 'windows':
+            print(
+                'Failed to start reproxy. Make sure you have authenticated via:\n'
+                '  luci-auth login -scopes-context',
+                file=sys.stderr,
+            )
+        raise
 
 
 def StopReproxy(host_platform):
-    reproxy = os.path.join(ReclientDir(), 'reproxy')
+    reproxy = ReclientBin('reproxy')
     server_address = GetReproxyServerAddress(host_platform)
     return proc.check_call([
-        os.path.join(ReclientDir(), 'bootstrap'),
+        ReclientBin('bootstrap'),
         f'-re_proxy={reproxy}',
         f'-cfg={ReproxyCfg()}',
         f'-server_address={server_address}',
@@ -285,7 +319,7 @@ def CMakeLauncherFlags(host_platform, extra_reclient_inputs=None):
     flags = []
     if UsingReclient():
         compiler_launcher = ';'.join(
-            [os.path.join(ReclientDir(), 'rewrapper')] +
+            [ReclientBin('rewrapper')] +
             RewrapperFlags(host_platform, extra_inputs=extra_reclient_inputs))
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
@@ -293,7 +327,7 @@ def CMakeLauncherFlags(host_platform, extra_reclient_inputs=None):
         try:
             compiler_launcher = proc.Which('ccache')
         except:  # noqa
-            return flags
+            compiler_launcher = ''
 
     flags.extend([
         '-DCMAKE_%s_COMPILER_LAUNCHER=%s' % (c, compiler_launcher)
