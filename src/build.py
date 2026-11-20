@@ -596,10 +596,13 @@ def MaybeOverrideCMakeCompiler():
         tools.append('-DCMAKE_RANLIB=' +
                      host_toolchains.GetPrebuiltClang('llvm-ranlib'))
         if IsMac():
-            # LLVM's CMake wants to use libtool instead of llvm-ar, but the Chrome
-            # clang package doesn't have libtool. If we set CMAKE_LIBTOOL empty, it
-            # will fall back to the default.
-            tools.append('-DCMAKE_LIBTOOL=')
+            # LLVM's UseLibtool.cmake searches for Apple's libtool (via xcrun
+            # and find_program) and uses it instead of CMAKE_AR, which fails on
+            # ThinLTO bitcode when Xcode's libLTO lags behind our prebuilt
+            # Clang. Caching FALSE makes find_program a no-op and skips xcrun so
+            # CMake uses CMAKE_AR/CMAKE_RANLIB (llvm-ar/llvm-ranlib) instead.
+            tools.append('-DCMAKE_LIBTOOL=FALSE')
+            tools.append('-DCMAKE_XCRUN=FALSE')
     return tools
 
 
