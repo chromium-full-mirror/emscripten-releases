@@ -16,6 +16,7 @@
 import ctypes
 import json
 import os
+import shutil
 import socket
 import sys
 
@@ -36,18 +37,12 @@ def GetHostPlatform():
 
 
 def SetupToolchain():
-    return [
-        sys.executable,
-        os.path.join(work_dirs.GetV8(), 'build', 'toolchain', 'win',
-                     'setup_toolchain.py'),
-    ]
+    return os.path.join(work_dirs.GetV8(), 'build', 'toolchain', 'win',
+                        'setup_toolchain.py')
 
 
 def VSToolchainPy():
-    return [
-        sys.executable,
-        os.path.join(work_dirs.GetV8(), 'build', 'vs_toolchain.py'),
-    ]
+    return os.path.join(work_dirs.GetV8(), 'build', 'vs_toolchain.py')
 
 
 def WinToolchainJson():
@@ -56,7 +51,7 @@ def WinToolchainJson():
 
 def GetWinToolchainRoot():
     if not os.path.isfile(WinToolchainJson()):
-        proc.check_call(VSToolchainPy() + ['get_toolchain_dir'])
+        proc.check_call([VSToolchainPy(), 'get_toolchain_dir'])
     with open(WinToolchainJson()) as f:
         return json.load(f)['path']
 
@@ -95,7 +90,7 @@ def EnsurePrebuiltClangCoverageTools():
 
 def SyncWinToolchain():
     """Update the VS toolchain used by Chromium bots."""
-    proc.check_call(VSToolchainPy() + ['update'])
+    proc.check_call([VSToolchainPy(), 'update'])
 
 
 def GetVSEnv(dir):
@@ -118,15 +113,15 @@ def GetVSEnv(dir):
 def SetUpVSEnv(outdir):
     """Set up the VS build environment used by Chromium bots."""
     # Get the chromium-packaged toolchain directory info in a JSON file
-    proc.check_call(VSToolchainPy() + ['get_toolchain_dir'])
+    proc.check_call([VSToolchainPy(), 'get_toolchain_dir'])
     with open(WinToolchainJson()) as f:
         paths = json.load(f)
 
     # Write path information (usable by a non-chromium build) into an
     # environment block
     runtime_dirs = os.pathsep.join(paths['runtime_dirs'])
-    proc.check_call(SetupToolchain() +
-                    [paths['path'], paths['win_sdk'], runtime_dirs, 'win',
+    proc.check_call([SetupToolchain(),
+                     paths['path'], paths['win_sdk'], runtime_dirs, 'win',
                      'x64', 'environment.x64'],
                     cwd=outdir)
 
@@ -324,10 +319,7 @@ def CMakeLauncherFlags(host_platform, extra_reclient_inputs=None):
     elif UsingGoma():
         compiler_launcher = os.path.join(GomaDir(), 'gomacc')
     else:
-        try:
-            compiler_launcher = proc.Which('ccache')
-        except:  # noqa
-            compiler_launcher = ''
+        compiler_launcher = shutil.which('ccache') or ''
 
     flags.extend([
         '-DCMAKE_%s_COMPILER_LAUNCHER=%s' % (c, compiler_launcher)

@@ -614,7 +614,8 @@ def CMakeCommandBase():
         command.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=11')
     elif IsWindows():
         # CMake's usual logic fails to find LUCI's git on Windows
-        git_exe = proc.Which('git')
+        git_exe = shutil.which('git')
+        assert git_exe, 'failed to find git in path'
         command.append('-DGIT_EXECUTABLE=%s' % git_exe)
         # Workaround for cmcldeps bug with forward slashes on Windows.
         # TODO: remove when this issue is fixed and we upgrade CMake.
@@ -802,7 +803,9 @@ def BuildEnv(build_dir, bin_subdir=False,
 def GetHostLLVMProfdata():
     if host_toolchains.ShouldForceHostClang():
         return host_toolchains.EnsurePrebuiltClangCoverageTools()
-    return proc.Which('llvm-profdata')
+    profdata = shutil.which('llvm-profdata')
+    assert profdata, 'failed to find llvm-profdata in path'
+    return profdata
 
 
 def MergeProfrawFiles(search_dirs, output_file):
@@ -922,7 +925,9 @@ def EnsureWasmPGOInputs():
     if host_toolchains.ShouldForceHostClang():
         clang_bin_dir = os.path.dirname(host_toolchains.GetPrebuiltClang('clang'))
     else:
-        clang_bin_dir = os.path.dirname(proc.Which('clang'))
+        clang = shutil.which('clang')
+        assert clang, 'failed to find clang in path'
+        clang_bin_dir = os.path.dirname(clang)
     return CompileWasmPGOInputs(clang_bin_dir, out_dir)
 
 
@@ -1554,15 +1559,16 @@ def CheckEnvironment():
     buildbot.Step('Check environment & tools')
 
     # 1. Verify core host tools on PATH
-    for tool in ('cmake', 'ninja', 'node', 'npm', 'git'):
-        print(f'Checking {tool}: {proc.Which(tool)}')
+    for tool in ('cmake', 'ninja', 'node', 'npm', 'git', 'gcloud'):
+        print(f'Checking {tool}: {shutil.which(tool)}')
         proc.check_call([tool, '--version'])
 
     # 2. Verify compression tools and libraries (tar/xz, zip)
     TestCompression()
 
     # 3. Verify Cloud SDK and GCS connectivity
-    cloud.ListBuilds('36767eb2cfa15eab9b22df0c7015925891cf74b1')
+    builds = cloud.ListBuilds('36767eb2cfa15eab9b22df0c7015925891cf74b1')
+    assert len(builds) == 4, f'Expected 4 builds, got {builds}'
 
     # 4. Verify release script dependencies & version parsing
     proc.check_call([sys.executable, os.path.join(SCRIPT_DIR, 'trigger_emsdk_release.py'),

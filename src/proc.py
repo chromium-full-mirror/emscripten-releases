@@ -20,6 +20,7 @@
 # Imports subprocess in its own namespace so we can always refer directly to
 # its attributes.
 import os
+import shutil
 import subprocess
 import sys
 
@@ -33,35 +34,25 @@ def AddToPath(path):
     os.environ['PATH'] = path + os.pathsep + os.environ['PATH']
 
 
-def Which(filename, cwd=None, is_executable=True):
-    if os.path.isabs(filename):
-        return filename
+def MungeExe(cmd):
+    """Resolve and normalize the executable in a command.
 
-    to_search = os.environ.get('PATH', '').split(os.pathsep)
-    if cwd:
-        to_search.insert(0, cwd)
-    exe_suffixes = ['']
-    if sys.platform == 'win32' and is_executable:
-        exe_suffixes = ['.exe', '.bat', '.cmd'] + exe_suffixes
-    for path in to_search:
-        abs_path = os.path.abspath(os.path.join(path, filename))
-        for suffix in exe_suffixes:
-            full_path = abs_path + suffix
-            if (os.path.isfile(full_path) and
-                    (not is_executable or os.access(full_path, os.X_OK))):
-                return full_path
-    raise Exception('File "%s" not found. (cwd=`%s`, PATH=`%s`' %
-                    (filename, cwd, os.environ['PATH']))
-
-
-def MungeExe(cmd, cwd):
+    If `cmd` is a string, it is returned unchanged.
+    If the executable is a Python script (ends with '.py'), `sys.executable` is
+    prepended.
+    If the executable is not already an absolute path, it is resolved to its
+    full path using `shutil.which`.
+    """
+    if isinstance(cmd, str):
+        return cmd
     exe = cmd[0]
     if exe.endswith('.py'):
-        script = Which(exe, cwd, is_executable=False)
-        return [sys.executable, script] + cmd[1:]
-    if exe in {'git', 'npm', 'gclient', 'gcloud'}:
-        return [Which(exe, cwd)] + cmd[1:]
-    return cmd
+        return [sys.executable] + list(cmd)
+    if os.path.isabs(exe):
+        return list(cmd)
+    full_path = shutil.which(exe)
+    assert full_path, f'failed to find {exe} in path'
+    return [full_path] + list(cmd[1:])
 
 
 def MungeKwargs(kwargs):
@@ -84,7 +75,7 @@ def LogCall(funcname, cmd, cwd):
 def check_call(cmd, **kwargs):
     cwd = kwargs.get('cwd', os.getcwd())
     should_log, kwargs = MungeKwargs(kwargs)
-    cmd = MungeExe(cmd, cwd)
+    cmd = MungeExe(cmd)
     if should_log:
         LogCall('subprocess.check_call', cmd, cwd)
     sys.stdout.flush()
@@ -97,7 +88,7 @@ def check_call(cmd, **kwargs):
 def check_output(cmd, **kwargs):
     cwd = kwargs.get('cwd', os.getcwd())
     should_log, kwargs = MungeKwargs(kwargs)
-    cmd = MungeExe(cmd, cwd)
+    cmd = MungeExe(cmd)
     if should_log:
         LogCall('subprocess.check_output', cmd, cwd)
     sys.stdout.flush()
