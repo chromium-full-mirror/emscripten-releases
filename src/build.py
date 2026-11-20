@@ -579,6 +579,9 @@ def MaybeOverrideCMakeCompiler():
             host_toolchains.GetPrebuiltClang(cc)),
         '-DCMAKE_CXX_COMPILER=' + Executable(
             host_toolchains.GetPrebuiltClang(cxx)),
+        # Chromium's prebuilt clang package does not ship clang-scan-deps, so
+        # disable C++20 module dependency scanning.
+        '-DCMAKE_CXX_SCAN_FOR_MODULES=OFF',
     ]
     # We need to use tools that work with LTO (i.e. they understand bitcode
     # when linking and creating archives).
