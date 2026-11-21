@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 7.0.1
+# VERSION: 7.0.2
 
 
 vars = {
@@ -24,15 +24,15 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling binaryen
   # and whatever else without interference from each other.
-  'binaryen_revision': '326708daebf5a0b09475ee9f07d14253490e53b2',
+  'binaryen_revision': 'e7a4b90f3c638d57dc5a9bf5b49a9a0342278af4',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling emscripten
   # and whatever else without interference from each other.
-  'emscripten_revision': '5c33760e3c389d0428e9482158df9659b46f1f63',
+  'emscripten_revision': 'ac0578743420bcbe9a4f77d0b6599c25f8d43702',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling llvm_project
   # and whatever else without interference from each other.
-  'llvm_project_revision': 'fc6cf640ba0c11b22cf3965b1da0924ba7dd9aef',
+  'llvm_project_revision': '61c665e40ec9acac38f3163e22c699969ca2ff39',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling v8
   # and whatever else without interference from each other.
