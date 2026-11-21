@@ -11,7 +11,7 @@
 # DEPS file from a particular point in time. See src/create_release_candidate.py
 # for more on this.
 #
-# VERSION: 7.0.2
+# VERSION: 7.0.1
 
 
 vars = {
