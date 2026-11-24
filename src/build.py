@@ -633,7 +633,7 @@ def QuoteWinSysrootFlag(prefix):
 
 def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
         args, build_dir, is_cross=False, filter_out_stdlib=False,
-        extra_cflags='', extra_ldflags='', extra_reclient_inputs=None):
+        extra_cflags='', extra_reclient_inputs=None):
     command = CMakeCommandBase()
     command.append('-DCMAKE_INSTALL_PREFIX=%s' % GetInstallDir())
 
@@ -681,8 +681,6 @@ def CMakeCommandNative(  # noqa: C901, PLR0913, PLR0917
     if extra_cflags:
         cflags = f'{cflags} {extra_cflags}'
         cxxflags = f'{cxxflags} {extra_cflags}'
-    if extra_ldflags:
-        ldflags = f'{ldflags} {extra_ldflags}'.strip()
     if ldflags:
         command.append(f'-DCMAKE_EXE_LINKER_FLAGS={ldflags}')
         command.append(f'-DCMAKE_SHARED_LINKER_FLAGS={ldflags}')
@@ -1209,17 +1207,13 @@ def BuildBinaryenInstrumented(inst_dir, profdata_file):
     Mkdir(profraw_dir)
     cc_env = BuildEnv(inst_dir, bin_subdir=True, runtime='Debug')
 
-    pgo_gen_flag = f'-fprofile-generate={profraw_dir}'
-    cmake_command = CMakeCommandNative(
-        [GetSrcDir('binaryen')],
-        inst_dir,
-        extra_cflags=pgo_gen_flag,
-        extra_ldflags=pgo_gen_flag)
+    cmake_command = CMakeCommandNative([GetSrcDir('binaryen')], inst_dir)
     cmake_command.extend([
         '-DINSTALL_LIBS=OFF',
         '-DBUILD_TESTS=OFF',
         '-DBUILD_SHARED_LIBS=OFF',
         '-DBUILD_EMSCRIPTEN_TOOLS_ONLY=ON',
+        '-DBYN_PGO_GENERATE=ON',
     ])
     if IsLinux():
         cmake_command.append('-DBUILD_MIMALLOC=ON')
@@ -1269,25 +1263,22 @@ def Binaryen(build_dir, is_cross=False):
     # Currently it's a bad idea to do a non-asserts build of Binaryen
     cc_env = BuildEnv(build_dir, bin_subdir=True, runtime='Debug')
 
-    extra_cflags = ''
-    extra_ldflags = ''
+    pgo_profile = ''
     extra_reclient_inputs = None
     if ShouldUsePGO() and os.path.isfile(profdata_file):
-        # Other tools (e.g. wasm-as, wasm-reduce) define main(), which collides
-        # with wasm-opt's main() entry in the IR profile and triggers a harmless
-        # hash-mismatch warning under -Wbackend-plugin (promoted by -Werror).
-        extra_cflags = f'-fprofile-instr-use={profdata_file} -Wno-backend-plugin'
-        extra_ldflags = f'-fprofile-instr-use={profdata_file}'
+        pgo_profile = profdata_file
         extra_reclient_inputs = [profdata_file]
 
     cmake_command = CMakeCommandNative(
-        [GetSrcDir('binaryen')],
+        [
+            GetSrcDir('binaryen'),
+            '-DINSTALL_LIBS=OFF',
+            '-DBUILD_TESTS=OFF',
+            f'-DBYN_PGO_PROFILE_USE_FILE={pgo_profile}',
+        ],
         build_dir,
         is_cross=is_cross,
-        extra_cflags=extra_cflags,
-        extra_ldflags=extra_ldflags,
         extra_reclient_inputs=extra_reclient_inputs)
-    cmake_command.extend(['-DINSTALL_LIBS=OFF', '-DBUILD_TESTS=OFF'])
     if ShouldReleaseOptimize():
         cmake_command.append('-DBUILD_SHARED_LIBS=OFF')
         cmake_command.append('-DBYN_ENABLE_LTO=ON')
