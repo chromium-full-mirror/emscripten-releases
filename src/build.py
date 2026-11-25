@@ -292,8 +292,7 @@ def ShouldReleaseOptimize():
 
 
 def ShouldUsePGO():
-    # TODO: Enable PGO on Windows once tested.
-    return ShouldReleaseOptimize() and (IsLinux() or IsMac())
+    return ShouldReleaseOptimize()
 
 
 def CopyBinaryToArchive(binary, prefix=''):
@@ -765,7 +764,7 @@ def CopyLLVMTools(build_dir):
 
 
 def BuildEnv(build_dir, bin_subdir=False,
-             runtime='Release'):
+             runtime='Release', extra_cflags=''):
     if not IsWindows():
         if host_toolchains.ShouldForceHostClang():
             # We need a ranlib that understands bitcode, but llvm-ranlib is not
@@ -788,6 +787,8 @@ def BuildEnv(build_dir, bin_subdir=False,
             '-ffile-compilation-dir=.',
             QuoteWinSysrootFlag('/winsysroot'),
         ])
+    if extra_cflags:
+        win_cflags.append(extra_cflags)
     cc_env['CXXFLAGS'] = cc_env['CFLAGS'] = ' '.join(win_cflags)
     if 'INCLUDE' in cc_env:
         rc_incs = [
@@ -825,7 +826,7 @@ def MergeProfrawFiles(search_dirs, output_file):
     proc.check_call([profdata_bin, 'merge', f'-output={output_file}', *profraw_files])
 
 
-def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
+def CompileWasmPGOInputs(clang_bin_dir, out_dir, profile_dir=None):  # noqa: PLR0914
     """Compile standalone C/C++ training inputs to linear-memory .wasm.
 
     During LLVM PGO training, clang_bin_dir points to the instrumented LLVM
@@ -858,15 +859,22 @@ def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
         '-fuse-ld=lld', '-nostdlib', '-Wl,--no-entry', '-Wl,--export-all',
         '-Wl,--allow-undefined',
     ]
+    compile_env = os.environ.copy()
+    if profile_dir:
+        # Set LLVM_PROFILE_FILE explicitly so .profraw files always land in
+        # profile_dir even when relativize_ninja.py rewrites -fprofile-generate
+        # to a build_dir-relative path.
+        compile_env['LLVM_PROFILE_FILE'] = os.path.join(profile_dir, 'wasm-%4m.profraw')
     # By default lld exits via _exit(), skipping atexit profile flushing unless
     # LLD_IN_TEST=1 makes it return normally from main().
-    link_env = os.environ | {'LLD_IN_TEST': '1'}
+    link_env = compile_env | {'LLD_IN_TEST': '1'}
 
     # 1. C amalgamation: sqlite3.c (-O2 compile + object link)
     sqlite_src = os.path.join(em_dir, 'test', 'third_party', 'sqlite', 'sqlite3.c')
     sqlite_obj = os.path.join(out_dir, 'sqlite3.o')
     sqlite_wasm = os.path.join(out_dir, 'sqlite3.wasm')
-    proc.check_call([clang, *common_flags, '-O2', *c_includes, '-c', sqlite_src, '-o', sqlite_obj])
+    proc.check_call([clang, *common_flags, '-O2', *c_includes, '-c', sqlite_src, '-o', sqlite_obj],
+                    env=compile_env)
     proc.check_call([clang, *common_flags, *link_flags, sqlite_obj, '-o', sqlite_wasm],
                     env=link_env)
 
@@ -893,7 +901,7 @@ def CompileWasmPGOInputs(clang_bin_dir, out_dir):  # noqa: PLR0914
 
     workers = min(NPROC, 16)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        list(pool.map(proc.check_call, compile_cmds))
+        list(pool.map(lambda cmd: proc.check_call(cmd, env=compile_env), compile_cmds))
 
     box2d_o3_wasm = os.path.join(out_dir, 'box2d-o3.wasm')
     box2d_lto_wasm = os.path.join(out_dir, 'box2d-lto.wasm')
@@ -983,7 +991,7 @@ def BuildLLVMInstrumented(inst_dir, profdata_file):
     cmake_cmd = CMakeCommandNative(
         [GetLLVMSrcDir('llvm')] + cmake_flags,
         inst_dir,
-        extra_cflags='-Wno-backend-plugin')
+        extra_reclient_inputs=host_toolchains.GetPrebuiltClangProfileRTLibs())
     RunCMakeNative(cmake_cmd, inst_dir, env=cc_env)
     CopyLibCXXToLLVMBuild(inst_dir)
 
@@ -999,7 +1007,10 @@ def BuildLLVMInstrumented(inst_dir, profdata_file):
 
     # Compile and link C/C++ Wasm inputs so the WebAssembly backend and
     # wasm-ld (both regular object linking and ThinLTO) are profiled.
-    CompileWasmPGOInputs(os.path.join(inst_dir, 'bin'), GetBuildDir('wasm-pgo-inputs'))
+    CompileWasmPGOInputs(
+        os.path.join(inst_dir, 'bin'),
+        GetBuildDir('wasm-pgo-inputs'),
+        profile_dir=profraw_dir)
 
     MergeProfrawFiles([profraw_dir], profdata_file)
     RemoveIfBot(inst_dir)
@@ -1012,7 +1023,6 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
 
     buildbot.Step('LLVM')
     Mkdir(build_dir)
-    cc_env = BuildEnv(build_dir, bin_subdir=True)
     build_dylib = 'ON'
     if IsWindows() or ShouldReleaseOptimize() or options.link_static:
         build_dylib = 'OFF'
@@ -1056,6 +1066,8 @@ def LLVM(build_dir, is_cross=False):  # noqa: C901
         cmake_flags.append(f'-DLLVM_PROFDATA_FILE={profdata_file}')
         extra_cflags = '-Wno-backend-plugin'
         extra_reclient_inputs = [profdata_file]
+
+    cc_env = BuildEnv(build_dir, bin_subdir=True, extra_cflags=extra_cflags)
 
     if is_cross:
         # Cross builds need a native version of the tablegen tools to
@@ -1207,7 +1219,10 @@ def BuildBinaryenInstrumented(inst_dir, profdata_file):
     Mkdir(profraw_dir)
     cc_env = BuildEnv(inst_dir, bin_subdir=True, runtime='Debug')
 
-    cmake_command = CMakeCommandNative([GetSrcDir('binaryen')], inst_dir)
+    cmake_command = CMakeCommandNative(
+        [GetSrcDir('binaryen')],
+        inst_dir,
+        extra_reclient_inputs=host_toolchains.GetPrebuiltClangProfileRTLibs())
     cmake_command.extend([
         '-DINSTALL_LIBS=OFF',
         '-DBUILD_TESTS=OFF',

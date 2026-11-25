@@ -14,6 +14,7 @@
 #   limitations under the License.
 
 import ctypes
+import glob
 import json
 import os
 import shutil
@@ -88,6 +89,23 @@ def EnsurePrebuiltClangCoverageTools():
     return profdata
 
 
+def GetPrebuiltClangProfileRTLibs():
+    """Return Windows compiler-rt profile libraries needed as RBE inputs.
+
+    With -fprofile-generate, clang-cl checks whether clang_rt.profile-<arch>.lib
+    exists in its resource dir at compile time; if missing on remote RBE workers,
+    it embeds /DEFAULTLIB:clang_rt.profile.lib instead (crbug.com/335997052).
+    """
+    if sys.platform != 'win32' or not ShouldForceHostClang():
+        return None
+    pattern = os.path.join(
+        work_dirs.GetV8(), 'third_party', 'llvm-build', 'Release+Asserts',
+        'lib', 'clang', '*', 'lib', 'windows', 'clang_rt.profile*.lib')
+    libs = sorted(glob.glob(pattern))
+    assert libs, f'Expected clang_rt.profile*.lib matching {pattern}'
+    return libs
+
+
 def SyncWinToolchain():
     """Update the VS toolchain used by Chromium bots."""
     proc.check_call([VSToolchainPy(), 'update'])
@@ -137,6 +155,20 @@ def SetUpVSEnv(outdir):
 '''
     with open(GetPrebuiltClang('lib.bat'), 'w') as f:
         f.write(batch)
+    # Chromium's Windows clang archive only ships clang-cl.exe and lld-link.exe;
+    # expose clang/clang++/wasm-ld driver aliases for standalone Wasm builds
+    # (for local profiling without needing full emscripten install).
+    for src_name, dst_name in (
+        ('clang-cl.exe', 'clang.exe'),
+        ('clang-cl.exe', 'clang++.exe'),
+        ('lld-link.exe', 'wasm-ld.exe'),
+    ):
+        dst = GetPrebuiltClang(dst_name)
+        if not os.path.isfile(dst):
+            try:
+                os.link(GetPrebuiltClang(src_name), dst)
+            except OSError:
+                shutil.copy2(GetPrebuiltClang(src_name), dst)
     return GetVSEnv(outdir)
 
 
